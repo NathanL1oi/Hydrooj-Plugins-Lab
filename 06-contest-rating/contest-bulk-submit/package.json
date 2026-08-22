@@ -1,0 +1,16 @@
+{
+  "name": "hydrooj-contest-bulk-submit",
+  "version": "1.0.3",
+  "description": "Bulk upload and judge contest submissions from a ZIP archive",
+  "main": "index.ts",
+  "license": "MIT",
+  "hydrooj": {
+    "frontend": {
+      "contest_bulk_submit.page.ts": "frontend/contest_bulk_submit.page.ts"
+    }
+  },
+  "devDependencies": {
+    "@hydrooj/ui-default": "^4.58.0-beta.6",
+    "hydrooj": "^5.0.0-beta.6"
+  }
+}

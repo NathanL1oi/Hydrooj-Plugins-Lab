@@ -1,0 +1,225 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.rok-page { --rok-accent: #2563eb; --rok-accent-soft: #eff6ff; --rok-ok: #168a5a; --rok-ok-soft: #ecfdf3; --rok-line: #d8e0ea; --rok-line-soft: #edf2f7; --rok-surface: #fff; --rok-soft: #f8fafc; --rok-text: #111827; --rok-muted: #667085; }
+.rok-head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; padding-bottom: 14px; border-bottom: 1px solid var(--rok-line-soft); }
+.rok-titleblock { min-width: 0; }
+.rok-kicker { color: var(--rok-accent); font-size: 12px; font-weight: 700; letter-spacing: 0; margin-bottom: 4px; }
+.rok-subtitle { color: var(--rok-muted); font-size: 13px; margin-top: 5px; }
+.rok-head__actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.rok-shell { display: grid; grid-template-columns: minmax(0, 1fr) 236px; gap: 16px; align-items: start; }
+.rok-main { min-width: 0; }
+.rok-paper { border: 1px solid var(--rok-line); border-radius: 8px; background: var(--rok-surface); overflow: hidden; }
+.rok-paper__header { padding: 18px 20px; border-bottom: 1px solid var(--rok-line-soft); background: var(--rok-soft); }
+.rok-paper__title { margin: 0; font-size: 19px; line-height: 1.35; color: var(--rok-text); }
+.rok-paper__desc { margin: 7px 0 0; color: var(--rok-muted); line-height: 1.65; }
+.rok-question { position: relative; padding: 20px 20px 20px 60px; border-bottom: 1px solid var(--rok-line-soft); background: #fff; transition: background .16s ease; }
+.rok-question:last-child { border-bottom: 0; }
+.rok-question.is-answered { background: linear-gradient(90deg, rgba(236,253,243,.72), #fff 96px); }
+.rok-question__index { position: absolute; left: 18px; top: 20px; width: 28px; height: 28px; border-radius: 50%; background: #eef2ff; color: #334155; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
+.rok-question.is-answered .rok-question__index { background: var(--rok-ok-soft); color: #067647; }
+.rok-question__title { font-weight: 700; color: var(--rok-text); margin-bottom: 10px; line-height: 1.58; }
+.rok-required { color: #dc2626; margin-left: 3px; }
+.rok-question__desc { color: var(--rok-muted); margin-bottom: 12px; line-height: 1.65; }
+.rok-question__desc-line { margin: 0 0 8px; }
+.rok-paper__desc > :first-child, .rok-question__desc > :first-child { margin-top: 0; }
+.rok-paper__desc > :last-child, .rok-question__desc > :last-child { margin-bottom: 0; }
+.rok-options { display: grid; gap: 8px; }
+.rok-option { display: flex; gap: 10px; align-items: flex-start; border: 1px solid #d7dde8; border-radius: 7px; padding: 10px 12px; cursor: pointer; background: #fff; transition: border-color .14s ease, background .14s ease, box-shadow .14s ease; }
+.rok-option:hover { border-color: var(--rok-accent); background: #f7fbff; }
+.rok-option:has(input:checked), .rok-option.is-selected { border-color: var(--rok-accent); background: var(--rok-accent-soft); box-shadow: inset 3px 0 0 var(--rok-accent); }
+.rok-option input { margin-top: 3px; }
+.rok-option__text { min-width: 0; line-height: 1.5; }
+.rok-answer { max-width: 720px; }
+.rok-textarea { min-height: 120px; resize: vertical; }
+.rok-inline-blank { display: inline-block; width: 136px; min-width: 136px; max-width: min(100%, 620px); min-height: 34px; margin: 0 5px 4px; padding: 5px 10px 6px; border: 1px solid #cbd5e1; border-bottom-color: #94a3b8; border-radius: 7px; background: linear-gradient(180deg, #fff, var(--rok-soft)); color: var(--rok-text); line-height: 1.45; vertical-align: middle; resize: none; overflow: hidden; transition: width .16s ease, height .16s ease, border-color .14s ease, background .14s ease, box-shadow .14s ease; }
+.rok-inline-blank::placeholder { color: #94a3b8; }
+.rok-inline-blank:not(:placeholder-shown) { border-color: #9fc4ff; background: #fff; }
+.rok-inline-blank:focus { outline: 0; border-color: var(--rok-accent); background: #fff; box-shadow: 0 0 0 3px #dbeafe; }
+.rok-inline-blank.is-expanded { vertical-align: top; margin-top: 3px; }
+.rok-blanks { display: grid; gap: 10px; max-width: 780px; }
+.rok-blank { display: grid; grid-template-columns: minmax(160px, 240px) minmax(0, 1fr); gap: 12px; align-items: start; padding: 11px 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: var(--rok-soft); transition: border-color .14s ease, background .14s ease; }
+.rok-blank:focus-within { border-color: #9fc4ff; background: #fff; }
+.rok-blank__meta { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 8px; align-items: start; color: #344054; line-height: 1.45; padding-top: 4px; }
+.rok-blank__mark { display: inline-flex; width: 24px; height: 24px; border-radius: 50%; background: #eef2ff; color: #334155; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+.rok-blank__label { min-width: 0; }
+.rok-blank-field { width: 100%; min-height: 38px; padding-top: 7px; padding-bottom: 7px; line-height: 1.5; resize: none; overflow: hidden; }
+.rok-blank-field--solo { max-width: 780px; }
+.rok-submitbar { position: sticky; bottom: 0; z-index: 2; display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-top: 12px; padding: 12px 14px; border: 1px solid var(--rok-line); border-radius: 8px; background: rgba(255,255,255,.96); box-shadow: 0 -8px 24px rgba(15,23,42,.06); }
+.rok-submitbar__meta { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.rok-save-label { color: var(--rok-text); font-weight: 700; }
+.rok-status { color: var(--rok-muted); font-size: 13px; line-height: 1.45; }
+.rok-side { position: sticky; top: 12px; border: 1px solid var(--rok-line); border-radius: 8px; overflow: hidden; background: #fff; }
+.rok-side .section__header { background: var(--rok-soft); border-bottom: 1px solid var(--rok-line-soft); }
+.rok-progress { display: grid; gap: 8px; margin-bottom: 14px; }
+.rok-progress__top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.rok-progress__label { color: var(--rok-muted); font-size: 13px; }
+.rok-progress__value { color: var(--rok-text); font-weight: 700; }
+.rok-progress__bar { height: 7px; border-radius: 999px; background: #e8edf4; overflow: hidden; }
+.rok-progress__fill { display: block; height: 100%; width: 0%; border-radius: inherit; background: var(--rok-ok); transition: width .18s ease; }
+.rok-nav-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 7px; }
+.rok-nav-list a { display: block; text-align: center; padding: 7px 0; border: 1px solid #d7dde8; border-radius: 6px; background: #fff; color: #344054; transition: border-color .14s ease, background .14s ease, color .14s ease; }
+.rok-nav-list a:hover { border-color: var(--rok-accent); color: var(--rok-accent); }
+.rok-nav-list a.answered { border-color: var(--rok-ok); background: var(--rok-ok-soft); color: #067647; font-weight: 700; }
+.rok-h5-frame { width: 100%; min-height: 560px; border: 0; display: block; background: #fff; }
+{% if config.customCss %}{{ config.customCss|safe }}{% endif %}
+@media (max-width: 900px) {
+  .rok-head { flex-direction: column; }
+  .rok-head__actions { justify-content: flex-start; }
+  .rok-shell { grid-template-columns: 1fr; }
+  .rok-side { position: static; order: -1; }
+  .rok-question { padding: 16px; }
+  .rok-question__index { position: static; margin: 0 0 9px; }
+  .rok-blank { grid-template-columns: 1fr; }
+  .rok-submitbar { position: static; flex-direction: column; align-items: stretch; }
+  .rok-submitbar .button { width: 100%; }
+}
+</style>
+<div class="section rok-page">
+  <div class="section__header rok-head">
+    <div class="rok-titleblock">
+      <div class="rok-kicker">{{ _('富交互客观题') }}</div>
+      <h1 class="section__title">{{ title }}</h1>
+      <div class="rok-subtitle">{{ _('保存即提交') }}</div>
+    </div>
+    <div class="rok-head__actions">
+      {% if canEdit %}
+        <a class="button rounded" href="{{ editUrl }}">{{ _('配置') }}</a>
+      {% endif %}
+    </div>
+  </div>
+  <div class="section__body">
+    <form method="post" action="{{ submitUrl }}" class="rok-shell" data-rok-form data-rok-mode="{{ mode }}" data-rok-draft-key="{{ draftKey }}">
+      <div class="rok-main">
+        <div class="rok-paper">
+          {% if mode == 'schema' %}
+            <div class="rok-paper__header">
+              {% set displayTitle = schema.title or title %}
+              <h2 class="rok-paper__title">{{ displayTitle|markdownInline|safe }}</h2>
+              {% if schema.description %}
+                <div class="rok-paper__desc">{{ schema.description|markdown|safe }}</div>
+              {% endif %}
+            </div>
+            {% for q in schema.questions %}
+              <div class="rok-question" id="rok-q-{{ q.id }}" data-rok-question="{{ q.id }}">
+                <span class="rok-question__index">{{ loop.index }}</span>
+                <div class="rok-question__title">
+                  {% for part in q.titleParts %}
+                    {% if part.type == 'blank' %}
+                      <textarea class="rok-inline-blank" rows="1" name="{{ part.blank.answerName }}" data-rok-answer="{{ part.blank.answerKey }}" data-rok-autosize placeholder="{{ part.blank.label }}" aria-label="{{ part.blank.label }}" {% if q.required %}required{% endif %}></textarea>
+                    {% else %}
+                      {{ part.text|markdownInline|safe }}
+                    {% endif %}
+                  {% endfor %}
+                  {% if q.required %}<span class="rok-required">*</span>{% endif %}
+                </div>
+                {% if q.hasInlineBlanks and q.descriptionLines|length %}
+                  <div class="rok-question__desc">
+                    {% for line in q.descriptionLines %}
+                      <p class="rok-question__desc-line">
+                        {% for part in line %}
+                          {% if part.type == 'blank' %}
+                            <textarea class="rok-inline-blank" rows="1" name="{{ part.blank.answerName }}" data-rok-answer="{{ part.blank.answerKey }}" data-rok-autosize placeholder="{{ part.blank.label }}" aria-label="{{ part.blank.label }}" {% if q.required %}required{% endif %}></textarea>
+                          {% else %}
+                            {{ part.text|markdownInline|safe }}
+                          {% endif %}
+                        {% endfor %}
+                      </p>
+                    {% endfor %}
+                  </div>
+                {% elif q.description %}
+                  <div class="rok-question__desc">{{ q.description|markdown|safe }}</div>
+                {% endif %}
+                {% if q.type == 'single' %}
+                  <div class="rok-options">
+                    {% for opt in q.options %}
+                      <label class="rok-option">
+                        <input type="radio" name="{{ q.answerName }}" value="{{ opt.value }}" data-rok-answer="{{ q.id }}" {% if q.required %}required{% endif %}>
+                        <span class="rok-option__text"><strong>{{ opt.value }}.</strong> {{ opt.label|markdownInline|safe }}</span>
+                      </label>
+                    {% endfor %}
+                  </div>
+                {% elif q.type == 'multiple' %}
+                  <div class="rok-options">
+                    {% for opt in q.options %}
+                      <label class="rok-option">
+                        <input type="checkbox" name="{{ q.answerName }}" value="{{ opt.value }}" data-rok-answer="{{ q.id }}">
+                        <span class="rok-option__text"><strong>{{ opt.value }}.</strong> {{ opt.label|markdownInline|safe }}</span>
+                      </label>
+                    {% endfor %}
+                  </div>
+                {% elif q.type == 'select' %}
+                  <select class="select rok-answer" name="{{ q.answerName }}" data-rok-answer="{{ q.id }}" {% if q.required %}required{% endif %}>
+                    <option value=""></option>
+                    {% for opt in q.options %}<option value="{{ opt.value }}">{{ opt.value }}. {{ opt.label }}</option>{% endfor %}
+                  </select>
+                {% elif q.type == 'textarea' %}
+                  <textarea class="textbox rok-answer rok-textarea" name="{{ q.answerName }}" data-rok-answer="{{ q.id }}" placeholder="{{ q.placeholder }}" {% if q.required %}required{% endif %}></textarea>
+                {% elif q.type == 'blank' and q.listBlanks|length %}
+                  <div class="rok-blanks">
+                    {% for blank in q.listBlanks %}
+                      <label class="rok-blank">
+                        <span class="rok-blank__meta">
+                          <span class="rok-blank__mark">{{ loop.index }}</span>
+                          <span class="rok-blank__label">{{ blank.label|markdownInline|safe }}</span>
+                        </span>
+                        <textarea class="textbox rok-answer rok-blank-field" rows="1" name="{{ blank.answerName }}" data-rok-answer="{{ blank.answerKey }}" data-rok-autosize placeholder="{{ blank.placeholder }}" {% if q.required %}required{% endif %}></textarea>
+                      </label>
+                    {% endfor %}
+                  </div>
+                {% elif q.type == 'blank' and q.blanks|length %}
+                  {# Inline blanks have already been rendered in the title or description. #}
+                {% elif q.type == 'blank' %}
+                  <textarea class="textbox rok-answer rok-blank-field rok-blank-field--solo" rows="1" name="{{ q.answerName }}" data-rok-answer="{{ q.id }}" data-rok-autosize placeholder="{{ q.placeholder }}" {% if q.required %}required{% endif %}></textarea>
+                {% else %}
+                  <input class="textbox rok-answer" name="{{ q.answerName }}" data-rok-answer="{{ q.id }}" placeholder="{{ q.placeholder }}" {% if q.required %}required{% endif %}>
+                {% endif %}
+              </div>
+            {% endfor %}
+          {% else %}
+            <input type="hidden" name="answers_payload" data-rok-h5-payload>
+            <iframe
+              class="rok-h5-frame"
+              data-rok-h5-frame
+              sandbox="allow-scripts allow-forms allow-popups"
+              srcdoc="{{ h5Srcdoc }}"
+            ></iframe>
+          {% endif %}
+        </div>
+        <div class="rok-submitbar">
+          <div class="rok-submitbar__meta">
+            <span class="rok-save-label">{{ _('保存答案') }}</span>
+            <span class="rok-status" data-rok-status>{{ _('保存后进入评测队列。') }}</span>
+          </div>
+          <button class="button rounded primary" type="submit">
+            <span class="icon icon-save"></span> {{ _('保存') }}
+          </button>
+        </div>
+      </div>
+      <div class="section side rok-side">
+        <div class="section__header">
+          <h1 class="section__title">{{ _('答题进度') }}</h1>
+        </div>
+        <div class="section__body">
+          {% if mode == 'schema' %}
+            <div class="rok-progress">
+              <div class="rok-progress__top">
+                <span class="rok-progress__label">{{ _('已完成') }}</span>
+                <span class="rok-progress__value"><span data-rok-progress-current>0</span>/<span data-rok-progress-total>{{ schema.questions|length }}</span></span>
+              </div>
+              <div class="rok-progress__bar"><span class="rok-progress__fill" data-rok-progress-fill></span></div>
+            </div>
+            <div class="rok-nav-list" data-rok-nav>
+              {% for q in schema.questions %}
+                <a href="#rok-q-{{ q.id }}" data-rok-nav-item="{{ q.id }}">{{ loop.index }}</a>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="rok-status">{{ _('H5 答案同步后可保存。') }}</p>
+          {% endif %}
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

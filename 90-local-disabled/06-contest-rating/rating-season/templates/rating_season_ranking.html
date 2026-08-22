@@ -1,0 +1,90 @@
+{% extends "layout/basic.html" %}
+{% import "components/user.html" as user with context %}
+{% import "components/paginator.html" as paginator with context %}
+{% import "components/nothing.html" as nothing with context %}
+{% block content %}
+<style>
+.rs-rank .rs-tabs { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; border-bottom: 1px solid #e5e7eb; }
+.rs-rank .rs-muted { color: #64748b; font-size: 13px; }
+.rs-rank .rs-table { display: block; overflow: visible; }
+.rs-rank .section__table-container { clear: both; }
+.rs-rank table { min-width: 820px; }
+.rs-rank .rs-badge { display: inline-block; min-width: 72px; text-align: center; border-radius: 6px; color: #fff; padding: 3px 8px; font-size: 12px; font-weight: 700; }
+.rs-rank .rs-up { color: #15803d; font-weight: 700; }
+.rs-rank .rs-down { color: #b91c1c; font-weight: 700; }
+.rs-rank .rs-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center; }
+.theme--dark .rs-rank .rs-tabs {
+  border-bottom-color: rgba(148, 163, 184, .24);
+}
+.theme--dark .rs-rank .rs-muted {
+  color: #9fb0c6;
+}
+.theme--dark .rs-rank .rs-up { color: #4ade80; }
+.theme--dark .rs-rank .rs-down { color: #f87171; }
+</style>
+<div class="row rs-rank">
+  <div class="columns">
+    <div class="section">
+      <div class="rs-tabs">
+        <a class="button rounded" href="{{ rpRankingUrl }}">{{ _('RP榜') }}</a>
+        <a class="button rounded" href="{{ ratingRankingUrl }}">{{ _('Rating榜') }}</a>
+        <a class="button rounded primary" href="{{ url('rating_season_ranking') }}">{{ _('赛季榜') }}</a>
+        {% if manageUrl %}<a class="button rounded" href="{{ manageUrl }}">{{ _('赛季设置') }}</a>{% endif %}
+      </div>
+      <div class="section__header">
+        <div class="rs-head">
+          <h1 class="section__title">{{ activeSeason.title if activeSeason else _('Rating 赛季榜') }}</h1>
+          {% if activeSeason %}
+          <form method="get">
+            <select name="seasonId" class="select" onchange="this.form.submit()">
+              {% for season in seasons %}
+              <option value="{{ season.seasonId }}" {% if activeSeason and activeSeason.seasonId == season.seasonId %}selected{% endif %}>{{ season.title }}</option>
+              {% endfor %}
+            </select>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      <div class="section__body no-padding rs-table table-layout-guard">
+        {% if not config.enabled %}
+          <blockquote class="note">{{ _('当前子域未启用 Rating 赛季。') }}</blockquote>
+        {% elif not activeSeason %}
+          {{ nothing.render('还没有当前赛季。') }}
+        {% elif not rows.length %}
+          {{ nothing.render('这个赛季还没有 Rating 变化。') }}
+        {% else %}
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>{{ _('排名') }}</th>
+              <th>{{ _('用户') }}</th>
+              <th>{{ _('赛季变化') }}</th>
+              <th>{{ _('当前 Rating') }}</th>
+              <th>{{ _('段位') }}</th>
+              <th>{{ _('场次') }}</th>
+              <th>{{ _('最佳名次') }}</th>
+              <th>{{ _('最近比赛') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for row in rows %}
+            <tr>
+              <td>{{ row.rank }}</td>
+              <td>{% if udict[row.uid] %}{{ user.render_inline(udict[row.uid], badge=false) }}{% else %}UID {{ row.uid }}{% endif %}</td>
+              <td>{% if row.delta > 0 %}<span class="rs-up">+{{ row.delta }}</span>{% elif row.delta < 0 %}<span class="rs-down">{{ row.delta }}</span>{% else %}0{% endif %}</td>
+              <td><strong style="color: {{ row.color }}">{{ row.lastRating|round }}</strong></td>
+              <td><span class="rs-badge" style="background: {{ row.color }}">{{ row.title }}</span></td>
+              <td>{{ row.contests }}</td>
+              <td>{{ row.bestRank or '-' }}</td>
+              <td><span class="rs-muted">{{ row.lastContestTitle or '-' }}</span></td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        {{ paginator.render(page, pageCount) }}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

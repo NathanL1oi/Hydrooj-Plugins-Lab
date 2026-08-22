@@ -1,0 +1,24 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">{{ _('错因复盘') }}</h1>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>{{ _('题目') }}</th><th>{{ _('错因') }}</th><th>{{ _('下次策略') }}</th><th>{{ _('更新时间') }}</th><th></th></tr></thead>
+    <tbody>
+      {% for doc in docs %}
+      <tr>
+        <td><a href="{{ url('problem_detail', pid=doc.pid) }}">P{{ doc.pid }}</a></td>
+        <td>{{ causeLabel(doc.cause) }}</td>
+        <td>{{ doc.next|truncate(60) }}</td>
+        <td>{{ datetimeSpan(doc.updatedAt)|safe }}</td>
+        <td><a href="{{ url('mistake_reflection_edit', rid=doc._id) }}">{{ _('编辑') }}</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5">{{ _('还没有错因卡。可以从题目页或直接访问 /reflection/create/题号 新建。') }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

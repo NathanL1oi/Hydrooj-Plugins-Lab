@@ -1,0 +1,77 @@
+{% extends "manage_base.html" %}
+{% block manage_content %}
+<style>
+.cvsub-page { display: grid; gap: 16px; font-size: 14px; }
+.cvsub-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; align-items: center; }
+.cvsub-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.cvsub-card { border: 1px solid #dfeaf5; border-radius: 8px; background: #fff; padding: 16px; max-width: 920px; }
+.cvsub-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.cvsub-form .wide { grid-column: 1 / -1; }
+.cvsub-form .textbox, .cvsub-form .select { width: 100%; min-height: 36px; }
+.cvsub-note { padding: 10px 12px; border-left: 3px solid #5aa3e6; background: #f8fbff; color: #506680; margin-bottom: 14px; }
+@media screen and (max-width: 760px) {
+  .cvsub-form { grid-template-columns: 1fr; }
+  .cvsub-form .wide { grid-column: auto; }
+}
+</style>
+{% include "course_video_theme.html" %}
+<div class="cvsub-page">
+  <div class="section">
+    <div class="section__header cvsub-head">
+      <h1 class="section__title">登记已有 VOD FileId</h1>
+      <div class="cvsub-actions">
+        <a class="rounded button" href="{{ url('course_video_main') }}">返回视频库</a>
+        <a class="rounded button" href="{{ url('course_video_folder_create') }}">新建课程 / 章</a>
+        <a class="rounded button" href="{{ url('course_video_folder_manage') }}">管理已有目录</a>
+      </div>
+    </div>
+    <div class="section__body">
+      <p class="cvsub-note">用于把腾讯云控制台中已经存在的视频 FileId 纳入 Hydro 课程视频库。Hydro 仍然只保存 FileId 和目录信息，不保存 MP4 文件。</p>
+      <div class="cvsub-card">
+        <form method="post" class="cvsub-form" data-cvv-path-selects>
+          <input type="hidden" name="operation" value="manual_create">
+          <label>
+            课程
+            <select class="select" name="folderCourseId" data-cvv-course-select required>
+              <option value="">请选择课程</option>
+              {% for course in folderTree %}
+                <option value="{{ course.id }}" {% if currentCourseId == course.id %}selected{% endif %}>{{ course.name }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>
+            章
+            <select class="select" name="folderChapterId" data-cvv-chapter-select required>
+              <option value="">请选择章</option>
+              {% for course in folderTree %}
+                {% for chapter in course.chapters %}
+                  <option value="{{ chapter.id }}" data-course-id="{{ course.id }}" {% if currentChapterId == chapter.id %}selected{% endif %}>{{ chapter.name }}</option>
+                {% endfor %}
+              {% endfor %}
+            </select>
+          </label>
+          <label>
+            视频名
+            <input class="textbox" name="videoTitle" placeholder="例如：树形 DP 讲解视频 1" required>
+          </label>
+          <label>
+            VOD FileId
+            <input class="textbox" name="fileId" placeholder="5001834805754623728" required>
+          </label>
+          <label>
+            大小（字节，可空）
+            <input class="textbox" name="size" placeholder="1492500000">
+          </label>
+          <label>
+            时长（秒，可空）
+            <input class="textbox" name="duration" placeholder="9418">
+          </label>
+          <div class="wide">
+            <button class="rounded primary button" type="submit">登记 VOD</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,129 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.rs-page .rs-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.rs-page .rs-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(280px, .9fr); gap: 14px; }
+.rs-page .rs-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; background: #fff; }
+.rs-page .rs-muted { color: #64748b; font-size: 13px; line-height: 1.55; }
+.rs-page .rs-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.rs-page .rs-switch { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.rs-page .rs-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+.rs-page .rs-pill { display: inline-block; border-radius: 999px; padding: 2px 8px; font-size: 12px; font-weight: 700; background: #e2e8f0; color: #334155; }
+.rs-page .rs-pill.active { background: #dcfce7; color: #166534; }
+.rs-page .rs-pill.off { background: #f1f5f9; color: #64748b; }
+.rs-page table { min-width: 720px; }
+.rs-page .rs-table { overflow-x: auto; }
+.theme--dark .rs-page .rs-card {
+  background: rgba(15, 23, 42, .42);
+  border-color: rgba(148, 163, 184, .26);
+  color: #dbe7f5;
+}
+.theme--dark .rs-page .rs-muted {
+  color: #9fb0c6;
+}
+.theme--dark .rs-page .rs-pill {
+  background: rgba(148, 163, 184, .18);
+  color: #e2e8f0;
+}
+.theme--dark .rs-page .rs-pill.active {
+  background: rgba(22, 101, 52, .32);
+  color: #86efac;
+}
+.theme--dark .rs-page .rs-pill.off {
+  background: rgba(15, 23, 42, .42);
+  color: #94a3b8;
+}
+html.hydro-user-background-enabled .rs-page .rs-card {
+  background: var(--hub-surface) !important;
+  border-color: var(--hub-border) !important;
+  color: var(--hub-text) !important;
+  box-shadow: var(--hub-shadow) !important;
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+}
+html.hydro-user-background-enabled .rs-page .rs-muted {
+  color: var(--hub-muted) !important;
+}
+@media (max-width: 900px) { .rs-page .rs-grid, .rs-page .rs-row { grid-template-columns: 1fr; } }
+</style>
+<div class="row rs-page">
+  <div class="columns">
+    <div class="section">
+      <div class="section__header">
+        <div class="rs-head">
+          <h1 class="section__title">{{ _('Rating 赛季') }}</h1>
+          <a class="button rounded" href="{{ rankingUrl }}">{{ _('查看赛季榜') }}</a>
+        </div>
+      </div>
+      <div class="section__body">
+        {% if messages and messages.length %}
+          {% for msg in messages %}<blockquote class="note">{{ msg }}</blockquote>{% endfor %}
+        {% endif %}
+        <div class="rs-grid">
+          <div class="rs-card">
+            <h2>{{ _('当前赛季') }}</h2>
+            <form method="post">
+              <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+              {% if activeSeasonForm %}<input type="hidden" name="seasonId" value="{{ activeSeasonForm.seasonId }}">{% endif %}
+              <label>{{ _('赛季名称') }}<input class="textbox" name="title" value="{{ activeSeasonForm.title if activeSeasonForm else '' }}" placeholder="2026 春季赛"></label>
+              <div class="rs-row">
+                <label>{{ _('开始日期') }}<input class="textbox" type="date" name="startsAt" value="{{ activeSeasonForm.startsAtText if activeSeasonForm else '' }}"></label>
+                <label>{{ _('结束日期') }}<input class="textbox" type="date" name="endsAt" value="{{ activeSeasonForm.endsAtText if activeSeasonForm else '' }}"></label>
+              </div>
+              <p class="rs-muted">{{ _('赛季只统计这个时间范围内已经发布的 Rating 变化，不改变原始 Rating。') }}</p>
+              <div class="rs-actions">
+                <button class="button rounded primary" name="operation" value="save_season" type="submit">{{ _('保存赛季') }}</button>
+                {% if activeSeason %}
+                <button class="button rounded" name="operation" value="archive_season" type="submit" onclick="return confirm('{{ _('确认归档当前赛季？') }}')">{{ _('归档') }}</button>
+                {% endif %}
+              </div>
+            </form>
+          </div>
+          <div class="rs-card">
+            <h2>{{ _('显示设置') }}</h2>
+            <form method="post">
+              <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+              <label class="rs-switch">
+                <input type="checkbox" name="enabled" value="true" {% if config.enabled %}checked{% endif %}>
+                <span>{{ _('在当前子域启用赛季榜和用户页赛季卡') }}</span>
+              </label>
+              <p class="rs-muted">{{ _('入口放在域管理和 /ranking/rating-season；不额外占用顶部导航。') }}</p>
+              <button class="button rounded primary" name="operation" value="save_config" type="submit">{{ _('保存开关') }}</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section__header"><h1 class="section__title">{{ _('赛季列表') }}</h1></div>
+      <div class="section__body no-padding rs-table table-layout-guard">
+        <table class="data-table">
+          <thead><tr><th>{{ _('赛季') }}</th><th>{{ _('时间') }}</th><th>{{ _('状态') }}</th><th>{{ _('操作') }}</th></tr></thead>
+          <tbody>
+          {% for season in seasons %}
+          <tr>
+            <td><strong>{{ season.title }}</strong><div class="rs-muted">{{ season.seasonId }}</div></td>
+            <td>{{ datetimeSpan(season.startsAt)|safe }}{% if season.endsAt %} - {{ datetimeSpan(season.endsAt)|safe }}{% endif %}</td>
+            <td>
+              {% if config.activeSeasonId == season.seasonId %}<span class="rs-pill active">{{ _('当前') }}</span>
+              {% elif season.archived %}<span class="rs-pill off">{{ _('已归档') }}</span>
+              {% else %}<span class="rs-pill">{{ _('可切换') }}</span>{% endif %}
+            </td>
+            <td>
+              <form method="post" style="display:inline">
+                <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+                <input type="hidden" name="seasonId" value="{{ season.seasonId }}">
+                <button class="button rounded" name="operation" value="activate_season" type="submit">{{ _('设为当前') }}</button>
+              </form>
+              <a class="button rounded" href="{{ url('rating_season_ranking') }}?seasonId={{ season.seasonId }}">{{ _('查看') }}</a>
+            </td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        {% if not seasons.length %}<blockquote class="note">{{ _('还没有赛季，先创建一个本学期赛季。') }}</blockquote>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

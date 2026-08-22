@@ -1,0 +1,262 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.course-atr-problem-picker {
+  margin: 0 0 1rem;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background: #fafafa;
+}
+.course-atr-problem-picker__tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  align-items: flex-end;
+}
+.course-atr-problem-picker__tools label {
+  flex: 1 1 11rem;
+  margin-bottom: 0;
+}
+.course-atr-problem-picker__actions {
+  display: flex;
+  flex: 1 1 14rem;
+  gap: .5rem;
+  align-items: center;
+}
+.course-atr-problem-picker__meta {
+  margin: .75rem 0 .25rem;
+  color: #6b7280;
+  font-size: .875rem;
+}
+.course-atr-problem-picker table {
+  margin: .5rem 0;
+  table-layout: fixed;
+}
+.course-atr-problem-picker .col--check { width: 3rem; text-align: center; }
+.course-atr-problem-picker .col--pid { width: 6rem; }
+.course-atr-problem-picker .col--difficulty { width: 7rem; }
+.course-atr-problem-picker .col--stat { width: 7rem; }
+.course-atr-problem-picker__tag {
+  display: inline-block;
+  margin: 0 .25rem .25rem 0;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #eef2ff;
+  color: #374151;
+  font-size: .75rem;
+}
+.course-atr-problem-picker__pager {
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+}
+.course-atr-selected-sort {
+  margin: .5rem 0 1rem;
+  padding: .75rem;
+  border: 1px solid #dbe4ef;
+  border-radius: 4px;
+  background: #fff;
+}
+.course-atr-selected-sort__title {
+  margin: 0 0 .5rem;
+  color: #374151;
+  font-size: .875rem;
+  font-weight: 600;
+}
+.course-atr-selected-sort__list {
+  display: grid;
+  gap: .5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.course-atr-selected-sort__row {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  gap: .5rem;
+  align-items: center;
+  padding: .5rem;
+  border: 1px solid #dbe4ef;
+  border-left: 4px solid #60a5fa;
+  border-radius: 4px;
+  background: #fff;
+  transition: background .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.course-atr-selected-sort__row.is-swap-main {
+  border-color: #fb923c;
+  border-left-color: #f97316;
+  background: #fff7ed;
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, .2);
+}
+.course-atr-selected-sort__row.is-swap-peer {
+  border-color: #60a5fa;
+  border-left-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, .16);
+}
+.course-atr-selected-sort__index {
+  display: inline-flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #e8f2ff;
+  color: #111827;
+}
+.course-atr-selected-sort__name {
+  min-width: 0;
+  color: #172033;
+  font-size: .875rem;
+  line-height: 1.35;
+  word-break: break-word;
+}
+.course-atr-selected-sort__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: .35rem;
+}
+.course-atr-selected-sort__actions .button {
+  margin: 0 !important;
+  height: 1.75rem;
+  padding: 0 .5rem;
+  line-height: 1.65rem;
+  font-size: .75rem;
+}
+@media screen and (max-width: 720px) {
+  .course-atr-selected-sort__row { grid-template-columns: 2rem minmax(0, 1fr); }
+  .course-atr-selected-sort__actions { grid-column: 2; justify-content: flex-start; }
+}
+</style>
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('Edit Subsection') }}</h1>
+      </div>
+      <div class="section__body">
+        <form method="post">
+          <div class="row">
+            <div class="medium-9 columns">
+              <label>
+                {{ _('Title') }}
+                <input name="title" placeholder="{{ _('title') }}" value="{{ ssdoc.title|default('') }}" class="textbox"
+                  autofocus>
+              </label>
+            </div>
+            <div class="medium-3 columns">
+              <label>
+                {{ _('Pin') }}
+                <input name="pin" placeholder="{{ _('Pin level') }}" value="{{ ssdoc.pin|default(0) }}" class="textbox">
+                <p class="help-text">{{ _('pin_help-text') }}</p>
+              </label>
+            </div>
+          </div>
+          <div class="row">
+            <div class="medium-12 columns">
+              <label>
+                {{ _('Problems') }}
+                <input type="text" name="pids" value="{{ ssdoc.pids }}" placeholder="{{ _('Seperated with \',\'') }}" class="textbox autocomplete-dummy">
+              </label>
+              <div class="course-atr-selected-sort" data-selected-problem-sort>
+                <div class="course-atr-selected-sort__title">
+                  {{ _('Adjust Problem Order') }}
+                  {% if ssdoc %}
+                  <a class="supplementary" href="{{ url('course_subsec_detail', cid=cdoc.docId, csid=csdoc.docId, ssid=ssdoc._id) }}/problem-order">{{ _('Open full page') }}</a>
+                  {% endif %}
+                </div>
+                <ol class="course-atr-selected-sort__list" data-selected-problem-list></ol>
+              </div>
+              <div class="course-atr-problem-picker" data-search-url="{{ url('course_problem_search') }}" data-problem-url-template="{{ url('problem_detail', pid='__pid__') }}">
+                <div class="course-atr-problem-picker__tools">
+                  <label>
+                    {{ _('关键词') }}
+                    <input type="text" class="textbox" data-problem-search-q placeholder="P1000 / 标题 / Trie001">
+                  </label>
+                  <label>
+                    {{ _('标记') }}
+                    <input type="text" class="textbox" data-problem-search-tags placeholder="#Trie001. 字典树入门">
+                  </label>
+                  <label>
+                    {{ _('难度') }}
+                    <input type="text" class="textbox" data-problem-search-difficulty placeholder="入门 / 普及-">
+                  </label>
+                  <div class="course-atr-problem-picker__actions">
+                    <button type="button" class="rounded button" data-problem-search-submit>{{ _('搜索') }}</button>
+                    <button type="button" class="rounded button" data-problem-search-add>{{ _('加入选中') }}</button>
+                  </div>
+                </div>
+                <div class="course-atr-problem-picker__meta">
+                  {{ _('当前已选') }} <span data-problem-selected-count>0</span> {{ _('题') }}
+                  <span data-problem-search-count></span>
+                </div>
+                <table class="data-table">
+                  <colgroup>
+                    <col class="col--check">
+                    <col class="col--pid">
+                    <col>
+                    <col class="col--difficulty">
+                    <col class="col--stat">
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th><input type="checkbox" data-problem-search-check-all></th>
+                      <th>{{ _('题号') }}</th>
+                      <th>{{ _('题目') }}</th>
+                      <th>{{ _('难度') }}</th>
+                      <th>{{ _('通过') }}</th>
+                    </tr>
+                  </thead>
+                  <tbody data-problem-search-results>
+                    <tr><td colspan="5">{{ _('输入条件后搜索题目') }}</td></tr>
+                  </tbody>
+                </table>
+                <div class="course-atr-problem-picker__pager">
+                  <button type="button" class="rounded button" data-problem-search-prev>{{ _('上一页') }}</button>
+                  <span data-problem-search-page>1 / 1</span>
+                  <button type="button" class="rounded button" data-problem-search-next>{{ _('下一页') }}</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="columns">
+              <label>
+                {{ _('Description') }}
+                <textarea name="content" class="textbox" data-markdown
+                  style="height: 200px">{{ ssdoc['content']|default('') }}</textarea>
+              </label>
+            </div>
+          </div>
+          <div class="row">
+            <div class="columns">
+              {% if page_name == 'course_subsec_edit' %}
+              <button type="submit" class="rounded primary button">
+                {{ _('Update') }}
+              </button>
+              {% if handler.user.hasPerm(perm.PERM_EDIT_TRAINING) %}
+              <button name="operation" value="delete" type="submit" class="rounded button">
+                {{ _('Delete') }}
+              </button>
+              {% endif %}
+              {% else %}
+              <button type="submit" class="rounded primary button">
+                {{ _('Create') }}
+              </button>
+              {% endif %}
+              <button type="button" class="rounded button" onclick="window.history.go(-1)">
+                {{ _('Cancel') }}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    {% include 'components/md_hint.html' %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,8 @@
+{
+    "compilerOptions": {
+        "jsx": "react",
+        "target": "ES5",
+        "experimentalDecorators": true,
+        "allowSyntheticDefaultImports": true
+    }
+}

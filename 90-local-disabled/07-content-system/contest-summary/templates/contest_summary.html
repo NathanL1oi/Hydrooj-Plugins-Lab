@@ -1,0 +1,198 @@
+{% extends "layout/basic.html" %}
+{% import "components/user.html" as user with context %}
+{% block content %}
+<style>
+.contest-summary { color: #24364b; --cs-accent: #2563eb; --cs-line: #e5edf7; --cs-soft: #f8fbff; --cs-ink: #17324d; --cs-muted: #64748b; }
+.contest-summary .cs-shell { display: grid; gap: 16px; }
+.contest-summary .cs-head { display: flex; flex-wrap: wrap; gap: 14px; justify-content: space-between; align-items: flex-start; }
+.contest-summary .cs-title { margin: 0 0 6px; color: var(--cs-ink); font-size: 24px; font-weight: 800; letter-spacing: 0; line-height: 1.25; }
+.contest-summary .cs-muted { color: var(--cs-muted); }
+.contest-summary .cs-actions,
+.contest-summary .cs-filter,
+.contest-summary .cs-meta,
+.contest-summary .cs-badges { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.contest-summary .cs-overview { display: grid; gap: 14px; }
+.contest-summary .cs-filter { margin-top: 14px; padding: 12px; border: 1px solid var(--cs-line); border-radius: 8px; background: var(--cs-soft); }
+.contest-summary .cs-filter label { display: grid; gap: 5px; margin: 0; color: #41546c; font-weight: 700; }
+.contest-summary .cs-filter .textbox { min-width: 240px; }
+.contest-summary .cs-filter .select { min-width: 220px; }
+.contest-summary .cs-filter-toggle { display: flex !important; align-items: center; gap: 6px !important; margin-top: 20px !important; }
+.contest-summary .cs-panel { overflow: hidden; border-radius: 8px; }
+.contest-summary .cs-card { display: grid; gap: 12px; padding: 16px 18px; border-bottom: 1px solid #edf2f8; transition: background .16s ease, border-color .16s ease; }
+.contest-summary .cs-card:hover { background: #fbfdff; }
+.contest-summary .cs-card:last-child { border-bottom: 0; }
+.contest-summary .cs-card-title { margin: 0; color: #1f3b57; font-size: 18px; font-weight: 800; letter-spacing: 0; line-height: 1.35; }
+.contest-summary .cs-card-title a { color: inherit; }
+.contest-summary .cs-meta { row-gap: 5px; font-size: 13px; }
+.contest-summary .cs-meta span { display: inline-flex; align-items: center; }
+.contest-summary .cs-meta span + span::before { content: ""; width: 4px; height: 4px; margin-right: 8px; border-radius: 50%; background: #cbd5e1; }
+.contest-summary .cs-text { max-width: 920px; color: #334155; line-height: 1.75; }
+.contest-summary .cs-badge { display: inline-flex; align-items: center; min-height: 22px; padding: 2px 8px; border-radius: 999px; background: #eef7ff; color: #0b66c3; font-size: 12px; font-weight: 700; }
+.contest-summary .cs-badge--excellent { background: #fff0f6; color: #c2255c; }
+.contest-summary .cs-badge--ai { background: #ecfdf5; color: #047857; }
+.contest-summary .cs-empty { padding: 36px 24px; text-align: center; color: var(--cs-muted); background: linear-gradient(180deg, #fff, #f8fbff); }
+.contest-summary .cs-pager { display: flex; gap: 8px; justify-content: flex-end; }
+.theme--dark .contest-summary { color: #cbd5e1; }
+.theme--dark .contest-summary .cs-title,
+.theme--dark .contest-summary .cs-card-title { color: #e2e8f0; }
+.theme--dark .contest-summary .cs-muted { color: #94a3b8; }
+.theme--dark .contest-summary .cs-filter { background: #1c2430; border-color: #303a48; }
+.theme--dark .contest-summary .cs-card { border-color: #303a48; }
+.theme--dark .contest-summary .cs-card:hover { background: #1b2430; }
+html.hydro-user-background-enabled .contest-summary .cs-filter,
+html.hydro-user-background-enabled .contest-summary .cs-empty {
+  background: var(--hub-surface-soft) !important;
+  border-color: var(--hub-border) !important;
+  color: var(--hub-text) !important;
+  box-shadow: var(--hub-shadow) !important;
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+}
+html.hydro-user-background-enabled .contest-summary .cs-filter label,
+html.hydro-user-background-enabled .contest-summary .cs-text {
+  color: var(--hub-text) !important;
+}
+html.hydro-user-background-enabled .contest-summary .cs-card:hover {
+  background: var(--hub-nav-hover) !important;
+}
+@media screen and (max-width: 720px) {
+  .contest-summary .cs-filter label,
+  .contest-summary .cs-filter .textbox,
+  .contest-summary .cs-filter .select { width: 100%; }
+}
+</style>
+
+<div class="row contest-summary">
+  <div class="medium-12 columns">
+    <div class="cs-shell">
+      <section class="section cs-panel">
+        <div class="section__body">
+          <div class="cs-head">
+            <div>
+              <h1 class="cs-title">比赛总结</h1>
+              <div class="cs-muted">
+                {% if selectedContest %}
+                  当前筛选：{{ selectedContest.title }}
+                {% else %}
+                  当前展示你有权限查看的比赛总结
+                {% endif %}
+              </div>
+            </div>
+            <div class="cs-actions">
+              <a class="button rounded primary" href="{{ writeUrl }}">
+                <span class="icon icon-edit"></span> 写总结
+              </a>
+              {% if selectedContest %}
+              <a class="button rounded" href="{{ url('contest_detail', tid=selectedTid) }}">
+                <span class="icon icon-back"></span> 返回比赛
+              </a>
+              {% endif %}
+              {% if settingsUrl and canManageSelected %}
+              <a class="button rounded" href="{{ settingsUrl }}">
+                <span class="icon icon-settings"></span> 总结设置
+              </a>
+              {% endif %}
+            </div>
+          </div>
+
+          <form method="get" class="cs-filter">
+            <label>
+              比赛
+              <select class="select" name="tid">
+                <option value="" {% if not selectedTid %}selected{% endif %}>全部可见比赛</option>
+                {% for contest in contests %}
+                <option value="{{ contest.id }}" {% if contest.id == selectedTid %}selected{% endif %}>{{ contest.title }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label>
+              关键词
+              <input class="textbox" name="q" value="{{ q }}" placeholder="标题、正文、评语">
+            </label>
+            <label>
+              排序
+              <select class="select" name="sort">
+                <option value="updated" {% if sort == 'updated' %}selected{% endif %}>最近更新</option>
+                <option value="created" {% if sort == 'created' %}selected{% endif %}>最近提交</option>
+                <option value="score" {% if sort == 'score' %}selected{% endif %}>AI 分数</option>
+              </select>
+            </label>
+            <label class="cs-filter-toggle">
+              <input type="checkbox" name="excellent" value="true" {% if excellent %}checked{% endif %}>
+              只看优秀总结
+            </label>
+            <button class="button rounded" type="submit" style="margin-top:20px;">
+              <span class="icon icon-search"></span> 筛选
+            </button>
+          </form>
+        </div>
+      </section>
+
+      {% if selectedConfig and selectedConfig.prompt %}
+      <section class="section cs-panel">
+        <div class="section__header">
+          <h1 class="section__title">{{ selectedConfig.title }}</h1>
+        </div>
+        <div class="section__body typo richmedia">
+          {{ selectedConfig.prompt|markdown|safe }}
+          {% if selectedConfig.deadline %}
+          <p class="cs-muted">截止时间：{{ datetimeSpan(selectedConfig.deadline)|safe }}</p>
+          {% endif %}
+        </div>
+      </section>
+      {% endif %}
+
+      <section class="section cs-panel">
+        <div class="section__header">
+          <h1 class="section__title">总结列表</h1>
+        </div>
+        <div class="section__body no-padding">
+          {% if rows.length %}
+            {% for row in rows %}
+            <article class="cs-card">
+              <div class="cs-head">
+                <div>
+                  <h2 class="cs-card-title"><a href="{{ row.detailUrl }}">{{ row.title }}</a></h2>
+                  <div class="cs-meta cs-muted">
+                    <span>{{ row.contestTitle }}</span>
+                    <span>{% if udict[row.uid] %}{{ user.render_inline(udict[row.uid], badge=false) }}{% else %}UID {{ row.uid }}{% endif %}</span>
+                    <span>{{ datetimeSpan(row.updatedAt)|safe }}</span>
+                    <span>{{ row.wordCount }} 字</span>
+                  </div>
+                </div>
+                <div class="cs-badges">
+                  {% if row.excellent %}<span class="cs-badge cs-badge--excellent">优秀总结</span>{% endif %}
+                  {% if row.evaluationStatus %}<span class="cs-badge cs-badge--ai">AI {{ row.evaluationStatusText }}</span>{% endif %}
+                  {% if row.evaluationScore != null %}<span class="cs-badge">AI {{ row.evaluationScore }}</span>{% endif %}
+                  {% if row.hidden %}<span class="cs-badge">已隐藏</span>{% endif %}
+                </div>
+              </div>
+              <div class="cs-text">{{ row.summaryText }}</div>
+              <div class="cs-actions">
+                <a class="button rounded small primary" href="{{ row.detailUrl }}">查看</a>
+                {% if row.canEdit %}<a class="button rounded small" href="{{ row.editUrl }}">修改我的总结</a>{% endif %}
+                <a class="button rounded small" href="{{ row.listUrl }}">只看这场</a>
+              </div>
+            </article>
+            {% endfor %}
+          {% else %}
+            <div class="cs-empty">当前筛选下还没有总结。</div>
+          {% endif %}
+        </div>
+      </section>
+
+      {% if pcount > 1 %}
+      {% set glue = '&' if queryBase else '' %}
+      <div class="cs-pager">
+        {% if page > 1 %}
+        <a class="button rounded" href="{{ listUrl }}?{{ queryBase }}{{ glue }}page={{ page - 1 }}">上一页</a>
+        {% endif %}
+        {% if page < pcount %}
+        <a class="button rounded" href="{{ listUrl }}?{{ queryBase }}{{ glue }}page={{ page + 1 }}">下一页</a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

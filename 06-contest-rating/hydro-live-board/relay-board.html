@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hydro Live Board Relay</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0d1117;
+      --line: #30363d;
+      --line-soft: rgba(255, 255, 255, .08);
+      --text: #f0f6fc;
+      --muted: #8b949e;
+      --accent: #58a6ff;
+      --good: #3fb950;
+      --focus: #1f6feb;
+      --warn: #d29922;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; background: var(--bg); color: var(--text); }
+    body { font-family: Inter, "Segoe UI", "Microsoft YaHei", system-ui, sans-serif; overflow: hidden; }
+
+    .board {
+      height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      background: linear-gradient(180deg, rgba(88, 166, 255, .10), transparent 28%), var(--bg);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 24px 32px 18px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(13, 17, 23, .86);
+    }
+
+    .title-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    h1 { margin: 0; font-size: 30px; font-weight: 800; line-height: 1.15; }
+    .sub { margin-top: 8px; color: var(--muted); font-size: 14px; }
+    .stats { display: flex; gap: 18px; align-items: center; white-space: nowrap; }
+    .stat { min-width: 96px; padding: 10px 12px; border: 1px solid var(--line); background: rgba(22, 27, 34, .72); border-radius: 6px; }
+    .stat .label { color: var(--muted); font-size: 12px; }
+    .stat .value { margin-top: 4px; font-size: 22px; font-weight: 800; }
+
+    button {
+      border: 1px solid var(--line);
+      color: var(--text);
+      background: rgba(22, 27, 34, .86);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    button:hover { border-color: var(--accent); }
+
+    .settings {
+      position: fixed;
+      top: 78px;
+      right: 24px;
+      z-index: 20;
+      width: min(340px, calc(100vw - 32px));
+      border: 1px solid var(--line);
+      background: rgba(13, 17, 23, .98);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, .36);
+      border-radius: 8px;
+      padding: 14px;
+      display: none;
+    }
+
+    .settings.open { display: block; }
+    .settings h2 { margin: 0 0 12px; font-size: 16px; }
+    .field { display: grid; grid-template-columns: 1fr 112px; gap: 12px; align-items: center; margin: 10px 0; color: var(--muted); font-size: 13px; }
+    .field input { width: 100%; }
+    .field input[type="number"] { background: #161b22; color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 7px 8px; font: inherit; }
+    .field input[type="checkbox"] { width: 18px; height: 18px; justify-self: end; }
+    .settings-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+
+    .status-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 8px;
+      background: var(--warn);
+      box-shadow: 0 0 0 3px rgba(210, 153, 34, .18);
+    }
+
+    .status-dot.online {
+      background: var(--good);
+      box-shadow: 0 0 0 3px rgba(63, 185, 80, .18);
+    }
+
+    .viewport { overflow: auto; scrollbar-width: none; padding: 0 24px 12px; }
+    .viewport::-webkit-scrollbar { width: 0; height: 0; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; font-size: 15px; }
+    thead th { position: sticky; top: 0; z-index: 2; background: rgba(13, 17, 23, .96); border-bottom: 1px solid var(--line); color: var(--muted); font-weight: 700; height: 46px; }
+    th, td { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 10px 8px; border-bottom: 1px solid var(--line-soft); text-align: center; }
+    .rank { width: 72px; color: var(--muted); font-weight: 800; }
+    .team { width: 260px; text-align: left; font-weight: 800; }
+    .total { width: 104px; color: var(--accent); font-weight: 900; }
+    .problem { min-width: 80px; }
+
+    tbody tr { background: rgba(22, 27, 34, .42); transition: transform 1.1s cubic-bezier(.2, .8, .2, 1), background-color .35s ease; will-change: transform; }
+    tbody tr:nth-child(2n) { background: rgba(31, 41, 55, .34); }
+    tbody tr.focus { background: rgba(31, 111, 235, .38); box-shadow: inset 4px 0 0 var(--focus); }
+
+    td.cell { font-variant-numeric: tabular-nums; color: #dbe7f3; }
+    td.score-full { color: #07130b; background: linear-gradient(180deg, rgba(86, 211, 100, .95), rgba(46, 160, 67, .95)); font-weight: 900; }
+    td.score-high { color: #0c1b0f; background: rgba(141, 219, 140, .82); font-weight: 850; }
+    td.score-mid { color: #1f1600; background: rgba(242, 204, 96, .78); font-weight: 800; }
+    td.score-low { color: #231104; background: rgba(240, 136, 62, .72); font-weight: 800; }
+    td.changed { outline: 2px solid rgba(88, 166, 255, .72); outline-offset: -2px; }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 10px 32px 18px;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+      background: rgba(13, 17, 23, .88);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="board">
+    <header class="topbar">
+      <div>
+        <div class="title-row">
+          <h1 id="contest-title">Hydro Live Board</h1>
+          <button id="settings-button" type="button">Settings</button>
+        </div>
+        <div class="sub"><span id="connection-dot" class="status-dot"></span><span id="connection-text">Loading</span></div>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="label">Teams</div><div class="value" id="team-count">0</div></div>
+        <div class="stat"><div class="label">Problems</div><div class="value" id="problem-count">0</div></div>
+        <div class="stat"><div class="label">Updated</div><div class="value" id="updated-at">--:--</div></div>
+      </div>
+    </header>
+
+    <main class="viewport" id="viewport">
+      <table>
+        <thead id="thead"></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </main>
+
+    <footer class="footer">
+      <div id="event-line">Waiting for relay data</div>
+      <div>Hydro Live Board Relay</div>
+    </footer>
+  </div>
+
+  <section id="settings-panel" class="settings" aria-label="Display settings">
+    <h2>Display Settings</h2>
+    <label class="field">Follow changed row <input id="setting-follow" type="checkbox"></label>
+    <label class="field">Auto scroll speed <input id="setting-idle" type="number" min="0" max="300" step="1"></label>
+    <label class="field">Update interval ms <input id="setting-interval" type="number" min="0" max="10000" step="100"></label>
+    <label class="field">Animated rank delta <input id="setting-rank-delta" type="number" min="1" max="200" step="1"></label>
+    <label class="field">Focus duration ms <input id="setting-focus" type="number" min="500" max="30000" step="500"></label>
+    <div class="settings-actions">
+      <button id="settings-reset" type="button">Reset</button>
+      <button id="settings-close" type="button">Close</button>
+    </div>
+  </section>
+
+  <script>
+    window.LIVE_BOARD_RELAY_BOOTSTRAP = __LIVE_BOARD_RELAY_BOOTSTRAP__;
+  </script>
+  <script>
+    (() => {
+      const boot = window.LIVE_BOARD_RELAY_BOOTSTRAP;
+      const viewport = document.getElementById('viewport');
+      const thead = document.getElementById('thead');
+      const tbody = document.getElementById('tbody');
+      const title = document.getElementById('contest-title');
+      const teamCount = document.getElementById('team-count');
+      const problemCount = document.getElementById('problem-count');
+      const updatedAt = document.getElementById('updated-at');
+      const eventLine = document.getElementById('event-line');
+      const connectionDot = document.getElementById('connection-dot');
+      const connectionText = document.getElementById('connection-text');
+      const settingsButton = document.getElementById('settings-button');
+      const settingsPanel = document.getElementById('settings-panel');
+      const settingFollow = document.getElementById('setting-follow');
+      const settingIdle = document.getElementById('setting-idle');
+      const settingInterval = document.getElementById('setting-interval');
+      const settingRankDelta = document.getElementById('setting-rank-delta');
+      const settingFocus = document.getElementById('setting-focus');
+      const settingsReset = document.getElementById('settings-reset');
+      const settingsClose = document.getElementById('settings-close');
+
+      let state = null;
+      let pauseUntil = Date.now() + 2500;
+      let scrollDirection = 1;
+      let lastFrame = performance.now();
+      let pendingState = null;
+      let drainTimer = null;
+      let draining = false;
+      let lastAppliedAt = 0;
+      const moveAnimationMs = 1100;
+      const focusNudgeMs = 220;
+      const defaultOptions = {
+        eventFocusMs: 5000,
+        displayMinIntervalMs: 1500,
+        displayMaxAnimatedRankDelta: 20,
+        followEventScroll: true,
+        idleScrollSpeed: 24,
+      };
+      const settingsKey = `hydro-live-board:${boot.domainId}:${boot.contestId}:display`;
+      let viewOptions = loadOptions();
+
+      function loadOptions() {
+        try {
+          return { ...defaultOptions, ...JSON.parse(localStorage.getItem(settingsKey) || '{}') };
+        } catch {
+          return { ...defaultOptions };
+        }
+      }
+
+      function saveOptions() {
+        localStorage.setItem(settingsKey, JSON.stringify(viewOptions));
+      }
+
+      function syncSettingsForm() {
+        settingFollow.checked = !!viewOptions.followEventScroll;
+        settingIdle.value = viewOptions.idleScrollSpeed;
+        settingInterval.value = viewOptions.displayMinIntervalMs;
+        settingRankDelta.value = viewOptions.displayMaxAnimatedRankDelta;
+        settingFocus.value = viewOptions.eventFocusMs;
+      }
+
+      function readSettingsForm() {
+        viewOptions = {
+          followEventScroll: settingFollow.checked,
+          idleScrollSpeed: Math.max(0, Number(settingIdle.value) || 0),
+          displayMinIntervalMs: Math.max(0, Number(settingInterval.value) || 0),
+          displayMaxAnimatedRankDelta: Math.max(1, Number(settingRankDelta.value) || 1),
+          eventFocusMs: Math.max(500, Number(settingFocus.value) || 500),
+        };
+        saveOptions();
+      }
+
+      settingsButton.onclick = () => settingsPanel.classList.toggle('open');
+      settingsClose.onclick = () => settingsPanel.classList.remove('open');
+      settingsReset.onclick = () => {
+        viewOptions = { ...defaultOptions };
+        saveOptions();
+        syncSettingsForm();
+      };
+      for (const input of [settingFollow, settingIdle, settingInterval, settingRankDelta, settingFocus]) {
+        input.addEventListener('change', readSettingsForm);
+      }
+      syncSettingsForm();
+
+      function escapeHtml(value) {
+        return `${value ?? ''}`.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+
+      function formatTime(ts) {
+        const date = new Date(ts);
+        return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+      }
+
+      function sleep(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+
+      function rowMap() {
+        const map = new Map();
+        for (const tr of tbody.querySelectorAll('tr[data-uid]')) map.set(tr.dataset.uid, tr.getBoundingClientRect().top);
+        return map;
+      }
+
+      function rowIndexByUid(rows, uid) {
+        return rows.findIndex((row) => String(row.uid) === String(uid));
+      }
+
+      function scoreClass(score) {
+        if (typeof score !== 'number' || !Number.isFinite(score)) return '';
+        if (score >= 100) return 'score-full';
+        if (score >= 80) return 'score-high';
+        if (score >= 50) return 'score-mid';
+        if (score > 0) return 'score-low';
+        return '';
+      }
+
+      function renderHeader(next) {
+        thead.innerHTML = `<tr>
+          <th class="rank">#</th>
+          <th class="team">Team</th>
+          <th class="total">Score</th>
+          ${next.problems.map((problem) => `<th class="problem" title="${escapeHtml(problem.title)}">${escapeHtml(problem.label)}</th>`).join('')}
+        </tr>`;
+      }
+
+      function renderRows(next) {
+        const focusUid = next.event?.uid ? String(next.event.uid) : '';
+        tbody.innerHTML = next.rows.map((row) => {
+          const cells = row.cells.map((cell) => {
+            const classes = ['cell'];
+            const cls = scoreClass(cell.score);
+            if (cls) classes.push(cls);
+            if (String(row.uid) === focusUid && String(cell.pid) === String(next.event?.pid || '')) classes.push('changed');
+            return `<td class="${classes.join(' ')}">${escapeHtml(cell.value || '-')}</td>`;
+          }).join('');
+          return `<tr data-uid="${row.uid}" class="${String(row.uid) === focusUid ? 'focus' : ''}">
+            <td class="rank">${escapeHtml(row.rank)}</td>
+            <td class="team" title="${escapeHtml(row.name)}">${escapeHtml(row.name)}</td>
+            <td class="total">${escapeHtml(row.total)}</td>
+            ${cells}
+          </tr>`;
+        }).join('');
+      }
+
+      function describeEvent(next) {
+        const event = next.event;
+        if (!event?.uid) return 'Waiting for submissions';
+        const row = next.rows.find((item) => item.uid === event.uid);
+        const problem = next.problems.find((item) => item.pid === event.pid);
+        const team = row?.name || `#${event.uid}`;
+        const label = problem?.label || event.pid || '';
+        if (event.batchSize > 1) return `${team} led a batch of ${event.batchSize} updates on ${label}`;
+        if (event.kind === 'accepted') return `${team} accepted ${label}`;
+        return `${team} updated ${label}`;
+      }
+
+      function setConnection(online, text) {
+        connectionDot.classList.toggle('online', online);
+        connectionText.textContent = text || (online ? 'Relay live' : 'Reconnecting');
+      }
+
+      function enqueueState(next) {
+        if (pendingState) eventLine.textContent = 'Many updates received; keeping latest state';
+        pendingState = next;
+        scheduleDrain();
+      }
+
+      function scheduleDrain() {
+        if (drainTimer || draining || !pendingState) return;
+        const wait = Math.max(0, (viewOptions.displayMinIntervalMs || 0) - (Date.now() - lastAppliedAt));
+        drainTimer = setTimeout(() => {
+          drainTimer = null;
+          const next = pendingState;
+          pendingState = null;
+          if (!next) return scheduleDrain();
+          draining = true;
+          applyState(next).then(() => {
+            lastAppliedAt = Date.now();
+            draining = false;
+            scheduleDrain();
+          }).catch((e) => {
+            eventLine.textContent = e.message;
+            draining = false;
+            scheduleDrain();
+          });
+        }, wait);
+      }
+
+      async function applyState(next, animate = true) {
+        const focusUid = next.event?.uid ? String(next.event.uid) : '';
+        const shouldFollow = animate && viewOptions.followEventScroll !== false && focusUid && state;
+        const oldFocus = shouldFollow ? tbody.querySelector(`tr[data-uid="${focusUid}"]`) : null;
+        let clampedRankDelta = 0;
+        if (oldFocus) {
+          pauseUntil = Date.now() + (viewOptions.eventFocusMs || 5000) + moveAnimationMs;
+          oldFocus.scrollIntoView({ block: 'center', behavior: 'auto' });
+          await sleep(focusNudgeMs);
+          const oldIndex = rowIndexByUid(state.rows || [], focusUid);
+          const newIndex = rowIndexByUid(next.rows || [], focusUid);
+          const rankDelta = oldIndex >= 0 && newIndex >= 0 ? newIndex - oldIndex : 0;
+          const maxDelta = viewOptions.displayMaxAnimatedRankDelta || 20;
+          clampedRankDelta = Math.abs(rankDelta) > maxDelta ? Math.sign(rankDelta) * maxDelta : rankDelta;
+        }
+
+        const before = animate && !shouldFollow ? rowMap() : new Map();
+        state = next;
+        title.textContent = next.contest.title;
+        teamCount.textContent = next.rows.length;
+        problemCount.textContent = next.problems.length;
+        updatedAt.textContent = formatTime(next.generatedAt);
+        eventLine.textContent = describeEvent(next);
+        renderHeader(next);
+        renderRows(next);
+
+        if (animate && !shouldFollow) {
+          for (const tr of tbody.querySelectorAll('tr[data-uid]')) {
+            const prev = before.get(tr.dataset.uid);
+            if (prev === undefined) continue;
+            const now = tr.getBoundingClientRect().top;
+            const dy = prev - now;
+            if (!dy) continue;
+            tr.style.transform = `translateY(${dy}px)`;
+            tr.style.transition = 'none';
+            requestAnimationFrame(() => {
+              tr.style.transition = '';
+              tr.style.transform = '';
+            });
+          }
+        }
+
+        if (shouldFollow) {
+          const tr = tbody.querySelector(`tr[data-uid="${focusUid}"]`);
+          if (tr) {
+            tr.scrollIntoView({ block: 'center', behavior: 'auto' });
+            const rowHeight = tr.getBoundingClientRect().height || 38;
+            const dy = -clampedRankDelta * rowHeight;
+            if (dy) {
+              tr.style.transform = `translateY(${dy}px)`;
+              tr.style.transition = 'none';
+              requestAnimationFrame(() => {
+                tr.style.transition = `transform ${moveAnimationMs}ms cubic-bezier(.2, .8, .2, 1), background-color .35s ease`;
+                tr.style.transform = '';
+              });
+            }
+          }
+        }
+      }
+
+      async function loadLatest() {
+        const res = await fetch(boot.latestUrl);
+        if (!res.ok) throw new Error(`Failed to load latest: ${res.status}`);
+        const data = await res.json();
+        await applyState(data.snapshot.state, false);
+        lastAppliedAt = Date.now();
+        setConnection(false, 'Connecting stream');
+      }
+
+      function connectStream() {
+        const source = new EventSource(boot.streamUrl);
+        source.addEventListener('open', () => setConnection(true));
+        source.addEventListener('state', (message) => {
+          const payload = JSON.parse(message.data);
+          if (payload.type === 'state') enqueueState(payload.snapshot.state);
+        });
+        source.addEventListener('error', () => setConnection(false));
+      }
+
+      function idleScroll(now) {
+        const dt = (now - lastFrame) / 1000;
+        lastFrame = now;
+        if (Date.now() > pauseUntil && (viewOptions.idleScrollSpeed || 0) > 0) {
+          const max = viewport.scrollHeight - viewport.clientHeight;
+          if (max > 0) {
+            viewport.scrollTop += scrollDirection * viewOptions.idleScrollSpeed * dt;
+            if (viewport.scrollTop >= max - 2) scrollDirection = -1;
+            if (viewport.scrollTop <= 2) scrollDirection = 1;
+          }
+        }
+        requestAnimationFrame(idleScroll);
+      }
+
+      loadLatest().then(connectStream).catch((e) => {
+        setConnection(false, 'Error');
+        eventLine.textContent = e.message;
+      });
+      requestAnimationFrame(idleScroll);
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.course-package-contest .section { border-radius: 8px; overflow: hidden; }
+.course-package-contest .contest-step { border: 1px solid var(--cp-border); border-radius: 8px; padding: 18px; margin-bottom: 16px; background: var(--cp-panel); color: var(--cp-ink); }
+.course-package-contest .contest-step h2 { font-size: 1.05rem; margin: 0 0 12px; }
+.course-package-contest .contest-muted { color: var(--cp-muted); }
+.course-package-contest .contest-stat { display: inline-block; min-width: 72px; padding: 8px 10px; margin: 0 6px 8px 0; border: 1px solid var(--cp-border); border-radius: 8px; text-align: center; background: var(--cp-card); color: var(--cp-muted); }
+.course-package-contest .contest-stat strong { display: block; font-size: 1.25rem; color: var(--cp-ink); }
+</style>
+{% include "course_package_style.html" %}
+<div class="course-package-contest course-package-ui">
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('按节创建比赛') }}</h1>
+      </div>
+      <div class="section__body">
+        <p class="help-text">{{ _('比赛题目会直接使用当前节的题目；跨子域创建时会先同步题目到目标子域，再用目标子域题号建赛。') }}</p>
+        <form method="get" class="contest-step">
+          <h2>{{ _('选择目标子域') }}</h2>
+          <label>
+            {{ _('目标子域') }}
+            <select name="targetDomainId" class="select">
+              {% for ddoc in domains %}
+              <option value="{{ ddoc._id }}" {% if ddoc._id == targetDomainId %}selected{% endif %}>
+                {{ ddoc._id }}{% if ddoc.name %} - {{ ddoc.name }}{% endif %}
+              </option>
+              {% endfor %}
+            </select>
+          </label>
+          <p><button type="submit" class="rounded button">{{ _('刷新目标子域') }}</button></p>
+        </form>
+
+        <form method="post">
+          <input type="hidden" name="targetDomainId" value="{{ targetDomainId }}">
+          <div class="contest-step">
+            <h2>{{ _('比赛信息') }}</h2>
+            <label>
+              {{ _('比赛标题') }}
+              <input name="title" value="{{ defaultTitle }}" class="textbox">
+            </label>
+            <label>
+              {{ _('比赛说明') }}
+              <textarea name="content" class="textbox" data-markdown style="height: 140px">{{ lesson.content|default('') }}</textarea>
+            </label>
+          </div>
+
+          <div class="contest-step">
+            <h2>{{ _('赛制与时间') }}</h2>
+            <div class="row">
+              <div class="medium-4 columns">
+                <label>
+                  {{ _('赛制') }}
+                  <select name="rule" class="select">
+                    {% for key, text in rules %}
+                    <option value="{{ key }}" {% if key == defaultRule %}selected{% endif %}>{{ _(text) }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+              </div>
+              <div class="medium-3 columns">
+                <label>
+                  {{ _('开始日期') }}
+                  <input name="beginAtDate" type="date" value="{{ beginAtDate }}" class="textbox">
+                </label>
+              </div>
+              <div class="medium-2 columns">
+                <label>
+                  {{ _('开始时间') }}
+                  <input name="beginAtTime" type="time" value="{{ beginAtTime }}" class="textbox">
+                </label>
+              </div>
+              <div class="medium-3 columns">
+                <label>
+                  {{ _('时长（分钟）') }}
+                  <input name="durationMinutes" type="number" min="1" step="1" value="120" class="textbox">
+                </label>
+              </div>
+            </div>
+            <label>
+              <input type="checkbox" name="rated" value="1">
+              {{ _('计入 Rating') }}
+            </label>
+          </div>
+
+          <p class="help-text">{{ _('创建后，当前节绑定的视频会在比赛完成后显示在比赛页；比赛进行中和 VP 未完成时不会展示。') }}</p>
+          <button type="submit" class="rounded primary button">{{ _('创建比赛') }}</button>
+          <a class="rounded button" href="{{ url('course_package_version_detail', cpid=cpdoc.docId, vid=vpdoc.docId) }}">{{ _('Cancel') }}</a>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    <div class="section side">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('当前节') }}</h1>
+      </div>
+      <div class="section__body typo">
+        <p>{{ cpdoc.title }} / {{ vpdoc.version }}</p>
+        <p>{{ chapter.title }} / {{ lesson.title }}</p>
+        <p class="contest-muted">{{ targetDomainId }}</p>
+        <div class="contest-stat"><strong>{{ selectedProblemCount }}</strong>{{ _('题目') }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+{% endblock %}

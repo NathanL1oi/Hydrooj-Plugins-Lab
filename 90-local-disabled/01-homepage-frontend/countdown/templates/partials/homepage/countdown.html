@@ -1,0 +1,44 @@
+<div class="section side nojs--hide text-center">
+    <div class="section__header">
+      <div class="index-calendar text-red">
+        <span class="punch-small">{{ payload.calendar.month }}</span>
+        <span class="punch-big">{{ payload.calendar.day }}</span>
+        <span class="punch-small">{{ payload.calendar.week }}</span>
+      </div>
+    </div>
+    {% if payload.dates %}
+      <div class="section__body typo" id="countdowns">
+        {% for date in payload.dates %}
+          <p> 距 <strong> {{date.name}} </strong> 还剩 <strong> {{date.diff}} 天 </strong></p>
+        {% endfor %}
+      </div>
+    {% endif %}
+</div>
+<style>
+.index-calendar {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+.punch-big {
+    display: inline-block;
+    font-size: 85px;
+    vertical-align: top;
+    line-height: 55px;
+    font-weight: bolder;
+}
+.punch-small {
+    display: inline-block;
+    width: 20px;
+    vertical-align: top;
+    line-height: 17px;
+    margin-left: 10px;
+    margin-right: 10px;
+    font-weight: bold;
+}
+</style>
+<script>
+    function loadCountdown() {
+        window.dispatchEvent(new Event('countdown-finish'));
+    }
+    window.addEventListener('load', loadCountdown, { once: true });
+</script>

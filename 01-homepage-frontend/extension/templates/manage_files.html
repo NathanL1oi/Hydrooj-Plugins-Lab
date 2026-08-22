@@ -1,0 +1,44 @@
+{% import "components/nothing.html" as nothing with context %}
+{% import "components/paginator.html" as paginator with context %}
+{% extends "manage_base.html" %}
+{% block manage_content %}
+<div class="section">
+    <div class="section__header">
+        <h1 class="section__title">{{ _('manage_files') }}</h1>
+    </div>
+    <div class="section__body no-padding">
+        {% if not udocs.length %}
+        {{ nothing.render('没有用户！') }}
+        {% else %}
+        <table class="data-table">
+            <colgroup>
+                <col class="col--uid" style="width:5rem">
+                <col class="col--user">
+                <col class="col--files">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>{{ _('User ID') }}</th>
+                    <th>{{ _('Username') }}</th>
+                    <th>{{ _('文件') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {%- for udoc in udocs -%}
+                <tr>
+                    <td>{{ udoc._id }}</td>
+                    <td>{{ user.render_inline(udoc) }}</td>
+                    <td>
+                        <a href="{{ url('home_files',query={uid:udoc._id}) }}" target="_blank" class="typo-a contest-tag">
+                            {{ _('{0} 个文件').format(udoc._files.length) }}
+                        </a>
+                    </td>
+                </tr>
+                {%- endfor -%}
+            </tbody>
+        </table>
+        {{ paginator.render(page, upcount) }}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

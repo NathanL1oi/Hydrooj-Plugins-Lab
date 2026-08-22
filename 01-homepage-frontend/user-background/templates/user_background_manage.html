@@ -1,0 +1,346 @@
+{% set page_name = "user_background_manage" %}
+{% extends "manage_base.html" %}
+{% block manage_content %}
+<style>
+.user-bg-manage {
+  --ubg-surface: rgba(255, 255, 255, .72);
+  --ubg-surface-soft: rgba(248, 250, 252, .76);
+  --ubg-surface-head: rgba(255, 255, 255, .38);
+  --ubg-input: rgba(255, 255, 255, .90);
+  --ubg-border: rgba(226, 234, 242, .74);
+  --ubg-border-soft: rgba(226, 234, 242, .54);
+  --ubg-text: #24364b;
+  --ubg-muted: #718096;
+  --ubg-accent: #4f8bd6;
+  --ubg-shadow: 0 16px 36px rgba(15, 23, 42, .10);
+  --ubg-thumb-bg: #f8fafc;
+  --ubg-thumb-overlay: transparent;
+}
+.theme--dark .user-bg-manage,
+.theme-dark .user-bg-manage,
+.theme_dark .user-bg-manage,
+[data-theme="dark"] .user-bg-manage,
+body.dark .user-bg-manage {
+  color-scheme: dark;
+  --ubg-surface: rgba(31, 36, 44, .68);
+  --ubg-surface-soft: rgba(24, 30, 39, .62);
+  --ubg-surface-head: rgba(36, 43, 53, .48);
+  --ubg-input: rgba(15, 23, 42, .58);
+  --ubg-border: rgba(58, 70, 86, .72);
+  --ubg-border-soft: rgba(58, 70, 86, .52);
+  --ubg-text: #e2e8f0;
+  --ubg-muted: #94a3b8;
+  --ubg-accent: #7aa7e4;
+  --ubg-shadow: 0 16px 36px rgba(0, 0, 0, .18);
+  --ubg-thumb-bg: #111827;
+  --ubg-thumb-overlay: linear-gradient(180deg, rgba(15, 23, 42, .12), rgba(15, 23, 42, .32));
+}
+@media (prefers-color-scheme: dark) {
+  .user-bg-manage {
+    color-scheme: dark;
+    --ubg-surface: rgba(31, 36, 44, .68);
+    --ubg-surface-soft: rgba(24, 30, 39, .62);
+    --ubg-surface-head: rgba(36, 43, 53, .48);
+    --ubg-input: rgba(15, 23, 42, .58);
+    --ubg-border: rgba(58, 70, 86, .72);
+    --ubg-border-soft: rgba(58, 70, 86, .52);
+    --ubg-text: #e2e8f0;
+    --ubg-muted: #94a3b8;
+    --ubg-accent: #7aa7e4;
+    --ubg-shadow: 0 16px 36px rgba(0, 0, 0, .18);
+    --ubg-thumb-bg: #111827;
+    --ubg-thumb-overlay: linear-gradient(180deg, rgba(15, 23, 42, .12), rgba(15, 23, 42, .32));
+  }
+}
+.user-bg-manage.section {
+  border-color: var(--ubg-border);
+  background: var(--ubg-surface);
+  box-shadow: var(--ubg-shadow);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+}
+.user-bg-manage .section__header,
+.user-bg-manage .section__body {
+  background: transparent;
+}
+.user-bg-manage .section__header {
+  border-color: var(--ubg-border-soft);
+  background: var(--ubg-surface-head);
+}
+.user-bg-manage .section__title {
+  color: var(--ubg-text);
+}
+.user-bg-manage-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 18px;
+  align-items: start;
+}
+.user-bg-library-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.user-bg-library-head__copy {
+  color: var(--ubg-muted);
+  line-height: 1.6;
+}
+.user-bg-upload-box {
+  border: 1px solid var(--ubg-border);
+  border-radius: 8px;
+  padding: 14px;
+  background: var(--ubg-surface-soft);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, .08);
+  backdrop-filter: blur(12px) saturate(145%);
+  -webkit-backdrop-filter: blur(12px) saturate(145%);
+}
+.user-bg-upload-row {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.user-bg-upload-row label {
+  color: var(--ubg-text);
+  font-weight: 700;
+}
+.user-bg-upload-row .supplementary {
+  color: var(--ubg-muted);
+}
+.user-bg-specs {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 12px;
+  border: 1px solid var(--ubg-border-soft);
+  border-radius: 8px;
+  background: var(--ubg-surface-head);
+  color: var(--ubg-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.user-bg-specs strong {
+  color: var(--ubg-text);
+}
+.user-bg-manage .textbox {
+  border-color: var(--ubg-border);
+  background: var(--ubg-input);
+  color: var(--ubg-text);
+}
+.user-bg-manage input[type="file"].textbox::file-selector-button {
+  margin-right: 10px;
+  border: 1px solid var(--ubg-border);
+  border-radius: 6px;
+  background: var(--ubg-surface-soft);
+  color: var(--ubg-text);
+  cursor: pointer;
+}
+.user-bg-images {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 12px;
+}
+.user-bg-image {
+  border: 1px solid var(--ubg-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--ubg-surface-soft);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, .08);
+  backdrop-filter: blur(12px) saturate(145%);
+  -webkit-backdrop-filter: blur(12px) saturate(145%);
+}
+.user-bg-image__thumb {
+  display: block;
+  position: relative;
+  height: 120px;
+  overflow: hidden;
+  background-color: var(--ubg-thumb-bg);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+.user-bg-image__thumb::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--ubg-thumb-overlay);
+  pointer-events: none;
+}
+.user-bg-image__body {
+  padding: 10px;
+}
+.user-bg-image__name {
+  display: block;
+  overflow: hidden;
+  color: var(--ubg-text);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.user-bg-image__meta {
+  display: block;
+  overflow: hidden;
+  margin: 4px 0 10px;
+  color: var(--ubg-muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.user-bg-image__filename {
+  display: block;
+  overflow: hidden;
+  margin-bottom: 10px;
+  color: var(--ubg-muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.user-bg-image__badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  color: var(--ubg-muted);
+  font-size: 12px;
+}
+.user-bg-empty {
+  padding: 24px;
+  border: 1px dashed var(--ubg-border);
+  border-radius: 8px;
+  background: var(--ubg-surface-soft);
+  color: var(--ubg-muted);
+  text-align: center;
+}
+.user-bg-upload-preview[hidden] {
+  display: none;
+}
+.user-bg-upload-preview {
+  display: grid;
+  gap: 10px;
+  margin: 10px 0 14px;
+}
+.user-bg-crop-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 86px;
+  gap: 10px;
+  align-items: start;
+}
+.user-bg-crop-item {
+  min-width: 0;
+}
+.user-bg-crop-label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--ubg-muted);
+  font-size: 12px;
+}
+.user-bg-crop-preview {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--ubg-border);
+  border-radius: 6px;
+  background-color: var(--ubg-thumb-bg);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+.user-bg-crop-preview.is-desktop {
+  aspect-ratio: 16 / 9;
+}
+.user-bg-crop-preview.is-mobile {
+  aspect-ratio: 9 / 16;
+}
+.user-bg-upload-preview__meta {
+  color: var(--ubg-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+@media (max-width: 900px) {
+  .user-bg-manage-grid {
+    grid-template-columns: 1fr;
+  }
+  .user-bg-library-head {
+    display: block;
+  }
+}
+</style>
+
+<div class="section user-bg-manage">
+  <div class="section__header">
+    <h1 class="section__title" data-heading>背景图库</h1>
+  </div>
+  <div class="section__body">
+    <div class="user-bg-manage-grid">
+      <div>
+        <div class="user-bg-library-head">
+          <div class="user-bg-library-head__copy">
+            管理员维护背景图库，用户只能从这里选择背景并调整透明度。
+          </div>
+        </div>
+        {% if images|length %}
+        <div class="user-bg-images">
+          {% for image in images %}
+          <div class="user-bg-image">
+            <span class="user-bg-image__thumb" data-user-bg-lazy="{{ image.url }}"></span>
+            <div class="user-bg-image__body">
+              <span class="user-bg-image__name" title="{{ image.name }}">{{ image.name }}</span>
+              <span class="user-bg-image__meta">{{ image.metaText }}</span>
+              <span class="user-bg-image__filename">{{ image.filename }}</span>
+              {% if image.builtin %}
+              <span class="user-bg-image__badge">插件内置，不能删除</span>
+              {% else %}
+              <form method="post">
+                <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+                <input type="hidden" name="operation" value="delete">
+                <input type="hidden" name="imageId" value="{{ image.id }}">
+                <button type="submit" class="rounded button" data-user-bg-delete>
+                  <span class="icon icon-delete"></span> 删除
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="user-bg-empty">还没有上传任何背景图片</div>
+        {% endif %}
+      </div>
+
+      <form method="post" enctype="multipart/form-data" class="user-bg-upload-box">
+        <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+        <input type="hidden" name="operation" value="upload">
+        <div class="user-bg-specs">
+          <span><strong>推荐规格</strong> {{ recommendedImageSize }}，主体放在画面中央。</span>
+          <span><strong>限制</strong> 至少 {{ minImageWidth }}×{{ minImageHeight }}，长边不超过 {{ maxImageEdge }}px，文件不超过 {{ maxImageSizeMB }} MB。</span>
+          <span><strong>格式</strong> JPG、PNG、WebP。背景会以 cover 方式铺满，手机端会裁切左右。</span>
+        </div>
+        <div class="user-bg-upload-row">
+          <label>图片名称</label>
+          <input type="text" name="name" class="textbox" maxlength="60" required>
+        </div>
+        <div class="user-bg-upload-row">
+          <label>图片文件 <span class="supplementary">最大 {{ maxImageSizeMB }} MB</span></label>
+          <input type="file" name="file" class="textbox" accept=".jpg,.jpeg,.png,.webp" required data-user-bg-manage-file>
+        </div>
+        <div class="user-bg-upload-preview" data-user-bg-upload-preview hidden>
+          <div class="user-bg-crop-row">
+            <div class="user-bg-crop-item">
+              <span class="user-bg-crop-label">桌面裁切预览 16:9</span>
+              <span class="user-bg-crop-preview is-desktop" data-user-bg-upload-desktop></span>
+            </div>
+            <div class="user-bg-crop-item">
+              <span class="user-bg-crop-label">手机 9:16</span>
+              <span class="user-bg-crop-preview is-mobile" data-user-bg-upload-mobile></span>
+            </div>
+          </div>
+          <div class="user-bg-upload-preview__meta" data-user-bg-upload-meta></div>
+        </div>
+        <button type="submit" class="rounded primary button">
+          <span class="icon icon-upload"></span> 上传到图库
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

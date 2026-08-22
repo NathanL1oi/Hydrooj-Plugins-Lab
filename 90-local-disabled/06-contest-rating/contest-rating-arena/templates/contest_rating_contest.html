@@ -1,0 +1,120 @@
+{% extends "layout/basic.html" %}
+{% import "components/user.html" as user with context %}
+{% block content %}
+<style>
+.cra-contest .cra-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.cra-contest .cra-muted { color: #64748b; }
+.cra-contest .cra-table-wrap { display: block; overflow: visible; }
+.cra-contest .section__table-container { clear: both; }
+.cra-contest table { min-width: 900px; }
+.cra-contest .cra-badge { display: inline-block; min-width: 76px; text-align: center; color: #fff; border-radius: 6px; padding: 3px 9px; font-size: 12px; font-weight: 700; box-shadow: inset 0 -2px 0 rgba(15, 23, 42, .22); }
+.cra-contest .cra-tierline { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+.cra-contest .cra-tierline span { display: inline-flex; align-items: center; gap: 5px; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 8px; font-size: 12px; background: #fff; }
+.cra-contest .cra-tierline i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; box-shadow: inset 0 -1px 0 rgba(15, 23, 42, .28); }
+.cra-contest .cra-delta-plus { color: #15803d; font-weight: 700; }
+.cra-contest .cra-delta-minus { color: #b91c1c; font-weight: 700; }
+.cra-contest .cra-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.cra-contest .cra-danger { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+.theme--dark .cra-contest .cra-muted { color: #94a3b8; }
+.theme--dark .cra-contest .cra-tierline span {
+  border-color: rgba(148, 163, 184, .28);
+  background: rgba(31, 41, 55, .72);
+  color: #e2e8f0;
+}
+.theme--dark .cra-contest .cra-danger {
+  border-color: rgba(248, 113, 113, .42);
+  background: rgba(127, 29, 29, .34);
+  color: #fecaca;
+}
+</style>
+<div class="row cra-contest" data-sticky-parent>
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <div class="cra-head">
+          <h1 class="section__title">{{ _('比赛 Rating') }}</h1>
+          <span class="cra-muted">{{ tdoc.title }}</span>
+        </div>
+        <div class="cra-tierline">
+          {% for tier in ratingTiers %}
+            <span><i style="background: {{ tier.color }}"></i>{{ tier.title }} {{ tier.min }}+</span>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="section__body">
+        {% if message %}
+          <blockquote class="note">{{ _(message) }}</blockquote>
+        {% endif %}
+        <div class="cra-actions">
+          {% if published %}
+            <span class="cra-muted">{{ _('已发布') }}{% if publishedDoc.publishedAt %}: {{ datetimeSpan(publishedDoc.publishedAt)|safe }}{% endif %}</span>
+            {% if canWithdraw %}
+            <form method="post" onsubmit="return confirm('{{ _('确认撤回这场比赛的 Rating？撤回后会重算相关用户当前 Rating。') }}');">
+              <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+              <button class="button rounded cra-danger" name="operation" value="withdraw" type="submit">
+                <span class="icon icon-close"></span> {{ _('撤回 Rating') }}
+              </button>
+            </form>
+            {% endif %}
+          {% elif preview and canManage %}
+            <form method="post">
+              <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+              <button class="button rounded primary" name="operation" value="publish" type="submit" {% if rows.length < config.minParticipants %}disabled{% endif %}>
+                <span class="icon icon-check"></span> {{ _('发布 Rating') }}
+              </button>
+            </form>
+            <span class="cra-muted">{{ _('预览不会写入用户 Rating。') }}</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="section__body no-padding cra-table-wrap table-layout-guard">
+        {% if rows.length %}
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>{{ _('名次') }}</th>
+              <th>{{ _('用户') }}</th>
+              <th>{{ _('分数') }}</th>
+              <th>{{ _('旧 Rating') }}</th>
+              <th>{{ _('变化') }}</th>
+              <th>{{ _('新 Rating') }}</th>
+              <th>{{ _('表现分') }}</th>
+              <th>{{ _('预期名次') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+            <tr>
+              <td>{{ row.rank }}</td>
+              <td>{% if udict[row.uid] %}{{ user.render_inline(udict[row.uid], badge=false) }}{% else %}UID {{ row.uid }}{% endif %}</td>
+              <td>{{ row.score }}</td>
+              <td>{{ row.oldRating|round }}</td>
+              <td>
+                {% if row.delta > 0 %}
+                  <span class="cra-delta-plus">+{{ row.delta }}</span>
+                {% elif row.delta < 0 %}
+                  <span class="cra-delta-minus">{{ row.delta }}</span>
+                {% else %}
+                  <span class="cra-muted">0</span>
+                {% endif %}
+              </td>
+              <td><strong style="color: {{ row.color }}">{{ row.newRating|round }}</strong> <span class="cra-badge" style="background: {{ row.color }}">{{ row.title }}</span></td>
+              <td>{{ row.performanceRating|round }}</td>
+              <td>{{ row.seed|round(2) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns" data-sticky="large">
+    {% if canManage %}
+      {% include "partials/contest_sidebar_management.html" %}
+    {% else %}
+      {% include "partials/contest_sidebar.html" %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

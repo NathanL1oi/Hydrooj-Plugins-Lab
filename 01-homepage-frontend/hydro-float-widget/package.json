@@ -1,0 +1,11 @@
+{
+  "name": "hydro-float-widget",
+  "version": "1.0.12-clean-orb",
+  "description": "hydro浮窗插件",
+  "main": "index.ts",
+  "author": "zacktan",
+  "license": "MIT",
+  "devDependencies": {
+    "hydrooj": "^5.0.0-beta.17"
+  }
+}

@@ -1,0 +1,53 @@
+{% extends "coin_base.html" %}
+{% import "components/paginator.html" as paginator with context %}
+{% import "components/nothing.html" as nothing with context %}
+{% block coin_content %}
+<div class="section">
+    <div class="section__header">
+        <h1 class="section__title">{{ _('coin_mall')}}</h1>
+        <div class="section__tools">
+            当前硬币数量: {{ udoc['coin_now']|default('0') }}
+        </div>
+    </div>
+    <div class="section__body no-padding">
+        {% if not ddocs.length %}
+        {{ nothing.render('对不起，没有商品。') }}
+        {% else %}
+        <div class="section__table-container">
+            <table class="data-table section__table-heade">
+                <colgroup>
+                    <col class="col--id" style="width:5rem">
+                    <col class="col--name">
+                    <col class="col--price">
+                    <col class="col--num">
+                    <col class="col--actions">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>{{ _('商品ID') }}</th>
+                        <th>{{ _('商品名称') }}</th>
+                        <th>{{ _('商品价格') }}</th>
+                        <th>{{ _('商品数量') }}</th>
+                        <th>{{ _('Action') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {%- for ddoc in ddocs -%}
+                    <tr>
+                        <td>{{ ddoc._id }}</td>
+                        <td>{{ ddoc.name }}</td>
+                        <td>{{ ddoc.price }}</td>
+                        <td>{{ ddoc.num }}</td>
+                        <td>
+                            {% if ddoc.num %}<a href="{{ url('coin_exchange', id=ddoc._id) }}" class="typo-a contest-tag">{{ _('兑换') }}</a>{% else %}{{ _('暂时缺货') }}{% endif %}
+                        </td>
+                    </tr>
+                    {%- endfor -%}
+                </tbody>
+            </table>
+            {{ paginator.render(page, dpcount) }}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock%}

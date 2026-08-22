@@ -1,0 +1,248 @@
+{% import "components/user.html" as user with context %}
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.course-package-version { font-size: 14px; line-height: 1.55; }
+.course-package-version .section { border-radius: 8px; overflow: hidden; }
+.course-package-version .section__header { padding: 14px 16px; }
+.course-package-version .section__title { font-size: 16.5px; line-height: 1.35; overflow-wrap: anywhere; }
+.course-package-version .cp-hero { background: var(--cp-panel); border: 1px solid var(--cp-border); }
+.course-package-version .cp-hero .section__title { font-size: 17px; }
+.course-package-version .cp-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+.course-package-version .cp-summary span { min-width: 0; padding: 10px 12px; border: 1px solid var(--cp-border); border-radius: 8px; background: var(--cp-card); color: var(--cp-muted); }
+.course-package-version .cp-summary b { display: block; color: var(--cp-ink); font-size: 18px; line-height: 1.2; }
+.course-package-version .cp-chapter { border: 1px solid var(--cp-border); background: var(--cp-card); }
+.course-package-version .cp-chapter + .cp-chapter { margin-top: 12px; }
+.course-package-version .cp-chapter-summary { display: block; list-style: none; cursor: pointer; }
+.course-package-version .cp-chapter-summary::-webkit-details-marker { display: none; }
+.course-package-version .cp-chapter-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; }
+.course-package-version .cp-chapter-main { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.course-package-version .cp-index { flex: 0 0 auto; display: inline-flex; width: 28px; height: 28px; border-radius: 50%; align-items: center; justify-content: center; background: var(--cp-accent-soft); color: var(--cp-ink); font-size: 13px; }
+.course-package-version .cp-chapter-text { min-width: 0; }
+.course-package-version .cp-chapter-title { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--cp-ink); font-weight: 500; }
+.course-package-version .cp-chapter-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 3px; color: var(--cp-muted); font-size: 12px; }
+.course-package-version .cp-chapter-side { display: flex; align-items: center; justify-content: flex-end; min-width: 0; }
+.course-package-version .cp-toggle { flex: 0 0 auto; width: 26px; height: 26px; border: 1px solid var(--cp-border); border-radius: 50%; position: relative; background: var(--cp-card); }
+.course-package-version .cp-toggle:before { content: ""; position: absolute; left: 9px; top: 7px; width: 7px; height: 7px; border-right: 2px solid var(--cp-menu); border-bottom: 2px solid var(--cp-menu); transform: rotate(-45deg); transition: transform .18s ease; }
+.course-package-version .cp-chapter[open] .cp-toggle:before { transform: rotate(45deg); top: 6px; }
+.course-package-version .cp-chapter-body { border-top: 1px solid var(--cp-border); padding: 0 16px 16px; background: var(--cp-panel); }
+.course-package-version .cp-chapter-content { padding: 14px 2px 4px; }
+.course-package-version .cp-lesson-list { list-style: none; margin: 0; padding: 12px 0 0; display: grid; gap: 8px; }
+.course-package-version .cp-lesson { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 12px 14px; border: 1px solid var(--cp-border); border-radius: 8px; background: var(--cp-card); }
+.course-package-version .cp-lesson h3 { margin: 0 0 8px; color: var(--cp-ink); font-size: 15px; line-height: 1.35; }
+.course-package-version .cp-lesson-content { margin-top: 8px; color: var(--cp-menu); }
+.course-package-version .cp-problems { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; }
+.course-package-version .cp-problems__label { color: var(--cp-ink); font-weight: 600; }
+.course-package-version .cp-problems a { display: inline-flex; align-items: center; min-height: 24px; padding: 2px 9px; border-radius: 999px; background: var(--cp-soft); color: var(--cp-menu); line-height: 1.3; }
+.course-package-version .cp-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; max-width: 100%; }
+.course-package-version .cp-actions a { margin: 0 !important; }
+.course-package-version .cp-actions .button { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; line-height: 28px; white-space: nowrap; font-size: 12.5px; }
+.course-package-version .cp-actions .icon { font-size: 13px; }
+.course-package-version .cp-empty { padding: 14px; border: 1px dashed var(--cp-border); border-radius: 8px; color: var(--cp-muted); background: var(--cp-card); }
+.course-package-version .cp-side-title { padding: 12px 14px 6px; color: var(--cp-muted); font-weight: 600; }
+.course-package-version .cp-nav { border-top: 1px solid var(--cp-border); }
+.course-package-version .cp-nav ol { margin: 0; padding: 4px 0 10px; list-style: none; }
+.course-package-version .cp-nav a { display: flex; align-items: center; gap: 8px; padding: 6px 14px; color: var(--cp-menu); }
+.course-package-version .cp-nav a:hover { background: var(--cp-soft); }
+.course-package-version .cp-nav span { display: inline-flex; width: 22px; height: 22px; align-items: center; justify-content: center; border-radius: 50%; background: var(--cp-soft); color: var(--cp-menu); font-size: 12px; }
+.course-package-version .side .menu__link { font-size: 13.5px; }
+.course-package-version .cp-sync-note { margin: 12px 0; padding: 10px 12px; border: 1px solid var(--cp-border); border-radius: 8px; background: var(--cp-accent-soft); color: var(--cp-accent); }
+@media screen and (max-width: 1180px) {
+  .course-package-version .cp-chapter-head { grid-template-columns: 1fr; align-items: start; }
+  .course-package-version .cp-chapter-side,
+  .course-package-version .cp-actions { justify-content: flex-start; }
+}
+@media screen and (max-width: 720px) {
+  .course-package-version .cp-summary { grid-template-columns: 1fr; }
+  .course-package-version .cp-lesson { grid-template-columns: 1fr; display: grid; }
+}
+</style>
+{% include "course_package_style.html" %}
+<div class="row course-package-version course-package-ui" data-sticky-parent>
+  <div class="medium-9 columns">
+    <div class="section cp-hero">
+      <div class="section__header">
+        <h1 class="section__title">
+          <a href="{{ url('course_package_detail', cpid=cpdoc.docId) }}">{{ cpdoc.title }}</a>: {{ vpdoc.version }}
+          {% if cpdoc.hidden %}<span class="cp-hidden-badge"><span class="icon icon-security"></span> {{ _('课程包已隐藏') }}</span>{% endif %}
+          {% if vpdoc.hidden %}<span class="cp-hidden-badge"><span class="icon icon-security"></span> {{ _('版本已隐藏') }}</span>{% endif %}
+        </h1>
+      </div>
+      <div class="section__body typo richmedia">
+        {{ vpdoc.content|default('')|markdown|safe }}
+        <div class="cp-summary">
+          <span><b>{{ summary.chapterCount }}</b>{{ _('章') }}</span>
+          <span><b>{{ summary.lessonCount }}</b>{{ _('节') }}</span>
+          <span><b>{{ summary.problemCount }}</b>{{ _('题目') }}</span>
+        </div>
+      </div>
+    </div>
+    {% if handler.request.query.videoSync == 'done' %}
+    <div class="cp-sync-note">
+      {{ _('课程视频同步完成：扫描 {0} 节，补齐 {1} 个旧复制映射，匹配 {2} 个复制小节，更新 {3} 个绑定，清空 {4} 个绑定。').format(handler.request.query.videoSyncLessons|default('0'), handler.request.query.videoSyncBackfilled|default('0'), handler.request.query.videoSyncTargets|default('0'), handler.request.query.videoSyncSynced|default('0'), handler.request.query.videoSyncCleared|default('0')) }}
+    </div>
+    {% endif %}
+    {% if not chapters.length %}
+    <div class="section">
+      <div class="section__body typo">
+        <p>{{ _('这个版本还没有章。') }}</p>
+        {% if canManage %}
+        <p><a class="rounded primary button" href="{{ url('course_package_chapter_create', cpid=cpdoc.docId, vid=vpdoc.docId) }}">{{ _('创建第一章') }}</a></p>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+    {% for chapter in chapters %}
+    <details id="chapter-{{ chapter.id }}" class="section cp-chapter {% if chapter.hidden %}cp-hidden-row{% endif %}" {% if chapters.length <= 2 and loop.first %}open{% endif %}>
+      <summary class="section__header cp-chapter-summary">
+        <div class="cp-chapter-head">
+          <div class="cp-chapter-main">
+            <span class="cp-index">{{ loop.index }}</span>
+            <span class="cp-toggle" aria-hidden="true"></span>
+            <div class="cp-chapter-text">
+              <h2 class="section__title cp-chapter-title">
+                {{ chapter.title }}
+                {% if chapter.hidden %}<span class="cp-hidden-badge"><span class="icon icon-security"></span> {{ _('已隐藏') }}</span>{% endif %}
+              </h2>
+              <div class="cp-chapter-meta">
+                <span>{{ chapter.lessons.length }} {{ _('节') }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="cp-chapter-side">
+            {% if canManage or canCopy %}
+            <div class="section__tools cp-actions" onclick="event.stopPropagation()">
+              {% if canManage %}
+              <a class="button rounded primary" href="{{ url('course_package_chapter_edit', cpid=cpdoc.docId, vid=vpdoc.docId, chapterId=chapter.id) }}"><span class="icon icon-edit"></span>{{ _('编辑章') }}</a>
+              <a class="button rounded" href="{{ url('course_package_lesson_create', cpid=cpdoc.docId, vid=vpdoc.docId, chapterId=chapter.id) }}"><span class="icon icon-add"></span>{{ _('创建节') }}</a>
+              <form method="post" class="cp-inline-form">
+                <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+                <input type="hidden" name="operation" value="toggle_chapter_hidden">
+                <input type="hidden" name="chapterId" value="{{ chapter.id }}">
+                <button type="submit" class="button rounded">
+                  <span class="icon icon-{{ 'check' if chapter.hidden else 'security' }}"></span>{{ _('显示章') if chapter.hidden else _('隐藏章') }}
+                </button>
+              </form>
+              {% endif %}
+              {% if canCopy %}
+              <a class="button rounded" href="{{ url('course_package_copy', cpid=cpdoc.docId, vid=vpdoc.docId, query={mode:'chapter', nodeId:chapter.id}) }}"><span class="icon icon-copy"></span>{{ _('复制本章') }}</a>
+              {% endif %}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </summary>
+      <div class="cp-chapter-body">
+        {% if chapter.content %}
+        <div class="cp-chapter-content typo richmedia">{{ chapter.content|markdown|safe }}</div>
+        {% endif %}
+        {% if chapter.lessons.length %}
+        <ol class="cp-lesson-list">
+          {% for lesson in chapter.lessons %}
+          <li class="cp-lesson {% if lesson.hidden %}cp-hidden-row{% endif %}">
+            <div class="cp-lesson-main">
+              <h3>
+                {{ lesson.title }}
+                {% if lesson.hidden %}<span class="cp-hidden-badge"><span class="icon icon-security"></span> {{ _('已隐藏') }}</span>{% endif %}
+              </h3>
+              {% if lesson.pids.length %}
+              <p class="cp-problems"><span class="cp-problems__label">{{ _('题目') }}:</span>{% for pid in lesson.pids %}<a href="{{ url('problem_detail', pid=pid) }}">P{{ pid }}</a>{% endfor %}</p>
+              {% endif %}
+              {% if lesson.content %}<div class="cp-lesson-content typo richmedia">{{ lesson.content|markdown|safe }}</div>{% endif %}
+            </div>
+            {% if canManage or canCopy %}
+            <div class="cp-actions">
+              {% if canManage %}
+              <a class="button rounded primary" href="{{ url('course_package_lesson_edit', cpid=cpdoc.docId, vid=vpdoc.docId, chapterId=chapter.id, lessonId=lesson.id) }}"><span class="icon icon-edit"></span>{{ _('编辑') }}</a>
+              {% if lesson.pids.length > 1 %}
+              <a class="button rounded" href="{{ url('course_package_lesson_problem_order', cpid=cpdoc.docId, vid=vpdoc.docId, chapterId=chapter.id, lessonId=lesson.id) }}"><span class="icon icon-sliders"></span>{{ _('调整题目') }}</a>
+              {% endif %}
+              <form method="post" class="cp-inline-form">
+                <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+                <input type="hidden" name="operation" value="toggle_lesson_hidden">
+                <input type="hidden" name="chapterId" value="{{ chapter.id }}">
+                <input type="hidden" name="lessonId" value="{{ lesson.id }}">
+                <button type="submit" class="button rounded">
+                  <span class="icon icon-{{ 'check' if lesson.hidden else 'security' }}"></span>{{ _('显示') if lesson.hidden else _('隐藏') }}
+                </button>
+              </form>
+              {% endif %}
+              {% if canCopy %}
+              <a class="button rounded" href="{{ url('course_package_copy', cpid=cpdoc.docId, vid=vpdoc.docId, query={mode:'lesson', nodeId:lesson.id}) }}"><span class="icon icon-copy"></span>{{ _('复制') }}</a>
+              <a class="button rounded" href="{{ url('course_package_lesson_contest', cpid=cpdoc.docId, vid=vpdoc.docId, chapterId=chapter.id, lessonId=lesson.id) }}"><span class="icon icon-flag"></span>{{ _('建比赛') }}</a>
+              {% endif %}
+            </div>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ol>
+        {% else %}
+        <div class="cp-empty">{{ _('本章还没有节。') }}</div>
+        {% endif %}
+      </div>
+    </details>
+    {% endfor %}
+  </div>
+  <div class="medium-3 columns" data-sticky="large">
+    <div class="section side">
+      <ol class="menu">
+        {% if canManage %}
+        <li class="menu__item"><a class="menu__link" href="{{ url('course_package_version_edit', cpid=cpdoc.docId, vid=vpdoc.docId) }}"><span class="icon icon-edit"></span> {{ _('Edit') }}</a></li>
+        <li class="menu__item">
+          <form method="post" class="cp-menu-form">
+            <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+            <input type="hidden" name="operation" value="toggle_version_hidden">
+            <button type="submit" class="menu__link">
+              <span class="icon icon-{{ 'check' if vpdoc.hidden else 'security' }}"></span>
+              {{ _('显示版本') if vpdoc.hidden else _('隐藏版本') }}
+            </button>
+          </form>
+        </li>
+        <li class="menu__item"><a class="menu__link" href="{{ url('course_package_chapter_create', cpid=cpdoc.docId, vid=vpdoc.docId) }}"><span class="icon icon-add"></span> {{ _('创建章') }}</a></li>
+        <li class="menu__item"><a class="menu__link cp-order-menu" href="{{ url('course_package_structure_order', cpid=cpdoc.docId, vid=vpdoc.docId) }}"><span class="icon icon-sliders"></span> {{ _('调整章/节顺序') }}</a></li>
+        {% endif %}
+        {% if handler.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM) %}
+        <li class="menu__item">
+          <form method="post" class="cp-menu-form" action="{{ url('course_video_package_sync') }}">
+            <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+            <input type="hidden" name="sourceDomainId" value="{{ handler.domain._id }}">
+            <input type="hidden" name="packageId" value="{{ cpdoc.docId }}">
+            <input type="hidden" name="versionId" value="{{ vpdoc.docId }}">
+            <button type="submit" class="menu__link">
+              <span class="icon icon-refresh"></span>
+              {{ _('同步课程视频') }}
+            </button>
+          </form>
+        </li>
+        {% endif %}
+        {% if canCopy %}
+        <li class="menu__item"><a class="menu__link" href="{{ url('course_package_copy', cpid=cpdoc.docId, vid=vpdoc.docId, query={mode:'package'}) }}"><span class="icon icon-copy"></span> {{ _('复制整个课程包') }}</a></li>
+        {% endif %}
+        {% if canExport %}
+        <li class="menu__item"><a class="menu__link" href="{{ url('course_package_export', cpid=cpdoc.docId, vid=vpdoc.docId) }}"><span class="icon icon-download"></span> {{ _('导出课程包 ZIP') }}</a></li>
+        {% endif %}
+      </ol>
+      {% if chapters.length %}
+      <div class="cp-nav">
+        <div class="cp-side-title">{{ _('结构') }}</div>
+        <ol>
+          {% for chapter in chapters %}
+          <li><a href="#chapter-{{ chapter.id }}"><span>{{ loop.index }}</span>{{ chapter.title }}</a></li>
+          {% endfor %}
+        </ol>
+      </div>
+      {% endif %}
+      <div class="section__body typo">
+        <dl class="large horizontal">
+          <dt>{{ _('Created By') }}</dt>
+          <dd>{{ user.render_inline(udoc, badge=false) }}</dd>
+          <dt>{{ _('章') }}</dt>
+          <dd>{{ summary.chapterCount }}</dd>
+          <dt>{{ _('版本定位') }}</dt>
+          <dd>{{ _('内容快照') }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row" data-sticky-parent>
+    <div class="medium-9 columns">
+        {% block realname_content %}{% endblock %}
+    </div>
+    <div class="medium-3 columns">
+        <div data-sticky="large">
+            <div class="section side">
+                <ol class="menu">
+                    <li class="menu__item">
+                        <div class="menu__link expandable">
+                            <span class="icon icon-feeling-lucky"></span> {{ _('实名认证管理') }}
+                        </div>
+                        <ol class="menu collapsed">
+                            <li class="menu__item" id="menu-item-realname_show">
+                                <a class="menu__link{% if page_name == '查看实名认证' %} active{% endif %}" href="{{ url('realname_show') }}">
+                                    {{ _('查看实名认证') }}
+                                </a>
+                            </li>
+                            {% if handler.user.hasPriv(PRIV.PRIV_SET_PERM) %}
+                            <li class="menu__item" id="menu-item-realname_set">
+                                <a class="menu__link{% if page_name == '添加实名认证' %} active{% endif %}" href="{{ url('realname_set') }}">
+                                    {{ _('添加实名认证') }}
+                                </a>
+                            </li>
+                            <li class="menu__item" id="menu-item-realname_import">
+                                <a class="menu__link{% if page_name == '批量实名认证' %} active{% endif %}" href="{{ url('realname_import') }}">
+                                    {{ _('批量实名认证') }}
+                                </a>
+                            </li>
+                            <li class="menu__item" id="menu-item-realname_quick">
+                                <a class="menu__link{% if page_name == '快速实名认证' %} active{% endif %}" href="{{ url('realname_quick') }}">
+                                    {{ _('快速实名认证') }}
+                                </a>
+                            </li>
+                            <li class="menu__item" id="menu-item-realname_resetpwd">
+                                <a class="menu__link{% if page_name == 'Reset Password' %} active{% endif %}" href="{{ url('realname_resetpwd') }}">
+                                    {{ _('Reset Password') }}
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ol>
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

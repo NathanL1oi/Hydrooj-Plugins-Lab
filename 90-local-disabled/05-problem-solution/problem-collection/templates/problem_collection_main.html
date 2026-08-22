@@ -1,0 +1,211 @@
+{% extends "layout/basic.html" %}
+
+{% block content %}
+<style>
+.pc-shell { max-width: 1040px; margin: 0 auto; }
+.pc-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.pc-kicker { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: #64748b; font-size: 13px; }
+.pc-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: #fff;
+  background: #f97316;
+}
+.pc-create {
+  display: grid;
+  grid-template-columns: minmax(150px, 220px) minmax(180px, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px;
+  background: #fff;
+  margin-bottom: 14px;
+}
+.pc-input {
+  width: 100%;
+  height: 36px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 0 10px;
+  background: #fff;
+}
+.pc-strip {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  overflow-x: auto;
+  border-bottom: 1px solid #edf2f7;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+}
+.pc-strip-title { color: #334155; font-weight: 700; white-space: nowrap; }
+.pc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 220px;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #334155;
+  padding: 3px 9px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.pc-chip span:last-child { overflow: hidden; text-overflow: ellipsis; }
+.pc-list { display: grid; gap: 10px; }
+.pc-card {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  padding: 12px;
+}
+.pc-card:hover { border-color: #cbd5e1; }
+.pc-tone-0 { background: #f97316; }
+.pc-tone-1 { background: #2563eb; }
+.pc-tone-2 { background: #16a34a; }
+.pc-tone-3 { background: #d946ef; }
+.pc-title { color: #172033; font-size: 16px; font-weight: 700; line-height: 1.35; }
+.pc-meta { color: #718096; font-size: 12px; line-height: 1.5; }
+.pc-desc { margin-top: 4px; color: #4b5563; font-size: 13px; line-height: 1.55; }
+.pc-preview { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.pc-count {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  padding: 2px 8px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.pc-empty {
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  padding: 18px;
+  color: #64748b;
+  background: #fbfdff;
+}
+.theme--dark .pc-kicker,
+.theme--dark .pc-meta,
+.theme--dark .pc-empty {
+  color: #94a3b8;
+}
+.theme--dark .pc-create,
+.theme--dark .pc-card {
+  border-color: #3a4656;
+  background: #1f242c;
+}
+.theme--dark .pc-input {
+  border-color: #3a4656;
+  background: #171c23;
+  color: #e2e8f0;
+}
+.theme--dark .pc-strip {
+  border-bottom-color: #303a48;
+}
+.theme--dark .pc-strip-title,
+.theme--dark .pc-title {
+  color: #e2e8f0;
+}
+.theme--dark .pc-chip,
+.theme--dark .pc-count {
+  border-color: #3a4656;
+  background: #242b35;
+  color: #7ab8ff;
+}
+.theme--dark .pc-desc {
+  color: #cbd5e1;
+}
+.theme--dark .pc-empty {
+  border-color: #3a4656;
+  background: #1a1f27;
+}
+@media (max-width: 760px) {
+  .pc-top, .pc-create, .pc-card { grid-template-columns: 1fr; }
+  .pc-card { align-items: start; }
+}
+</style>
+<div class="row">
+  <div class="columns">
+    <div class="section pc-shell">
+      <div class="section__header">
+        <h1 class="section__title">收藏题单</h1>
+        <div class="section__tools">
+          <a class="rounded button" href="{{ url('problem_main') }}"><span class="icon icon-file"></span> 题库</a>
+        </div>
+      </div>
+      <div class="section__body">
+        <div class="pc-top">
+          <div class="pc-kicker">
+            <span class="pc-icon"><span class="icon icon-star"></span></span>
+            <span>{{ lists.length }} / {{ maxLists }} 个题单</span>
+          </div>
+        </div>
+
+        <form class="pc-create" method="post">
+          <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+          <input type="hidden" name="operation" value="create">
+          <input class="pc-input" name="title" maxlength="40" placeholder="题单名：二分">
+          <input class="pc-input" name="description" maxlength="500" placeholder="备注，可选">
+          <button class="primary rounded button" type="submit"><span class="icon icon-add"></span> 新建</button>
+        </form>
+
+        {% if recentItems.length %}
+          <div class="pc-strip">
+            <span class="pc-strip-title"><span class="icon icon-star"></span> 最近</span>
+            {% for item in recentItems %}
+              <a class="pc-chip" href="{{ item.url }}"><span>{{ item.pidLabel }}</span><span>{{ item.title }}</span></a>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        {% if lists.length %}
+          <div class="pc-list">
+            {% for list in lists %}
+              <div class="pc-card">
+                <span class="pc-icon pc-tone-{{ loop.index0 % 4 }}"><span class="icon icon-star"></span></span>
+                <div>
+                  <div class="pc-title">{{ list.title }}</div>
+                  <div class="pc-meta">{{ datetimeSpan(list.updatedAt)|safe }} 更新</div>
+                  {% if list.description %}
+                    <div class="pc-desc">{{ list.description }}</div>
+                  {% endif %}
+                  <div class="pc-preview">
+                    {% for item in list.previewItems %}
+                      <a class="pc-chip" href="{{ item.url }}"><span>{{ item.pidLabel }}</span><span>{{ item.title }}</span></a>
+                    {% else %}
+                      <span class="pc-meta">暂无题目</span>
+                    {% endfor %}
+                  </div>
+                </div>
+                <div>
+                  <span class="pc-count">{{ list.itemCount }} 题</span>
+                  <a class="rounded button" href="{{ url('problem_collection_detail', cid=list.id) }}">打开</a>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="pc-empty">还没有收藏题单。</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

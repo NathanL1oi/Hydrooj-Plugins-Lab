@@ -1,0 +1,74 @@
+{% extends "layout/basic.html" %}
+{% import "components/form.html" as form with context %}
+{% block content %}
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('Edit Question') if qdoc else _('New Question') }}</h1>
+      </div>
+      <div class="section__body">
+        <form method="post">
+          <div class="row">
+            <div class="medium-12 columns">
+              <label>
+                {{ _('Title') }}
+                <input name="title" class="textbox" value="{{ qdoc.title }}" required autofocus>
+              </label>
+            </div>
+          </div>
+          {% if not qdoc and pdoc %}
+            <input type="hidden" name="problemId" value="{{ pdoc.docId }}" required>
+          {% endif %}
+          {{ form.form_textarea({
+            columns: 12,
+            label: _('Content'),
+            name: 'content',
+            value: qdoc.content,
+            markdown: true,
+            required: true,
+            extra_style: 'height: 400px; margin-top: 0;'
+          }) }}
+          <input type="hidden" name="operation" value="{{ 'update' if qdoc else 'create' }}">  
+          <div class="row">
+            <div class="medium-12 columns">
+              <button type="submit" class="primary rounded button">{{ _('Submit') }}</button>
+              <button type="button" class="rounded button" onclick="window.history.go(-1)">
+                {{ _('Cancel') }}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    {% if pdoc %}
+      <div class="section">
+        <div class="section__header">
+          <h1 class="section__title">{{ _('Related Problem') }}</h1>
+        </div>
+        <div class="section__body">
+          <a href="{{ url('problem_detail', { domainId: pdoc.domainId, pid: pdoc.docId }) }}" style="font-weight: bold; color: #5f9fd6;" >
+            {{ pdoc.pid|default('') }} {{ pdoc.title|truncate(20, true) }}
+          </a>
+        </div>
+      </div>
+    {% endif %}
+    {% if qdoc and handler.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM) %}
+      <div class="section">
+        <div class="section__header">
+          <h1 class="section__title">{{ _('Action') }}</h1>
+        </div>
+        <div class="section__body">
+            <form method="post" action="{{ url('question_edit', { qid: qdoc._id }) }}" onsubmit="return confirm('确定删除吗？删除后将无法找回')" style="display:inline">
+              <button type="submit" name="operation" value="delete" class="question-button warning-button">
+                <span class="icon icon-delete">删除答疑</span>
+              </button>
+            </form>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

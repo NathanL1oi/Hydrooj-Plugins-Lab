@@ -1,0 +1,65 @@
+{% import "components/paginator.html" as paginator with context %}
+{% import "components/nothing.html" as nothing with context %}
+{% extends "coin_base.html" %}
+{% block coin_content %}
+<div class="section">
+    <div class="section__header">
+        <h1 class="section__title">{{ _('coin_myrecord') }}</h1>
+    </div>
+    <div class="section__body no-padding">
+        {% if not bills.length %}
+        {{ nothing.render('没有过兑换记录！') }}
+        {% else %}
+        <table class="data-table">
+            <colgroup>
+                <col class="col--time" style="width:6rem">
+                <col class="col--uid" style="width:12rem">
+                <col class="col--uid" style="width:12rem">
+                <col class="col--amount" style="width:4rem">
+                <col class="col--text">
+                <col class="col--actions" style="width:12rem">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>{{ _('Time') }}</th>
+                    <th>{{ _('发放者') }}</th>
+                    <th>{{ _('接收者') }}</th>
+                    <th>{{ _('数额') }}</th>
+                    <th>{{ _('原因') }}</th>
+                    <th>{{ _('Actions') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {%- for bill in bills -%}
+                <tr data-uid="{{ udoc.uid }}">
+                    <td>{{ datetimeSpan(bill._id)|safe }}</td>
+                    <td>{{ user.render_inline(udict[bill.rootId],avatar=false,badge=false,inline=false) }}</td>
+                    <td>
+                        <a href="{{ url('coin_bill',query={uid:bill.userId}) }}">
+                            {{ user.render_inline(udict[bill.userId],avatar=false,badge=false,inline=false) }}
+                        </a>
+                    </td>
+                    <td>{{ bill.amount }}</td>
+                    <td>{{ bill.text }}</td>
+                    <td>
+                      {% if bill.status>=1 %}
+                        {{ _('等待兑换') }}
+                        <form method="post" style="display:inline">
+                          <input type="hidden" name="id" value="{{ bill._id }}">
+                          <button type="submit" class="typo-a contest-tag">
+                            {{ _('取消订单') }}
+                          </button>
+                        </form>
+                      {% elif bill.status==0 %}
+                        {{ _('已兑换') }}
+                      {% endif %}
+                    </td>
+                </tr>
+                {%- endfor -%}
+            </tbody>
+        </table>
+        {{ paginator.render(page, upcount) }}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,115 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+{% include "course_package_style.html" %}
+<style>
+.cp-sort { --cp-border: #dbe4ef; --cp-soft: #f8fafc; --cp-text: #172033; --cp-muted: #64748b; font-size: 14px; }
+.cp-sort .section { border-radius: 8px; overflow: hidden; }
+.cp-sort .section__header { padding: 14px 16px; }
+.cp-sort .section__title { font-size: 20px; line-height: 1.35; }
+.cp-sort-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.cp-sort-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 14px; border: 1px solid var(--cp-border); border-radius: 8px; background: #fff; }
+.cp-sort-index { display: inline-flex; width: 30px; height: 30px; align-items: center; justify-content: center; border-radius: 50%; background: #e8f2ff; color: #0f172a; }
+.cp-sort-title { margin: 0; color: var(--cp-text); font-size: 16px; line-height: 1.35; }
+.cp-sort-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; color: var(--cp-muted); font-size: 12px; }
+.cp-sort-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.cp-sort-actions .button { margin: 0 !important; height: 30px; padding: 0 10px; line-height: 28px; font-size: 13px; }
+.cp-sort-footer { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+@media screen and (max-width: 720px) {
+  .cp-sort-row { grid-template-columns: 36px minmax(0, 1fr); }
+  .cp-sort-actions { grid-column: 2; justify-content: flex-start; }
+}
+</style>
+<div class="row cp-sort course-package-ui">
+  <div class="medium-12 columns">
+    <form method="post" data-cp-sort>
+      <input type="hidden" name="order" data-cp-sort-input>
+      <div class="section">
+        <div class="section__header">
+          <h1 class="section__title">{{ _('版本排序') }}: {{ cpdoc.title }}</h1>
+          <div class="section__tools">
+            <button type="submit" class="rounded primary button">{{ _('保存排序') }}</button>
+            <button type="button" class="rounded button" data-cp-reset>{{ _('撤销更改') }}</button>
+            <a class="rounded button" href="{{ url('course_package_detail', cpid=cpdoc.docId) }}">{{ _('返回') }}</a>
+          </div>
+        </div>
+        <div class="section__body">
+          {% if not versions.length %}
+          <p>{{ _('暂无版本') }}</p>
+          {% else %}
+          <ol class="cp-sort-list" data-cp-sort-list>
+            {% for vpdoc in versions %}
+            <li class="cp-sort-row" data-cp-sort-item data-id="{{ vpdoc.docId }}">
+              <span class="cp-sort-index" data-cp-index>{{ loop.index }}</span>
+              <div>
+                <h2 class="cp-sort-title">{{ vpdoc.title }}</h2>
+                <div class="cp-sort-meta">
+                  <span>{{ vpdoc.version }}</span>
+                  <span>{{ vpdoc.summary.chapterCount }} {{ _('章') }}</span>
+                  <span>{{ vpdoc.summary.lessonCount }} {{ _('节') }}</span>
+                  <span>{{ vpdoc.summary.problemCount }} {{ _('题目') }}</span>
+                </div>
+              </div>
+              <div class="cp-sort-actions">
+                <button type="button" class="rounded button" data-sort-action="top">{{ _('置顶') }}</button>
+                <button type="button" class="rounded button" data-sort-action="up">{{ _('上移') }}</button>
+                <button type="button" class="rounded button" data-sort-action="down">{{ _('下移') }}</button>
+                <button type="button" class="rounded button" data-sort-action="bottom">{{ _('置底') }}</button>
+              </div>
+            </li>
+            {% endfor %}
+          </ol>
+          <div class="cp-sort-footer">
+            <button type="submit" class="rounded primary button">{{ _('保存排序') }}</button>
+            <button type="button" class="rounded button" data-cp-reset>{{ _('撤销更改') }}</button>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+(function() {
+  var root = document.querySelector('[data-cp-sort]');
+  if (!root) return;
+  var list = root.querySelector('[data-cp-sort-list]');
+  var input = root.querySelector('[data-cp-sort-input]');
+  if (!list || !input) return;
+  function items() {
+    return Array.prototype.slice.call(list.querySelectorAll('[data-cp-sort-item]'));
+  }
+  function refresh() {
+    var rows = items();
+    input.value = rows.map(function(row) { return row.getAttribute('data-id'); }).join(',');
+    rows.forEach(function(row, index) {
+      var indexNode = row.querySelector('[data-cp-index]');
+      if (indexNode) indexNode.textContent = String(index + 1);
+      var top = row.querySelector('[data-sort-action="top"]');
+      var up = row.querySelector('[data-sort-action="up"]');
+      var down = row.querySelector('[data-sort-action="down"]');
+      var bottom = row.querySelector('[data-sort-action="bottom"]');
+      if (top) top.disabled = index === 0;
+      if (up) up.disabled = index === 0;
+      if (down) down.disabled = index === rows.length - 1;
+      if (bottom) bottom.disabled = index === rows.length - 1;
+    });
+  }
+  list.addEventListener('click', function(ev) {
+    var button = ev.target.closest('[data-sort-action]');
+    if (!button) return;
+    var row = button.closest('[data-cp-sort-item]');
+    if (!row) return;
+    var action = button.getAttribute('data-sort-action');
+    if (action === 'top') list.insertBefore(row, list.firstElementChild);
+    if (action === 'up' && row.previousElementSibling) list.insertBefore(row, row.previousElementSibling);
+    if (action === 'down' && row.nextElementSibling) list.insertBefore(row.nextElementSibling, row);
+    if (action === 'bottom') list.appendChild(row);
+    refresh();
+  });
+  root.querySelectorAll('[data-cp-reset]').forEach(function(button) {
+    button.addEventListener('click', function() { window.location.reload(); });
+  });
+  refresh();
+})();
+</script>
+{% endblock %}

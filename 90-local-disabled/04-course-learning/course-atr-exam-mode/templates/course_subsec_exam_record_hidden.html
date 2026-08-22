@@ -1,0 +1,19 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">提交详情赛后公布</h1>
+      </div>
+      <div class="section__body typo">
+        <blockquote>OI 赛制考试进行中，提交分数、测试点详情和代码将在考试时长结束后开放。</blockquote>
+        {% if pdoc %}
+          <p>题目：<a href="{{ url('problem_detail', pid=pdoc.pid|default(pdoc.docId)) }}">{{ pdoc.pid|default(pdoc.docId) }} {{ pdoc.title }}</a></p>
+        {% endif %}
+        <p>记录：{{ rdoc._id }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

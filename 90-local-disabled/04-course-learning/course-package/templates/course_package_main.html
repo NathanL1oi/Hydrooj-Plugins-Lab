@@ -1,0 +1,87 @@
+{% import "components/nothing.html" as nothing with context %}
+{% import "components/user.html" as user with context %}
+{% import "components/paginator.html" as paginator with context %}
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.course-package-main .section { border-radius: 8px; overflow: hidden; }
+.course-package-main .cp-item { border: 1px solid var(--cp-border); border-radius: 8px; margin: 12px 0; padding: 16px; background: var(--cp-card); }
+.course-package-main .cp-item:hover { border-color: #cbd5e1; }
+.course-package-main .cp-count { border-radius: 8px; background: var(--cp-soft); }
+</style>
+{% include "course_package_style.html" %}
+<div class="row course-package-main course-package-ui">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('课程包') }}</h1>
+        <div class="section__tools">
+          <form method="get">
+            <input type="text" class="inline compact textbox" name="q" value="{{ q }}" placeholder="{{ _('搜索课程包...') }}">
+            <button type="submit" class="button hasjs--hide">{{ _('Search') }}</button>
+          </form>
+        </div>
+      </div>
+      {% if not cpdocs.length %}
+      {{ nothing.render('暂无课程包') }}
+      {% else %}
+      <ol class="section__list discussion__list">
+        {%- for cpdoc in cpdocs -%}
+        <li class="section__list__item discussion__item cp-item {% if cpdoc.hidden %}cp-hidden-row{% endif %}">
+          <div class="media">
+            <div class="media__left middle">
+              <div class="discussion__replies numbox cp-count">
+                <div class="numbox__num large">{{ cpdoc.nVersion|default(0) }}</div>
+                <div class="numbox__text">{{ _('版本') }}</div>
+              </div>
+            </div>
+            <div class="media__body middle">
+              <h1 class="discussion__title">
+                <a href="{{ url('course_package_detail', cpid=cpdoc.docId) }}">{{ cpdoc.title }}</a>
+                {% if cpdoc.hidden %}<span class="cp-hidden-badge"><span class="icon icon-security"></span> {{ _('已隐藏') }}</span>{% endif %}
+              </h1>
+              <ul class="supplementary list">
+                <li><div class="training__intro typo"><p>{{ cpdoc.content|truncate(60, true) }}</p></div></li>
+                {% if udict[cpdoc.owner] %}
+                <li>|</li>
+                <li>{{ user.render_inline(udict[cpdoc.owner], badge=false) }}</li>
+                {% endif %}
+              </ul>
+            </div>
+            {% if canManage %}
+            <div class="media__right middle">
+              <form method="post" class="cp-inline-form">
+                <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+                <input type="hidden" name="operation" value="toggle_hidden">
+                <input type="hidden" name="cpid" value="{{ cpdoc.docId }}">
+                <button type="submit" class="rounded button">
+                  <span class="icon icon-{{ 'check' if cpdoc.hidden else 'security' }}"></span>
+                  {{ _('显示') if cpdoc.hidden else _('隐藏') }}
+                </button>
+              </form>
+            </div>
+            {% endif %}
+          </div>
+        </li>
+        {%- endfor -%}
+      </ol>
+      {% if page and cpcount %}{{ paginator.render(page, cpcount) }}{% endif %}
+      {% endif %}
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    {% if canManage %}
+    <div class="section side">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('课程包') }}</h1>
+      </div>
+      <ol class="menu">
+        <li class="menu__item"><a href="{{ url('course_package_create') }}" class="menu__link"><span class="icon icon-add"></span> {{ _('创建课程包') }}</a></li>
+        <li class="menu__item"><a href="{{ url('course_package_import') }}" class="menu__link"><span class="icon icon-upload"></span> {{ _('导入课程包') }}</a></li>
+        <li class="menu__item"><a href="{{ url('course_package_order') }}" class="menu__link cp-order-menu"><span class="icon icon-sliders"></span> {{ _('调整课程包顺序') }}</a></li>
+      </ol>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,11 @@
+{
+  "name": "@hydrooj/contest-userimport",
+  "version": "0.1.0",
+  "description": "Batch-add users to a contest via /contest/:tid/batch-add",
+  "main": "index.ts",
+  "author": "",
+  "license": "AGPL-3.0-or-later",
+  "peerDependencies": {
+    "hydrooj": "*"
+  }
+}

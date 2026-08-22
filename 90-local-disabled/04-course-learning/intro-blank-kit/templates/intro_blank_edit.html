@@ -1,0 +1,191 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.ibk-edit-shell { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 16px; align-items: start; }
+.ibk-hero { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.ibk-muted { color: #667085; }
+.ibk-code-editor { min-height: 420px; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; line-height: 1.5; }
+.ibk-fence {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  color: #667085;
+  background: #f6f8fa;
+  border: 1px solid #d7dde8;
+  padding: 6px 9px;
+}
+.ibk-fence-top { border-radius: 4px 4px 0 0; border-bottom: 0; }
+.ibk-fence-bottom { border-radius: 0 0 4px 4px; border-top: 0; }
+.ibk-code-editor { border-radius: 0; }
+.ibk-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.ibk-inline-tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 8px 0; }
+.ibk-preview { position: sticky; top: 12px; }
+.ibk-blank-list { margin-top: 10px; }
+.ibk-blank-pill {
+  display: inline-block;
+  margin: 0 6px 6px 0;
+  border: 1px solid #d7dde8;
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: #fff;
+  color: #4d5f73;
+  font-size: 12px;
+}
+.ibk-help { color: #667085; line-height: 1.7; margin-top: 12px; }
+.ibk-help code { white-space: nowrap; }
+.ibk-student-preview { margin-top: 14px; border: 1px solid #d7dde8; border-radius: 6px; overflow: hidden; background: #fff; }
+.ibk-preview-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #f7fafc;
+  border-bottom: 1px solid #d7dde8;
+  color: #344054;
+  font-weight: 600;
+}
+.ibk-preview-code {
+  margin: 0;
+  padding: 12px;
+  overflow: auto;
+  white-space: pre;
+  background: #fbfdff;
+  color: #1f2937;
+  line-height: 1.7;
+  tab-size: 4;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 13px;
+  min-width: max-content;
+}
+.ibk-preview-blank {
+  display: inline-flex;
+  width: 10em;
+  min-width: 7em;
+  height: 28px;
+  margin: 2px 4px;
+  padding: 3px 7px;
+  vertical-align: middle;
+  border: 1px solid #2f80ed;
+  border-radius: 5px;
+  background: #eef6ff;
+  color: #475569;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.ibk-hl-keyword { color: #7c3aed; font-weight: 600; }
+.ibk-hl-builtin { color: #0369a1; }
+.ibk-hl-string { color: #047857; }
+.ibk-hl-number { color: #b45309; }
+.ibk-hl-comment { color: #7a8699; font-style: italic; }
+.ibk-hl-meta { color: #be123c; }
+.ibk-hl-operator { color: #475569; }
+.theme--dark .ibk-muted,
+.theme--dark .ibk-help {
+  color: #9fb0c6;
+}
+.theme--dark .ibk-fence,
+.theme--dark .ibk-student-preview,
+.theme--dark .ibk-blank-pill {
+  background: rgba(15, 23, 42, .42);
+  border-color: rgba(148, 163, 184, .26);
+  color: #dbe7f5;
+}
+.theme--dark .ibk-preview-title {
+  background: rgba(15, 23, 42, .36);
+  border-bottom-color: rgba(148, 163, 184, .24);
+  color: #dbe7f5;
+}
+.theme--dark .ibk-preview-code {
+  background: rgba(2, 6, 23, .42);
+  color: #dbe7f5;
+}
+.theme--dark .ibk-preview-blank {
+  background: rgba(59, 130, 246, .20);
+  border-color: rgba(96, 165, 250, .70);
+  color: #e2e8f0;
+}
+.theme--dark .ibk-hl-keyword { color: #c4b5fd; }
+.theme--dark .ibk-hl-builtin { color: #7dd3fc; }
+.theme--dark .ibk-hl-string { color: #86efac; }
+.theme--dark .ibk-hl-number { color: #fcd34d; }
+.theme--dark .ibk-hl-comment { color: #94a3b8; }
+.theme--dark .ibk-hl-meta { color: #fda4af; }
+.theme--dark .ibk-hl-operator { color: #cbd5e1; }
+@media (max-width: 900px) {
+  .ibk-edit-shell { grid-template-columns: 1fr; }
+  .ibk-preview { position: static; }
+}
+</style>
+<div class="section">
+  <div class="section__header ibk-hero">
+    <div>
+      <h1 class="section__title">{{ _('配置程序填空') }}: {{ pdoc.pid|default(pdoc.docId) }}. {{ pdoc.title }}</h1>
+      <div class="ibk-muted">{{ _('只配置给学生补全的代码模板，学生入口不会展示原题题面。') }}</div>
+    </div>
+    <a class="button rounded" href="{{ originalUrl }}">{{ _('返回原题') }}</a>
+  </div>
+  <div class="section__body">
+    {% if messages and messages|length %}
+      <blockquote class="note">
+        {% for message in messages %}<p>{{ message }}</p>{% endfor %}
+      </blockquote>
+    {% endif %}
+    <form method="post" class="ibk-edit-shell" id="intro-blank-editor">
+      <div>
+        <input type="hidden" name="mode" value="code">
+        <input type="hidden" name="enabled" value="on">
+        <input type="hidden" name="title" value="{{ pdoc.title }}">
+        <div class="row"><div class="columns">
+          <label>
+            {{ _('程序语言') }}
+            <input class="textbox" name="lang" value="{{ form.lang|default('cc') }}">
+          </label>
+        </div></div>
+        <div class="row"><div class="columns">
+          <label>
+            {{ _('代码填空模板') }}
+            <span class="ibk-fence ibk-fence-top">```cpp</span>
+            <textarea class="textbox ibk-code-editor" name="code">{{ form.code }}</textarea>
+            <span class="ibk-fence ibk-fence-bottom">```</span>
+          </label>
+          <div class="ibk-inline-tools">
+            <button type="button" class="button rounded" data-ibk-insert="code">
+              <span class="icon icon-add"></span> {{ _('插入程序空') }}
+            </button>
+            <span class="ibk-muted">{{ _('在代码里写') }} <code>[[提示]]</code>{{ _('，学生可以填') }} <code>a + 1</code>{{ _('、') }}<code>++a</code>{{ _('这类等价片段。') }}</span>
+          </div>
+        </div></div>
+        <div class="row"><div class="columns ibk-actions">
+          <button class="button rounded primary" type="submit">
+            <span class="icon icon-save"></span> {{ _('保存') }}
+          </button>
+          <a class="button rounded" href="{{ submitUrl }}">{{ _('预览学生入口') }}</a>
+          <a class="button rounded" href="{{ originalUrl }}">{{ _('返回原题') }}</a>
+          {% if config %}
+            <button class="button rounded" name="operation" value="delete" type="submit" onclick="return confirm('{{ _('确认删除这道题的程序填空配置？') }}')">
+              <span class="icon icon-delete"></span> {{ _('删除配置') }}
+            </button>
+          {% endif %}
+        </div></div>
+      </div>
+      <div class="section side ibk-preview">
+        <div class="section__header">
+          <h1 class="section__title">{{ _('填空清单') }}</h1>
+        </div>
+        <div class="section__body">
+          <p class="ibk-muted"><span id="ibk-blank-count">0</span> {{ _('个空') }}</p>
+          <div id="ibk-blank-list" class="ibk-blank-list"></div>
+          <div class="ibk-student-preview">
+            <div class="ibk-preview-title">
+              <span>{{ _('学生预览') }}</span>
+              <span id="ibk-preview-lang">cpp</span>
+            </div>
+            <div class="ibk-preview-code" id="ibk-code-preview"></div>
+          </div>
+          <div class="typo ibk-help">
+            <p>{{ _('学生只会看到这段代码填空，提交后按原题数据评测。') }}</p>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

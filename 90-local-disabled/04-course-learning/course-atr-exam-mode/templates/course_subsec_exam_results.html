@@ -1,0 +1,60 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+{% include "course_ui_style.html" %}
+{% set subsecUrl = url('course_subsec_detail', cid=cdoc.docId, csid=csdoc.docId, ssid=ssdoc._id) %}
+<div class="row">
+  <div class="medium-12 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">考试记录：{{ ssdoc.title }}</h1>
+      </div>
+      <div class="section__body no-padding">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>用户</th>
+              <th>得分</th>
+              <th>题数</th>
+              <th>状态</th>
+              <th>开始</th>
+              <th>结束</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+              {% set udoc = udict[row.uid] %}
+              <tr>
+                <td>
+                  {% if udoc %}
+                    {{ user.render_inline(udoc, badge=false) }}
+                  {% else %}
+                    UID {{ row.uid }}
+                  {% endif %}
+                </td>
+                <td>{{ row.result.score if row.result else '-' }} / {{ row.result.maxScore if row.result else exam.maxScore }}</td>
+                <td>{{ row.result.solved if row.result else 0 }} / {{ row.result.total if row.result else exam.pids.length }}</td>
+                <td>
+                  {% if row.finished %}
+                    已结束
+                    {% if row.expired %}（超时）{% endif %}
+                  {% else %}
+                    进行中
+                  {% endif %}
+                </td>
+                <td>{{ row.startedAtText }}</td>
+                <td>{{ row.endedAtText or '-' }}</td>
+              </tr>
+            {% else %}
+              <tr><td colspan="6">暂无考试记录。</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="section__body">
+        <a class="rounded button" href="{{ subsecUrl }}/exam">返回考试</a>
+        <a class="rounded button" href="{{ subsecUrl }}/exam/scoreboard">比赛排名</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{% if doc %}{{ _('编辑错因总结') }}{% else %}{{ _('填写错因总结') }}{% endif %}</h1>
+      </div>
+      <div class="section__body">
+        <blockquote class="warn">{{ _('本题 AC 后需要完成错因总结，完成后才会计入本题 AC 和课程进度。') }}</blockquote>
+        <form method="post">
+          <label>{{ _('题号') }}<input class="textbox" name="pid" value="{{ pid }}"></label>
+          <label>{{ _('错因类型') }}
+            <select class="select" name="cause">
+              {% for item in causes %}
+              <option value="{{ item[0] }}" {% if doc and doc.cause == item[0] %}selected{% endif %}>{{ item[1] }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>{{ _('我修正了什么') }}<textarea class="textbox" name="fix" data-markdown style="height:140px">{{ doc.fix|default('') }}</textarea></label>
+          <label>{{ _('下次遇到类似题我会怎么做') }}<textarea class="textbox" name="next" data-markdown style="height:140px">{{ doc.next|default('') }}</textarea></label>
+          <label>{{ _('补充备注') }}<textarea class="textbox" name="note" data-markdown style="height:100px">{{ doc.note|default('') }}</textarea></label>
+          <button class="rounded primary button" type="submit">{{ _('保存并计入 AC') }}</button>
+          {% if doc %}<button class="rounded button" name="operation" value="delete" type="submit">{{ _('删除') }}</button>{% endif %}
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns">{% include 'components/md_hint.html' %}</div>
+</div>
+{% endblock %}

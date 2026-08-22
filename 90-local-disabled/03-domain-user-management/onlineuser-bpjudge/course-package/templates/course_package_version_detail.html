@@ -1,0 +1,86 @@
+{% import "components/user.html" as user with context %}
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row" data-sticky-parent>
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title"><a href="{{ url('course_package_detail', cpid=cpdoc.docId) }}">{{ cpdoc.title }}</a>: {{ vpdoc.version }}</h1>
+      </div>
+      <div class="section__body typo richmedia">
+        {{ vpdoc.content|default('')|markdown|safe }}
+      </div>
+    </div>
+    {% for stage in vpdoc.stages %}
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ stage.title }}</h1>
+        {% if handler.user.hasPerm(perm.PERM_EDIT_TRAINING) %}
+        <div class="section__tools">
+          <a class="button rounded" href="{{ url('course_package_stage_edit', cpid=cpdoc.docId, vid=vpdoc.docId, stageId=stage.id) }}">{{ _('编辑阶段') }}</a>
+          <a class="button rounded" href="{{ url('course_package_chapter_create', cpid=cpdoc.docId, vid=vpdoc.docId, stageId=stage.id) }}">{{ _('创建章') }}</a>
+          <a class="button rounded" href="{{ url('course_package_copy', cpid=cpdoc.docId, vid=vpdoc.docId, query={mode:'stage', nodeId:stage.id}) }}">{{ _('复制阶段') }}</a>
+        </div>
+        {% endif %}
+      </div>
+      {% if stage.content %}
+      <div class="section__body typo richmedia">{{ stage.content|markdown|safe }}</div>
+      {% endif %}
+      {% for chapter in stage.chapters %}
+      <div class="section__body">
+        <h2>{{ chapter.title }}</h2>
+        {% if chapter.content %}<div class="typo richmedia">{{ chapter.content|markdown|safe }}</div>{% endif %}
+        {% if handler.user.hasPerm(perm.PERM_EDIT_TRAINING) %}
+        <p>
+          <a href="{{ url('course_package_chapter_edit', cpid=cpdoc.docId, vid=vpdoc.docId, stageId=stage.id, chapterId=chapter.id) }}">{{ _('编辑本章') }}</a>
+          |
+          <a href="{{ url('course_package_lesson_create', cpid=cpdoc.docId, vid=vpdoc.docId, stageId=stage.id, chapterId=chapter.id) }}">{{ _('创建节') }}</a>
+          |
+          <a href="{{ url('course_package_copy', cpid=cpdoc.docId, vid=vpdoc.docId, query={mode:'chapter', nodeId:chapter.id}) }}">{{ _('复制本章') }}</a>
+        </p>
+        {% endif %}
+        <ol class="section__list">
+          {% for lesson in chapter.lessons %}
+          <li class="section__list__item">
+            <h3>{{ lesson.title }}</h3>
+            {% if lesson.content %}<div class="typo richmedia">{{ lesson.content|markdown|safe }}</div>{% endif %}
+            {% if lesson.pids.length %}
+            <p>{{ _('题目') }}: {% for pid in lesson.pids %}<a href="{{ url('problem_detail', pid=pid) }}">P{{ pid }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</p>
+            {% endif %}
+            {% if handler.user.hasPerm(perm.PERM_EDIT_TRAINING) %}
+            <p>
+              <a href="{{ url('course_package_lesson_edit', cpid=cpdoc.docId, vid=vpdoc.docId, stageId=stage.id, chapterId=chapter.id, lessonId=lesson.id) }}">{{ _('编辑本节') }}</a>
+              |
+              <a href="{{ url('course_package_copy', cpid=cpdoc.docId, vid=vpdoc.docId, query={mode:'lesson', nodeId:lesson.id}) }}">{{ _('复制本节') }}</a>
+            </p>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ol>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+  <div class="medium-3 columns" data-sticky="large">
+    <div class="section side">
+      <ol class="menu">
+        {% if handler.user.hasPerm(perm.PERM_EDIT_TRAINING) %}
+        <li class="menu__item"><a class="menu__link" href="{{ url('course_package_version_edit', cpid=cpdoc.docId, vid=vpdoc.docId) }}"><span class="icon icon-edit"></span> {{ _('Edit') }}</a></li>
+        <li class="menu__item"><a class="menu__link" href="{{ url('course_package_stage_create', cpid=cpdoc.docId, vid=vpdoc.docId) }}"><span class="icon icon-add"></span> {{ _('创建阶段') }}</a></li>
+        <li class="menu__item"><a class="menu__link" href="{{ url('course_package_copy', cpid=cpdoc.docId, vid=vpdoc.docId, query={mode:'package'}) }}"><span class="icon icon-copy"></span> {{ _('复制整个课程包') }}</a></li>
+        {% endif %}
+        <li class="menu__item"><a class="menu__link" href="{{ url('course_package_export', cpid=cpdoc.docId, vid=vpdoc.docId) }}"><span class="icon icon-download"></span> {{ _('导出 JSON') }}</a></li>
+      </ol>
+      <div class="section__body typo">
+        <dl class="large horizontal">
+          <dt>{{ _('Created By') }}</dt>
+          <dd>{{ user.render_inline(udoc, badge=false) }}</dd>
+          <dt>{{ _('阶段') }}</dt>
+          <dd>{{ vpdoc.stages.length }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

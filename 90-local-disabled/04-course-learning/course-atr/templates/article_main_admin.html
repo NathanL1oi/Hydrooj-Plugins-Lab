@@ -1,0 +1,162 @@
+{% import "components/nothing.html" as nothing with context %}
+{% import "components/user.html" as user with context %}
+{% import "components/paginator.html" as paginator with context %}
+{% extends "layout/basic.html" %}
+{% block content %}
+{{ set(
+UiContext, 'requestUrl',
+"/article/manage?"
++ (("&uidOrName=" + filterUidOrName) if filterUidOrName else "")
++ (("&hidden=" + filterHidden) if typeof(filterHidden) == 'boolean' else "")
++ (("&nice=" + filterNice) if typeof(filterNice) == 'boolean' else "")
++ (("&domainName=" + filterDomainName) if typeof(filterDomainName) == 'string' else "")
++ (("&groupName=" + filterGroupName) if typeof(filterGroupName) == 'string' else "")
+) }}
+{% if handler.user.hasPerm(perm.PERM_EDIT_DOMAIN) %}
+{{ set(UiContext, 'forceDomain', handler.domain._id) }}
+{% endif %}
+<style>
+  .col--update_at {
+    width: 120px;
+  }
+
+  .col--owner {
+    width: 180px;
+  }
+
+  .col--title {
+    width: 250px;
+  }
+
+  .col--nice {
+    width: 80px;
+  }
+
+  .col--hidden {
+    width: 80px;
+  }
+
+  .col--lock {
+    width: 80px;
+  }
+
+  .col--actions {
+    width: 150px;
+  }
+</style>
+<div class="row">
+  <div class="medium-12 columns">
+    <form method="get">
+      <div class="section">
+        <div class="section__header">
+          <h1 class="section__title">{{ _('Article Management') }}</h1>
+          <div class="section__tools">
+            <button type="submit" class="primary button"><span class="icon icon-filter"></span> {{
+              _('Filter')
+              }}</button>
+            <a href="{{ url('article_main_admin') }}" class="button">{{ _('Reset') }}</a>
+            <a href="{{ url('article_main') }}" class="button">{{ _('Back to the front') }}</a>
+          </div>
+        </div>
+        <div class="section__body">
+          <div class="row">
+            <div class="medium-3 columns">
+              <label class="filter-user">
+                {{ _('By Username / UID') }}
+                <input name="uidOrName" type="text" class="textbox" value="{{ filterUidOrName }}" autocomplete="off"
+                  data-autofocus>
+              </label>
+            </div>
+            <div class="medium-3 columns">
+              <label class="filter-user">
+                {{ _('By Group') }}
+                <select class="compact select" id="groupNameSelect" name="groupName">
+                  <option value="all" {% if typeof(filterGroupName) !='string' %}selected{% else %}{% endif %}>all
+                  </option>
+                  {% for group in groups %}
+                  <a>{{ filterGroupName }} {{ group.name }}</a>
+                  <option value="{{group.name}}" {% if typeof(filterGroupName)=='string' and filterGroupName==group.name
+                    %}selected{% else %}{% endif %}>{{ group.name }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+            </div>
+            <div class="medium-2 columns">
+              <label>
+                {{ _('Hidden or Not') }}
+                <select class="compact select" name="hidden">
+                  <option value="" {% if typeof(filterHidden) !='boolean' %}selected{% else %}{% endif %}>所有</option>
+                  <option value="true" {% if typeof(filterHidden)=='boolean' and filterHidden %}selected{% else %}{%
+                    endif %}>隐藏</option>
+                  <option value="false" {% if typeof(filterHidden)=='boolean' and not filterHidden %}selected{% else
+                    %}{% endif %}>非隐藏</option>
+                </select>
+              </label>
+            </div>
+            <div class="medium-2 columns">
+              <label>
+                {{ _('Nice or Not') }}
+                <select class="compact select" id="niceSelect" name="nice">
+                  <option value="" {% if typeof(filterNice) !='boolean' %}selected{% else %}{% endif %}>所有</option>
+                  <option value="true" {% if typeof(filterNice)=='boolean' and filterNice %}selected{% else %}{% endif
+                    %}>推荐</option>
+                  <option value="false" {% if typeof(filterNice)=='boolean' and not filterNice %}selected{% else %}{%
+                    endif %}>未推荐</option>
+                </select>
+              </label>
+            </div>
+            <div class="medium-2 columns">
+              <label>
+                {{ _('By DomainID (Only the recommended)') }}
+                <select class="compact select" id="domainNameSelect" name="domainName">
+                  <option value="all" {% if typeof(filterDomainName) !='string' %}selected{% else %}{% endif %}>all
+                  </option>
+                  {% for domain in domains %}
+                  <a>{{ filterDomainName }} {{ domain }}</a>
+                  <option value="{{domain}}" {% if typeof(filterDomainName)=='string' and filterDomainName==domain
+                    %}selected{% else %}{% endif %}>{{ domain }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+    <div class="section">
+      {% if not ddocs.length %}
+      {{ nothing.render('No article yet...') }}
+      {% else %}
+      <div class="section__body no-padding">
+        <table class="data-table">
+          <colgroup>
+            <col class="col--title">
+            <col class="col--content">
+            <col class="col--owner">
+            <col class="col--update_at">
+            <col class="col--nice">
+            <col class="col--hidden">
+            <col class="col--lock">
+            <col class="col--actions">
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="col--title">{{ _('Title') }}</th>
+              <th class="col--content">{{ _('Content') }}</th>
+              <th class="col--owner">{{ _('User') }}</th>
+              <th class="col--update_at">{{ _('Update At') }}</th>
+              <th class="col--nice"> 是否推荐 </th>
+              <th class="col--hidden"> 是否可见 </th>
+              <th class="col--lock" data-tooltip="是否启用评论"> 评论 </th>
+              <th class="col--actions"> Actions </th>
+            </tr>
+          </thead>
+          {% include "partials/article_main_admin.html" %}
+        </table>
+        {% if page and dpcount %}{{ paginator.render(page, dpcount, add_qs=qs) }}{% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

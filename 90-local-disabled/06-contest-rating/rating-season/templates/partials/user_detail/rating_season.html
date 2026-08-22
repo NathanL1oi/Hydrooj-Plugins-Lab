@@ -1,0 +1,29 @@
+{% if ratingSeason and ratingSeason.config and ratingSeason.config.enabled %}
+<li class="section__tab-item">
+  <h1 class="section__tab-title">{{ _('Rating 赛季') }}</h1>
+  <div class="section__tab-main">
+    <div class="typo section__body">
+      {% if ratingSeason.season and ratingSeason.row %}
+      <p>
+        <strong>{{ ratingSeason.season.title }}</strong>
+        {{ _('赛季变化') }}
+        {% if ratingSeason.row.delta > 0 %}<span style="color:#15803d;font-weight:700">+{{ ratingSeason.row.delta }}</span>
+        {% elif ratingSeason.row.delta < 0 %}<span style="color:#b91c1c;font-weight:700">{{ ratingSeason.row.delta }}</span>
+        {% else %}<span>0</span>{% endif %}
+        ，{{ _('参赛') }} {{ ratingSeason.row.contests }} {{ _('场') }}。
+      </p>
+      <p>
+        <span class="user-profile-badge v-center" style="background-color:{{ ratingSeason.row.color }};color:#fff">{{ ratingSeason.row.title }}</span>
+        {{ _('当前 Rating') }} {{ ratingSeason.row.lastRating|round }}
+        ，{{ _('赛季排名') }} #{{ ratingSeason.row.rank }}。
+      </p>
+      <p><a href="{{ ratingSeasonRankingUrl }}">{{ _('查看赛季榜') }}</a></p>
+      {% elif ratingSeason.season %}
+      <p>{{ _('当前赛季还没有 Rating 记录。') }} <a href="{{ ratingSeasonRankingUrl }}">{{ _('查看赛季榜') }}</a></p>
+      {% else %}
+      <p>{{ _('当前子域还没有创建 Rating 赛季。') }}</p>
+      {% endif %}
+    </div>
+  </div>
+</li>
+{% endif %}

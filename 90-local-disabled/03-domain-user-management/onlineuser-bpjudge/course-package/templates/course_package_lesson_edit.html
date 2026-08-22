@@ -1,0 +1,60 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{% if lesson %}{{ _('编辑节') }}{% else %}{{ _('创建节') }}{% endif %}</h1>
+      </div>
+      <div class="section__body">
+        <form method="post">
+          <div class="row">
+            <div class="medium-9 columns">
+              <label>
+                {{ _('Title') }}
+                <input name="title" value="{{ lesson.title|default('') }}" class="textbox" autofocus>
+              </label>
+            </div>
+            <div class="medium-3 columns">
+              <label>
+                {{ _('标签') }}
+                <input name="tags" value="{{ lesson.tags|join(', ') if lesson and lesson.tags else '' }}" class="textbox">
+              </label>
+            </div>
+          </div>
+          <label>
+            {{ _('Problems') }}
+            <input type="text" name="pids" value="{{ lesson.pids|join(', ') if lesson and lesson.pids else '' }}" placeholder="{{ _('Seperated with \',\'') }}" class="textbox autocomplete-dummy">
+          </label>
+          <label>
+            {{ _('Description') }}
+            <textarea name="content" class="textbox" data-markdown style="height: 240px">{{ lesson.content|default('') }}</textarea>
+          </label>
+          {% if lesson %}
+          <button type="submit" class="rounded primary button">{{ _('Update') }}</button>
+          <button name="operation" value="delete" type="submit" class="rounded button">{{ _('Delete') }}</button>
+          {% else %}
+          <button type="submit" class="rounded primary button">{{ _('Create') }}</button>
+          {% endif %}
+          <button type="button" class="rounded button" onclick="window.history.go(-1)">{{ _('Cancel') }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    <div class="section side">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('位置') }}</h1>
+      </div>
+      <div class="section__body typo">
+        <p>{{ stage.title }}</p>
+        <p>{{ chapter.title }}</p>
+      </div>
+      <ol class="menu">
+        <li class="menu__item"><a href="{{ url('problem_create') }}" class="menu__link" target="_blank"><span class="icon icon-add"></span> {{ _('创建题目') }}</a></li>
+      </ol>
+    </div>
+    {% include 'components/md_hint.html' %}
+  </div>
+</div>
+{% endblock %}

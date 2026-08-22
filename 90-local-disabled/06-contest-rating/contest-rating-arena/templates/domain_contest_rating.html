@@ -1,0 +1,217 @@
+{% extends "layout/basic.html" %}
+{% import "components/paginator.html" as paginator with context %}
+{% block content %}
+<style>
+.cra-settings .cra-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.cra-settings .cra-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.cra-settings .cra-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; background: #fff; }
+.cra-settings .cra-card h2 { margin: 0 0 8px; font-size: 16px; line-height: 1.35; }
+.cra-settings .cra-muted { color: #64748b; font-size: 13px; line-height: 1.55; }
+.cra-settings .cra-switch { display: flex; gap: 8px; align-items: center; font-weight: 600; }
+.cra-settings .cra-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; align-items: center; }
+.cra-settings .cra-stat { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.cra-settings .cra-stat span { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: #f8fafc; }
+.cra-settings .cra-stat b { display: block; font-size: 24px; line-height: 1.2; }
+.cra-settings .cra-table-wrap { overflow-x: auto; }
+.cra-settings .cra-contest-table { min-width: 920px; }
+.cra-settings .cra-pill { display: inline-block; border-radius: 999px; padding: 2px 8px; font-size: 12px; font-weight: 700; background: #e2e8f0; color: #334155; }
+.cra-settings .cra-pill.ok { background: #dcfce7; color: #166534; }
+.cra-settings .cra-pill.warn { background: #fef3c7; color: #92400e; }
+.cra-settings .cra-pill.off { background: #fee2e2; color: #991b1b; }
+.cra-settings .cra-danger { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+.cra-settings .cra-tier-list { display: grid; gap: 8px; }
+.cra-settings .cra-tier { display: grid; grid-template-columns: 14px 1fr auto; gap: 8px; align-items: center; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; background: #fff; }
+.cra-settings .cra-tier i { width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 -2px 0 rgba(15, 23, 42, .24); }
+.cra-settings .cra-tier b { font-size: 13px; line-height: 1.25; }
+.cra-settings .cra-tier small { color: #64748b; line-height: 1.25; }
+.theme--dark .cra-settings .cra-card,
+.theme--dark .cra-settings .cra-stat span,
+.theme--dark .cra-settings .cra-tier {
+  background: rgba(15, 23, 42, .42);
+  border-color: rgba(148, 163, 184, .26);
+  color: #dbe7f5;
+}
+.theme--dark .cra-settings .cra-muted,
+.theme--dark .cra-settings .cra-tier small {
+  color: #9fb0c6;
+}
+.theme--dark .cra-settings .cra-pill {
+  background: rgba(148, 163, 184, .22);
+  color: #e2e8f0;
+}
+.theme--dark .cra-settings .cra-pill.ok {
+  background: rgba(22, 101, 52, .32);
+  color: #86efac;
+}
+.theme--dark .cra-settings .cra-pill.warn {
+  background: rgba(146, 64, 14, .34);
+  color: #fcd34d;
+}
+.theme--dark .cra-settings .cra-pill.off,
+.theme--dark .cra-settings .cra-danger {
+  background: rgba(127, 29, 29, .34);
+  color: #fca5a5;
+  border-color: rgba(248, 113, 113, .38);
+}
+@media (max-width: 800px) { .cra-settings .cra-grid, .cra-settings .cra-stat { grid-template-columns: 1fr; } }
+</style>
+<div class="row cra-settings">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <div class="cra-head">
+          <h1 class="section__title">{{ _('竞技 Rating 设置') }}</h1>
+          <span class="cra-muted">{{ handler.domain.name or handler.domain._id }}</span>
+        </div>
+      </div>
+      <div class="section__body">
+        <form method="post">
+          <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+          <div class="cra-grid">
+            <div class="cra-card">
+              <h2>{{ _('开关') }}</h2>
+              <label class="cra-switch">
+                <input type="checkbox" name="enabled" value="true" {% if config.enabled %}checked{% endif %}>
+                <span>{{ _('在当前子域启用竞技 Rating') }}</span>
+              </label>
+              <p class="cra-muted">{{ _('启用后，本子域单独统计 Rating，不影响 Hydro 原 RP。') }}</p>
+              <label class="cra-switch">
+                <input type="checkbox" name="showInNav" value="true" {% if config.showInNav %}checked{% endif %}>
+                <span>{{ _('在排行榜旁显示 Rating榜') }}</span>
+              </label>
+            </div>
+            <div class="cra-card">
+              <h2>{{ _('结算规则') }}</h2>
+              <label>
+                {{ _('初始 Rating') }}
+                <input class="textbox" type="number" name="initialRating" min="1" value="{{ config.initialRating }}">
+              </label>
+              <label>
+                {{ _('最少有效参赛人数') }}
+                <input class="textbox" type="number" name="minParticipants" min="2" value="{{ config.minParticipants }}">
+              </label>
+              <label>
+                {{ _('成长系数') }} (%)
+                <input class="textbox" type="number" name="growthFactor" min="80" max="300" value="{{ config.growthFactor }}">
+              </label>
+              <p class="cra-muted">{{ _('20 人以内建议 150-180；数值越高，表现好的选手涨分越快。') }}</p>
+              <label class="cra-switch">
+                <input type="checkbox" name="publishOnlyAfterEnd" value="true" {% if config.publishOnlyAfterEnd %}checked{% endif %}>
+                <span>{{ _('只允许比赛结束后发布 Rating') }}</span>
+              </label>
+            </div>
+          </div>
+          <div class="cra-actions">
+            <button class="button rounded primary" type="submit"><span class="icon icon-save"></span> {{ _('保存设置') }}</button>
+            <a class="button rounded" href="{{ rankingUrl }}"><span class="icon icon-statistics"></span> {{ _('查看 Rating榜') }}</a>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section__header">
+        <div class="cra-head">
+          <h1 class="section__title">{{ _('选择要计入 Rating 的比赛') }}</h1>
+          <span class="cra-muted">{{ _('只会发布管理员选中的比赛，不会自动扫描全部比赛。') }}</span>
+        </div>
+      </div>
+      <div class="section__body no-padding cra-table-wrap table-layout-guard">
+        <table class="data-table cra-contest-table">
+          <thead>
+            <tr>
+              <th>{{ _('比赛') }}</th>
+              <th>{{ _('规则') }}</th>
+              <th>{{ _('结束时间') }}</th>
+              <th>{{ _('参赛') }}</th>
+              <th>{{ _('状态') }}</th>
+              <th>{{ _('操作') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in contests %}
+            <tr>
+              <td>
+                <a href="{{ url('contest_detail', tid=row.docId) }}">{{ row.title }}</a>
+                <div class="cra-muted">#{{ row.contestId }}</div>
+              </td>
+              <td>{{ row.rule }}</td>
+              <td>{% if row.endAt %}{{ datetimeSpan(row.endAt)|safe }}{% else %}-{% endif %}</td>
+              <td>{{ row.attend }}</td>
+              <td>
+                {% if row.published %}
+                  <span class="cra-pill ok">{{ _('已发布') }}</span>
+                  <div class="cra-muted">{{ datetimeSpan(row.published.publishedAt)|safe }}</div>
+                {% elif not config.enabled %}
+                  <span class="cra-pill off">{{ _('域内未启用') }}</span>
+                {% elif not row.supported %}
+                  <span class="cra-pill off">{{ _('不支持该赛制') }}</span>
+                {% elif config.publishOnlyAfterEnd and not row.done %}
+                  <span class="cra-pill warn">{{ _('等待比赛结束') }}</span>
+                {% else %}
+                  <span class="cra-pill">{{ _('可发布') }}</span>
+                {% endif %}
+              </td>
+              <td>
+                <a class="button rounded" href="{{ row.ratingUrl }}">{{ _('预览') }}</a>
+                {% if row.canPublish %}
+                <form method="post" style="display:inline">
+                  <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+                  <input type="hidden" name="contestId" value="{{ row.contestId }}">
+                  <button class="button rounded primary" name="operation" value="publish_contest" type="submit">
+                    <span class="icon icon-check"></span> {{ _('发布 Rating') }}
+                  </button>
+                </form>
+                {% endif %}
+                {% if row.canWithdraw %}
+                <form method="post" style="display:inline" onsubmit="return confirm('{{ _('确认撤回这场比赛的 Rating？撤回后会重算相关用户当前 Rating。') }}');">
+                  <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+                  <input type="hidden" name="contestId" value="{{ row.contestId }}">
+                  <button class="button rounded cra-danger" name="operation" value="withdraw_contest" type="submit">
+                    <span class="icon icon-close"></span> {{ _('撤回') }}
+                  </button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% if not contests.length %}
+          <blockquote class="note">{{ _('当前子域暂无比赛。') }}</blockquote>
+        {% endif %}
+      </div>
+      <div class="section__body">
+        {{ paginator.render(contestPage, contestPageCount) }}
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    <div class="section side">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('当前数据') }}</h1>
+      </div>
+      <div class="section__body cra-stat">
+        <span><b>{{ userCount }}</b>{{ _('已有 Rating 用户') }}</span>
+        <span><b>{{ contestCount }}</b>{{ _('已结算比赛') }}</span>
+      </div>
+    </div>
+    <div class="section side">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('段位色') }}</h1>
+      </div>
+      <div class="section__body cra-tier-list">
+        {% for tier in ratingTiers %}
+        <div class="cra-tier">
+          <i style="background: {{ tier.color }}"></i>
+          <span>
+            <b style="color: {{ tier.color }}">{{ tier.title }}</b><br>
+            <small>{{ tier.hint }}</small>
+          </span>
+          <small>{{ tier.min }}+</small>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,90 @@
+'{0} sections': '{0} 章节'
+'{0} success': '{0}成功'
+'Badge color need a color code like #569CD6.': '徽章颜色需要使用像 #569CD6 这样的颜色代码'
+'Badge Rules:': '徽章规则：'
+'By DomainID (Only the recommended)': 由域 ID（只显示被推荐文章）
+'Confirm to {0} the user (UID: {1})?': '确认要{0}用户（UID：{1}）吗？'
+'If already have badge, this will change that.': '如果已有徽章，这里会改变原有徽章。'
+'It will be truncated to a portion of characters and displayed in the list view.': 将在列表页面中截取部分字符显示。
+'No article yet...': 目前没有文章…
+'Sorry, there are no badges.': '抱歉，目前没人拥有徽章'
+'web_safe_colors:': 'WEB安全色：'
+Add Group: 添加小组
+Article ID: 文章 ID
+Article Management: 管理文章
+Article Score: 文章评分
+Article: 文章
+Back to the front: 返回前台
+badge_create: 添加徽章
+badge_manage: 管理徽章
+badge_show: 展示徽章
+Badge: 徽章
+BadgeColor: 徽章颜色
+BadgeText: 徽章文字
+BadgeTextColor: 徽章文字颜色
+block: 屏蔽
+Block: 屏蔽
+blog reply banned: 该博客的评论功能已被管理员禁用
+Blog Status: 博客状态
+By Group: 由小组
+By School: 由学校
+Cheater: 作弊者
+Collapse All Sections: 收起所有章节
+Contest Solution: 题解
+Course: 课程
+Create Course: 创建课程
+Create Section: 添加章
+del badge: 删除徽章
+Delete All User: 清空所有用户
+Disable Solution: 禁用题解
+edit badge: 编辑徽章
+Edit Course: 编辑课程
+Edit Section: 编辑章节
+Edit Subsection: 编辑小节
+Enroll Course: 参加课程
+Groups: 小组
+Hidden or Not: 是否隐藏
+Hint::icon::manage_user_import: "使用方法：\n支持 csv 格式（用 , 分隔）或 Excel 格式（用 TAB 分隔）。\n每行最少三列，最多五列，分别为：邮箱,用户名,密码,显示名,{用户信息}。（显示名和用户信息为可选）\n请使用 UTF-8 编码，否则中文可能会乱码。\n如果使用 CSV 格式（逗号分隔），则用户信息列不可用。\n例如：test@goj.wiki,user1,password1,test,{\"group\":\"class1\",\"studentId\":\"123\",\"school\":\"Genisis OJ\"}\n将创建用户：user1，密码为 password1，邮箱 test@goj.wiki，显示名为 test，学校为 Genisis OJ，学号为 123，该用户将会被分配至当前域的 class1 小组内。"
+Is hidden: 是否隐藏
+manage_users_c: 作弊用户管理
+manage_users: 用户管理
+New Course: 新课程
+New Subsection: 添加小节
+Nice or Not: 是否被推荐
+Nice: 推荐
+No results: 没有搜索结果
+No course yet...: 目前没有课程…
+no file yet...: 目前没有文件...
+no solution yet...: 目前没有题解...
+Hidden: 隐藏
+Loading...: 加载中...
+pin_help-text: 排名权重
+Please select at least one problem.: 请至少选择一道题目。
+Problems added.: 题目已加入。
+Punish Time(Day): 惩罚时间（天）
+results: 个结果
+Score: 评分
+Search failed: 搜索失败
+Search courses...: 搜索课程
+section_help-text: 课程创建后进行添加章节
+sections_list: 章节列表
+sections_s: 小节
+Sections: 章节
+Select Group: 选择小组
+Selected users have been removed from the training.: 所选用户已从此训练中移除。
+Set Blog Status: 设置博客状态
+Show submission status on user profile page: 在用户详情页展示提交状态
+Show Submission Status: 展示提交状态
+Solution updated successfully: 题解成功提交
+Subsec Article: 创建文章
+Subsection: 小节
+Total ScoreBoard: 总分数表
+unblock: 取消屏蔽
+Unblock: 取消屏蔽
+UnLock Time: 解封时间
+Update At: 发布时间
+User Management: 用户管理
+Users With Badge: 有徽章的用户
+View Course: 查看课程
+View Section: 查看章节
+View Subsection: 查看小节

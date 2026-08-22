@@ -1,0 +1,277 @@
+{% extends "layout/basic.html" %}
+
+{% block content %}
+<div class="row">
+  <div class="medium-12 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('Rating Management') }}</h1>
+      </div>
+      
+      <div class="section__body">
+        <!-- 更新用户Rating -->
+        <div class="manage-section">
+          <h3>{{ _('Update User Rating') }}</h3>
+          <form method="post" action="{{ url('rating_manage') }}">
+            <input type="hidden" name="operation" value="update_rating">
+            <div class="row">
+              <div class="medium-6 columns">
+                <label>{{ _('User ID') }}</label>
+                <input type="number" id="uid-input" name="uid" required placeholder="{{ _('Enter user ID') }}">
+                <div id="user-info" style="margin-top: 5px; color: #666; font-size: 14px;"></div>
+              </div>
+              <div class="medium-6 columns">
+                <label>{{ _('Rating Change') }}</label>
+                <input type="number" name="ratingDelta" required placeholder="{{ _('Enter rating change (e.g., +50, -50)') }}" min="-1000" max="1000">
+                <small style="color: #666;">{{ _('Enter positive or negative value (e.g., +50 or -50)') }}</small>
+              </div>
+            </div>
+            <div class="row">
+              <div class="medium-12 columns">
+                <label>{{ _('Contest Name') }}</label>
+                <input type="text" name="contestName" required placeholder="{{ _('Enter contest name') }}">
+              </div>
+            </div>
+            <div class="row">
+              <div class="medium-12 columns">
+                <button type="submit" class="primary button">{{ _('Update Rating') }}</button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <hr>
+
+        <!-- Rating统计信息 -->
+        <div class="manage-section">
+          <h3>{{ _('Rating Statistics') }}</h3>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-title">{{ _('Total Users') }}</div>
+              <div class="stat-value" id="totalUsers">-</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-title">{{ _('Average Rating') }}</div>
+              <div class="stat-value" id="avgRating">-</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-title">{{ _('Highest Rating') }}</div>
+              <div class="stat-value" id="maxRating">-</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-title">{{ _('Active Users (30 days)') }}</div>
+              <div class="stat-value" id="activeUsers">-</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.manage-section {
+  margin-bottom: 30px;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #f9f9f9;
+}
+
+.manage-section h3 {
+  margin-top: 0;
+  color: #333;
+}
+
+.alert {
+  padding: 15px;
+  margin-bottom: 20px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+
+.alert-warning {
+  color: #856404;
+  background-color: #fff3cd;
+  border-color: #ffeaa7;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.stat-card {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+.stat-title {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+}
+
+.button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+.primary.button {
+  background-color: #007bff;
+  color: white;
+}
+
+.secondary.button {
+  background-color: #6c757d;
+  color: white;
+}
+
+.alert.button {
+  background-color: #dc3545;
+  color: white;
+}
+
+.button:hover {
+  opacity: 0.9;
+}
+
+form {
+  margin-bottom: 0;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+input[type="text"], input[type="number"], input[type="file"] {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box;
+  margin-bottom: 15px;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 30px 0;
+}
+.theme--dark .manage-section,
+.theme--dark .stat-card {
+  background: rgba(15, 23, 42, .42);
+  border-color: rgba(148, 163, 184, .26);
+  color: #dbe7f5;
+  box-shadow: none;
+}
+.theme--dark .manage-section h3,
+.theme--dark .stat-value,
+.theme--dark label {
+  color: #e2e8f0;
+}
+.theme--dark .stat-title,
+.theme--dark #user-info,
+.theme--dark small {
+  color: #9fb0c6 !important;
+}
+.theme--dark .alert-warning {
+  background-color: rgba(146, 64, 14, .28);
+  border-color: rgba(251, 191, 36, .36);
+  color: #fcd34d;
+}
+.theme--dark input[type="text"],
+.theme--dark input[type="number"],
+.theme--dark input[type="file"] {
+  background: rgba(15, 23, 42, .56);
+  border-color: rgba(148, 163, 184, .28);
+  color: #e2e8f0;
+}
+.theme--dark hr { border-top-color: rgba(148, 163, 184, .24); }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // 加载统计信息
+  loadStatistics();
+  
+  // 添加用户ID输入框的事件监听
+  const uidInput = document.getElementById('uid-input');
+  const userInfo = document.getElementById('user-info');
+  let debounceTimer;
+  
+  if (uidInput && userInfo) {
+    uidInput.addEventListener('input', function() {
+      clearTimeout(debounceTimer);
+      const uid = this.value.trim();
+      
+      if (!uid) {
+        userInfo.innerHTML = '';
+        return;
+      }
+      
+      // 防抖处理，避免频繁请求
+      debounceTimer = setTimeout(() => {
+        fetchUserInfo(uid);
+      }, 500);
+    });
+  }
+});
+
+async function fetchUserInfo(uid) {
+  const userInfo = document.getElementById('user-info');
+  
+  try {
+    userInfo.innerHTML = '<span style="color: #999;">{{ _("Loading...") }}</span>';
+    
+    const response = await fetch(`/api/user/${uid}/info`);
+    const data = await response.json();
+    
+    if (data.error) {
+      userInfo.innerHTML = `<span style="color: #e74c3c;">{{ _("User not found") }}</span>`;
+    } else {
+      userInfo.innerHTML = `
+        <span style="color: #27ae60;">
+          <strong>${data.displayName}</strong> (${data.username})
+        </span>
+      `;
+    }
+  } catch (error) {
+    console.error('Failed to fetch user info:', error);
+    userInfo.innerHTML = `<span style="color: #e74c3c;">{{ _("Failed to load user info") }}</span>`;
+  }
+}
+
+async function loadStatistics() {
+  try {
+    // 这里应该调用API获取统计信息
+    // 暂时使用模拟数据
+    document.getElementById('totalUsers').textContent = '1,234';
+    document.getElementById('avgRating').textContent = '1,567';
+    document.getElementById('maxRating').textContent = '2,456';
+    document.getElementById('activeUsers').textContent = '456';
+  } catch (error) {
+    console.error('Failed to load statistics:', error);
+  }
+}
+</script>
+{% endblock %}

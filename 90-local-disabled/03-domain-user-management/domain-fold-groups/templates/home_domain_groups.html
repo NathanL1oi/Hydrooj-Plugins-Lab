@@ -1,0 +1,271 @@
+{% extends "layout/home_base.html" %}
+
+{% block home_content %}
+<style>
+.dfg-admin .section__body {
+  padding: 24px 28px 30px;
+}
+.dfg-admin__note {
+  background: var(--hub-surface-soft, rgba(244, 248, 255, .86));
+  border: 1px solid var(--hub-border, #d8e4f2);
+  border-left: 3px solid var(--hub-border, #bfd2e8);
+  border-radius: 8px;
+  color: var(--hub-text, #314b68);
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  backdrop-filter: blur(12px) saturate(145%);
+  -webkit-backdrop-filter: blur(12px) saturate(145%);
+}
+.dfg-admin__error {
+  background: rgba(254, 226, 226, .72);
+  border-color: rgba(248, 113, 113, .45);
+  border-left-color: #ff6b6b;
+  color: #b42318;
+}
+.dfg-admin__lead {
+  align-items: center;
+  color: var(--hub-muted, #6b7a90);
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  line-height: 1.7;
+  margin: 0 0 18px;
+}
+.dfg-admin__table {
+  border-color: var(--hub-border, #d8e4f2);
+}
+.dfg-admin__table td,
+.dfg-admin__table th {
+  border-color: var(--hub-border, #d8e4f2);
+  vertical-align: middle;
+}
+.dfg-admin__domain {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+.dfg-admin__domain-id {
+  background: var(--hub-surface-soft, #eef4fb);
+  border: 1px solid var(--hub-border, #d8e4f2);
+  border-radius: 999px;
+  color: var(--hub-muted, #45627f);
+  font-size: 0.86rem;
+  padding: 2px 8px;
+}
+.dfg-admin__missing {
+  color: #a35b00;
+  font-size: 0.86rem;
+}
+.dfg-admin__input {
+  box-sizing: border-box;
+  width: 100%;
+}
+.dfg-admin .textbox {
+  background: var(--hub-input-bg, #fff);
+  border-color: var(--hub-border, #cbd5e1);
+  color: var(--hub-text, #26354d);
+}
+.dfg-admin__actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+.dfg-admin__advanced {
+  background: var(--hub-surface-soft, rgba(248, 251, 255, .78));
+  border: 1px solid var(--hub-border, #dfeaf5);
+  border-radius: 8px;
+  color: var(--hub-text, #26354d);
+  margin-top: 18px;
+  padding: 14px 16px;
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+}
+.dfg-admin__advanced summary {
+  color: var(--hub-text, #315b86);
+  cursor: pointer;
+  font-weight: 600;
+}
+.dfg-admin__advanced textarea {
+  box-sizing: border-box;
+  margin-top: 12px;
+  min-height: 90px;
+  width: 100%;
+}
+.dfg-admin__empty {
+  color: var(--hub-muted, #7c8797);
+  padding: 28px 0;
+  text-align: center;
+}
+.theme--dark .dfg-admin__note,
+.theme--dark .dfg-admin__advanced {
+  background: var(--hub-surface-soft, rgba(255, 255, 255, .045));
+  border-color: var(--hub-border, rgba(255, 255, 255, .12));
+  color: var(--hub-text, #e2e8f0);
+}
+.theme--dark .dfg-admin__error {
+  background: rgba(127, 29, 29, .34);
+  border-left-color: rgba(248, 113, 113, .74);
+  color: #fca5a5;
+}
+.theme--dark .dfg-admin__lead,
+.theme--dark .dfg-admin__empty {
+  color: var(--hub-muted, #cbd5e1);
+}
+.theme--dark .dfg-admin__domain-id {
+  background: var(--hub-surface-soft, rgba(255, 255, 255, .045));
+  border-color: var(--hub-border, rgba(255, 255, 255, .12));
+  color: var(--hub-muted, #cbd5e1);
+}
+.theme--dark .dfg-admin__missing {
+  color: #fbbf24;
+}
+.theme--dark .dfg-admin__advanced summary {
+  color: var(--hub-text, #e2e8f0);
+}
+.theme--dark .dfg-admin .textbox {
+  background: var(--hub-input-bg, rgba(15, 23, 42, .52));
+  border-color: var(--hub-border, #3a4656);
+  color: var(--hub-text, #e2e8f0);
+}
+html.hydro-user-background-enabled .dfg-admin__note,
+html.hydro-user-background-enabled .dfg-admin__advanced {
+  background: var(--hub-surface-soft) !important;
+  border-color: var(--hub-border) !important;
+  color: var(--hub-text) !important;
+  box-shadow: var(--hub-shadow) !important;
+}
+html.hydro-user-background-enabled .dfg-admin__error {
+  background: rgba(254, 226, 226, .34) !important;
+  border-color: rgba(248, 113, 113, .45) !important;
+  border-left-color: rgba(239, 68, 68, .72) !important;
+  color: #b42318 !important;
+}
+html.hydro-user-background-enabled.theme--dark .dfg-admin__error,
+html.hydro-user-background-enabled .theme--dark .dfg-admin__error {
+  background: rgba(127, 29, 29, .24) !important;
+  border-color: rgba(248, 113, 113, .55) !important;
+  border-left-color: rgba(248, 113, 113, .78) !important;
+  color: #fecaca !important;
+}
+html.hydro-user-background-enabled .dfg-admin__lead,
+html.hydro-user-background-enabled .dfg-admin__empty,
+html.hydro-user-background-enabled .dfg-admin__domain-id {
+  color: var(--hub-muted) !important;
+}
+html.hydro-user-background-enabled .dfg-admin__domain-id {
+  background: var(--hub-input-bg) !important;
+  border-color: var(--hub-border) !important;
+}
+html.hydro-user-background-enabled .dfg-admin .textbox {
+  background: var(--hub-input-bg) !important;
+  border-color: var(--hub-border) !important;
+  color: var(--hub-text) !important;
+}
+html.hydro-user-background-enabled .dfg-admin__table,
+html.hydro-user-background-enabled .dfg-admin__table td,
+html.hydro-user-background-enabled .dfg-admin__table th {
+  border-color: var(--hub-border) !important;
+}
+@media screen and (max-width: 800px) {
+  .dfg-admin .section__body {
+    padding: 20px 18px;
+  }
+  .dfg-admin__lead {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+</style>
+
+<div class="section dfg-admin">
+  <div class="section__header">
+    <h1 class="section__title">域分组</h1>
+    <div class="section__tools">
+      <a class="rounded button" href="{{ url('home_domain') }}">返回我的域</a>
+    </div>
+  </div>
+  <div class="section__body">
+    {% if saved == 'reset' %}
+    <div class="dfg-admin__note">分组已清空，“我的域”将恢复原列表显示。</div>
+    {% elif saved %}
+    <div class="dfg-admin__note">分组配置已保存。返回“我的域”即可看到折叠分组。</div>
+    {% endif %}
+    {% if parseError %}
+    <div class="dfg-admin__note dfg-admin__error">{{ parseError }}</div>
+    {% endif %}
+
+    <form method="post">
+      <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+      <input type="hidden" name="domainCount" value="{{ rows|length }}">
+
+      <div class="dfg-admin__lead">
+        <span>给每个域填写一级和二级分类；一级留空则不分组，自动放到“未分组”。这只是显示折叠，不会创建真实文件夹。</span>
+        <button class="rounded primary button" type="submit" name="groupAction" value="save">保存</button>
+      </div>
+
+      {% if rows|length %}
+      <table class="data-table dfg-admin__table">
+        <thead>
+          <tr>
+            <th style="width: 42%;">域</th>
+            <th style="width: 26%;">一级折叠</th>
+            <th style="width: 26%;">二级折叠</th>
+            <th style="width: 6%;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <td>
+              <input type="hidden" name="domain_{{ loop.index0 }}" value="{{ row.id }}">
+              <div class="dfg-admin__domain">
+                <span>{{ row.name or row.id }}</span>
+                <span class="dfg-admin__domain-id">{{ row.id }}</span>
+                {% if row.missing %}
+                <span class="dfg-admin__missing">不在当前列表</span>
+                {% endif %}
+              </div>
+            </td>
+            <td>
+              <input class="textbox dfg-admin__input" type="text" name="group_{{ loop.index0 }}" value="{{ row.group }}" list="dfg-group-options" placeholder="如：课程开发">
+            </td>
+            <td>
+              <input class="textbox dfg-admin__input" type="text" name="child_{{ loop.index0 }}" value="{{ row.child }}" list="dfg-child-options" placeholder="如：课程分区">
+            </td>
+            <td>
+              <button class="rounded button dfg-clear-row" type="button" title="清空本行">清空</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="dfg-admin__empty">当前账号没有可分组的域。</div>
+      {% endif %}
+
+      <datalist id="dfg-group-options">
+        {% for title in groupTitles %}
+        <option value="{{ title }}">
+        {% endfor %}
+      </datalist>
+      <datalist id="dfg-child-options">
+        {% for title in childTitles %}
+        <option value="{{ title }}">
+        {% endfor %}
+      </datalist>
+
+      <details class="dfg-admin__advanced">
+        <summary>批量补充</summary>
+        <textarea class="textbox" name="extraRules" placeholder="课程开发 / 课程分区: JC01, K2026&#10;课程开发 / 比赛分区: bs001, cs001"></textarea>
+      </details>
+
+      <div class="dfg-admin__actions">
+        <button class="rounded primary button" type="submit" name="groupAction" value="save">保存分组</button>
+        <button class="rounded button" type="submit" name="groupAction" value="reset">清空全部</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

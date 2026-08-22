@@ -1,0 +1,623 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+{% set cleanTaskTitle = task.title|default('')|trim %}
+{% set cleanTaskContent = task.content|default('')|trim %}
+{% set hasTaskContent = cleanTaskContent and cleanTaskContent != '##' %}
+<style>
+.csp-submit {
+  --csp-accent: #2563eb;
+  --csp-line: #e5edf7;
+  --csp-soft: #f8fbff;
+  --csp-ink: #17324d;
+  --csp-muted: #64748b;
+  color: #24364b;
+}
+.csp-submit .csp-shell,
+.csp-submit .csp-main,
+.csp-submit .csp-side { display: grid; gap: 16px; }
+.csp-submit .csp-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 18px;
+  align-items: start;
+}
+.csp-submit .csp-main,
+.csp-submit .csp-side { min-width: 0; }
+.csp-submit .csp-side { position: sticky; top: calc(2.8125rem + 12px); }
+.csp-submit .csp-main > .section,
+.csp-submit .csp-side > .section { margin-bottom: 0; }
+.csp-submit .csp-panel { overflow: hidden; border-radius: 8px; }
+.csp-submit .csp-panel .section__title { color: var(--csp-ink); }
+.csp-submit .csp-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.csp-submit .csp-title {
+  margin: 0 0 6px;
+  color: var(--csp-ink);
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+.csp-submit .csp-subtitle,
+.csp-submit .csp-muted { color: var(--csp-muted); }
+.csp-submit .csp-badges,
+.csp-submit .csp-actions,
+.csp-submit .csp-ai-meta,
+.csp-submit .csp-content-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.csp-submit .csp-badge,
+.csp-submit .csp-pill,
+.csp-submit .csp-ai-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #eef7ff;
+  color: #0b66c3;
+  font-size: 12px;
+  font-weight: 700;
+}
+.csp-submit .csp-badge--ok { background: #ecfdf5; color: #047857; }
+.csp-submit .csp-badge--warn { background: #fff7ed; color: #b45309; }
+.csp-submit .csp-badge--danger { background: #fef2f2; color: #b91c1c; }
+.csp-submit .csp-badge--excellent { background: #fff0f6; color: #c2255c; }
+.csp-submit .csp-editor-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 12px;
+}
+.csp-submit .csp-editor-heading h2 { margin: 0; color: var(--csp-ink); font-size: 16px; font-weight: 800; }
+.csp-submit textarea.csp-editor { min-height: 460px; line-height: 1.75; }
+.csp-submit .csp-editor-form { display: flex; flex-direction: column; }
+.csp-submit .csp-editor-form > div:not(.csp-actions) { order: 2; }
+.csp-submit .csp-editor-form > .csp-actions { order: 3; }
+.csp-submit .csp-actions { margin-top: 12px; }
+.csp-submit .csp-facts { display: grid; gap: 0; margin: 0; }
+.csp-submit .csp-fact {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--csp-line);
+}
+.csp-submit .csp-fact:first-child { padding-top: 0; }
+.csp-submit .csp-fact:last-child { padding-bottom: 0; border-bottom: 0; }
+.csp-submit .csp-fact dt,
+.csp-submit .csp-fact dd { margin: 0; }
+.csp-submit .csp-fact dt { color: var(--csp-muted); font-size: 13px; }
+.csp-submit .csp-fact dd { color: var(--csp-ink); font-weight: 700; overflow-wrap: anywhere; }
+.csp-submit .csp-side-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.csp-submit .csp-guide { color: #334155; line-height: 1.75; }
+.csp-submit .csp-reference { margin: 0; }
+.csp-submit .csp-reference summary { cursor: pointer; color: var(--csp-accent); font-weight: 700; }
+.csp-submit .csp-reference-body { display: grid; gap: 12px; margin-top: 12px; color: #334155; line-height: 1.75; }
+.csp-submit .csp-reference-divider { border-top: 1px solid var(--csp-line); }
+.csp-submit .csp-status-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.csp-submit .csp-status-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+.csp-submit .csp-status-grid > .csp-stat:last-child:nth-child(odd) { grid-column: 1 / -1; }
+.csp-submit .csp-stat {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--csp-line);
+  border-radius: 8px;
+  background: var(--csp-soft);
+}
+.csp-submit .csp-stat span { color: var(--csp-muted); font-size: 12px; }
+.csp-submit .csp-stat strong { color: var(--csp-ink); font-size: 20px; line-height: 1.2; overflow-wrap: anywhere; }
+.csp-submit .csp-ok { color: #15803d; }
+.csp-submit .csp-warn { color: #b45309; }
+.csp-submit .csp-ai-box {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  background: var(--csp-soft);
+}
+.csp-submit .csp-ai-box h3 { margin: 0; color: var(--csp-ink); font-size: 15px; font-weight: 700; line-height: 1.45; }
+.csp-submit .csp-ai-meta { row-gap: 6px; }
+.csp-submit .csp-ai-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.csp-submit .csp-ai-columns > .csp-ai-section:only-child { grid-column: 1 / -1; }
+.csp-submit .csp-ai-section { display: grid; gap: 8px; min-width: 0; }
+.csp-submit .csp-ai-text { margin: 0; color: #25364d; font-size: 14px; line-height: 1.85; white-space: pre-wrap; overflow-wrap: anywhere; }
+.csp-submit .csp-ai-list { display: grid; gap: 6px; margin: 0; padding-left: 20px; color: #25364d; font-size: 14px; line-height: 1.7; }
+.csp-submit .csp-ai-list li { margin: 0; padding-left: 2px; }
+.csp-submit .csp-suggestions { display: grid; gap: 12px; }
+.csp-submit .csp-ai-suggestion {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--csp-line);
+  border-radius: 8px;
+  background: #fff;
+}
+.csp-submit .csp-ai-suggestion-title { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; color: var(--csp-ink); font-weight: 800; }
+.csp-submit .csp-ai-quote { padding: 10px 12px; border: 1px solid var(--csp-line); border-radius: 8px; background: #f8fafc; color: #475569; }
+.csp-submit .csp-ai-refresh { margin: 0; }
+.csp-submit .csp-content-tools { margin-bottom: 12px; }
+.csp-submit .csp-content-view[hidden] { display: none; }
+.csp-submit .csp-content-annotated blockquote { margin: 10px 0; padding: 8px 10px; border-left: 4px solid #38bdf8; border-radius: 6px; background: #f0f9ff; }
+.csp-submit .md-editor { border-radius: 8px; overflow: hidden; }
+.csp-submit .md-editor .cm-editor { min-height: 460px; }
+.csp-submit .md-editor .cm-editor,
+.csp-submit .md-editor .cm-scroller,
+.csp-submit .md-editor .cm-content,
+.csp-submit .md-editor .cm-line {
+  background: #fff;
+  color: #0f172a;
+  caret-color: #2563eb;
+}
+.csp-submit .md-editor .cm-cursor,
+.csp-submit .md-editor .cm-dropCursor {
+  border-left-color: #2563eb !important;
+}
+.theme--dark .csp-submit {
+  --csp-line: #303a48;
+  --csp-soft: #1f242c;
+  --csp-ink: #e2e8f0;
+  --csp-muted: #94a3b8;
+  color: #cbd5e1;
+}
+.theme--dark .csp-submit .csp-muted { color: var(--csp-muted); }
+.theme--dark .csp-submit .csp-reference summary { color: #93c5fd; }
+.theme--dark .csp-submit .csp-title,
+.theme--dark .csp-submit .csp-panel .section__title,
+.theme--dark .csp-submit .csp-editor-heading h2,
+.theme--dark .csp-submit .csp-fact dd,
+.theme--dark .csp-submit .csp-stat strong,
+.theme--dark .csp-submit .csp-ai-box h3,
+.theme--dark .csp-submit .csp-ai-suggestion-title { color: #e2e8f0; }
+.theme--dark .csp-submit .csp-fact,
+.theme--dark .csp-submit .csp-reference-divider { border-color: #303a48; }
+.theme--dark .csp-submit .csp-guide,
+.theme--dark .csp-submit .csp-reference-body,
+.theme--dark .csp-submit .csp-ai-text,
+.theme--dark .csp-submit .csp-ai-list { color: #cbd5e1; }
+.theme--dark .csp-submit .csp-pill,
+.theme--dark .csp-submit .csp-badge,
+.theme--dark .csp-submit .csp-ai-tag {
+  background: rgba(59, 130, 246, .22);
+  color: #bfdbfe;
+}
+.theme--dark .csp-submit .csp-badge--ok { background: rgba(22, 101, 52, .32); color: #86efac; }
+.theme--dark .csp-submit .csp-badge--warn { background: rgba(146, 64, 14, .34); color: #fcd34d; }
+.theme--dark .csp-submit .csp-badge--danger { background: rgba(153, 27, 27, .32); color: #fca5a5; }
+.theme--dark .csp-submit .csp-badge--excellent { background: rgba(157, 23, 77, .30); color: #f9a8d4; }
+.theme--dark .csp-submit .csp-ok { color: #4ade80; }
+.theme--dark .csp-submit .csp-warn { color: #fbbf24; }
+.theme--dark .csp-submit .csp-ai-box,
+.theme--dark .csp-submit .csp-ai-suggestion,
+.theme--dark .csp-submit .csp-ai-quote,
+.theme--dark .csp-submit .csp-stat,
+.theme--dark .csp-submit .csp-content-annotated blockquote {
+  background: #1f242c;
+  border-color: #303a48;
+  color: #dbe7f5;
+}
+.theme--dark .csp-submit .md-editor,
+.theme--dark .csp-submit .md-editor .cm-editor,
+.theme--dark .csp-submit .md-editor .cm-scroller,
+.theme--dark .csp-submit .md-editor .cm-content,
+.theme--dark .csp-submit .md-editor .cm-line {
+  background: rgba(15, 23, 42, .72) !important;
+  color: #e5eef9 !important;
+  caret-color: #93c5fd !important;
+}
+.theme--dark .csp-submit .md-editor {
+  border: 1px solid rgba(148, 163, 184, .24);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, .24);
+}
+.theme--dark .csp-submit .md-editor .cm-gutters {
+  background: rgba(15, 23, 42, .82) !important;
+  border-color: rgba(148, 163, 184, .24) !important;
+  color: #94a3b8 !important;
+}
+.theme--dark .csp-submit .md-editor .cm-activeLine,
+.theme--dark .csp-submit .md-editor .cm-activeLineGutter {
+  background: rgba(96, 165, 250, .13) !important;
+}
+.theme--dark .csp-submit .md-editor .cm-cursor,
+.theme--dark .csp-submit .md-editor .cm-dropCursor {
+  border-left-color: #93c5fd !important;
+}
+.theme--dark .csp-submit .md-editor .cm-selectionBackground,
+.theme--dark .csp-submit .md-editor ::selection {
+  background: rgba(59, 130, 246, .38) !important;
+}
+.theme--dark .csp-submit .md-editor .cm-placeholder {
+  color: #94a3b8 !important;
+}
+.theme--dark .csp-submit .md-editor .md-editor-toolbar-wrapper,
+.theme--dark .csp-submit .md-editor .md-editor-toolbar,
+.theme--dark .csp-submit .md-editor .md-editor-toolbar-item,
+.theme--dark .csp-submit .md-editor .md-editor-resize-operate,
+.theme--dark .csp-submit .md-editor .md-editor-preview,
+.theme--dark .csp-submit .md-editor .md-editor-preview-wrapper {
+  background: rgba(15, 23, 42, .66) !important;
+  border-color: rgba(148, 163, 184, .24) !important;
+  color: #e5eef9 !important;
+}
+html.hydro-user-background-enabled .csp-submit .csp-ai-box,
+html.hydro-user-background-enabled .csp-submit .csp-ai-suggestion,
+html.hydro-user-background-enabled .csp-submit .csp-ai-quote,
+html.hydro-user-background-enabled .csp-submit .csp-content-annotated blockquote,
+html.hydro-user-background-enabled .csp-submit .csp-stat {
+  background: var(--hub-surface-soft) !important;
+  border-color: var(--hub-border) !important;
+  color: var(--hub-text) !important;
+}
+html.hydro-user-background-enabled .csp-submit .csp-title,
+html.hydro-user-background-enabled .csp-submit .csp-panel .section__title,
+html.hydro-user-background-enabled .csp-submit .csp-editor-heading h2,
+html.hydro-user-background-enabled .csp-submit .csp-fact dd,
+html.hydro-user-background-enabled .csp-submit .csp-stat strong,
+html.hydro-user-background-enabled .csp-submit .csp-ai-box h3,
+html.hydro-user-background-enabled .csp-submit .csp-ai-suggestion-title,
+html.hydro-user-background-enabled .csp-submit .csp-guide,
+html.hydro-user-background-enabled .csp-submit .csp-reference-body,
+html.hydro-user-background-enabled .csp-submit .csp-ai-text,
+html.hydro-user-background-enabled .csp-submit .csp-ai-list { color: var(--hub-text) !important; }
+html.hydro-user-background-enabled .csp-submit .csp-muted,
+html.hydro-user-background-enabled .csp-submit .csp-subtitle,
+html.hydro-user-background-enabled .csp-submit .csp-fact dt,
+html.hydro-user-background-enabled .csp-submit .csp-stat span { color: var(--hub-muted) !important; }
+html.hydro-user-background-enabled .csp-submit .csp-reference summary { color: var(--hub-text) !important; }
+html.hydro-user-background-enabled .csp-submit .csp-fact,
+html.hydro-user-background-enabled .csp-submit .csp-reference-divider { border-color: var(--hub-border) !important; }
+html.hydro-user-background-enabled .csp-submit .md-editor {
+  background: var(--hub-input-bg) !important;
+  border-color: var(--hub-border) !important;
+  box-shadow: none !important;
+}
+html.hydro-user-background-enabled .csp-submit .md-editor .cm-editor,
+html.hydro-user-background-enabled .csp-submit .md-editor .cm-scroller,
+html.hydro-user-background-enabled .csp-submit .md-editor .cm-content,
+html.hydro-user-background-enabled .csp-submit .md-editor .cm-line {
+  background: transparent !important;
+  color: var(--hub-text) !important;
+}
+html.hydro-user-background-enabled .csp-submit .md-editor .cm-gutters,
+html.hydro-user-background-enabled .csp-submit .md-editor .md-editor-toolbar-wrapper,
+html.hydro-user-background-enabled .csp-submit .md-editor .md-editor-toolbar,
+html.hydro-user-background-enabled .csp-submit .md-editor .md-editor-toolbar-item,
+html.hydro-user-background-enabled .csp-submit .md-editor .md-editor-resize-operate,
+html.hydro-user-background-enabled .csp-submit .md-editor .md-editor-preview,
+html.hydro-user-background-enabled .csp-submit .md-editor .md-editor-preview-wrapper {
+  background: var(--hub-surface-soft) !important;
+  border-color: var(--hub-border) !important;
+  color: var(--hub-text) !important;
+}
+html.hydro-user-background-enabled .csp-submit .md-editor .cm-activeLine,
+html.hydro-user-background-enabled .csp-submit .md-editor .cm-activeLineGutter { background: var(--hub-nav-hover) !important; }
+html.hydro-user-background-enabled .csp-submit .md-editor .cm-selectionBackground,
+html.hydro-user-background-enabled .csp-submit .md-editor ::selection { background: var(--hub-accent-soft) !important; }
+@media screen and (max-width: 960px) {
+  .csp-submit .csp-grid { grid-template-columns: 1fr; }
+  .csp-submit .csp-side { position: static; }
+}
+@media screen and (max-width: 640px) {
+  .csp-submit .csp-ai-columns,
+  .csp-submit .csp-status-grid { grid-template-columns: 1fr; }
+  .csp-submit .csp-actions .button { width: 100%; justify-content: center; }
+  .csp-submit textarea.csp-editor,
+  .csp-submit .md-editor .cm-editor { min-height: 400px; }
+}
+</style>
+<div class="row csp-submit">
+  <div class="medium-12 columns">
+    <div class="csp-shell">
+      <div class="csp-grid">
+        <main class="csp-main">
+          <section class="section csp-panel">
+            <div class="section__header">
+              <div class="csp-head">
+                <div>
+                  <h1 class="section__title csp-title">{% if cleanTaskTitle and cleanTaskTitle != '##' %}{{ cleanTaskTitle }}{% else %}{{ _('课程小结') }}{% endif %}</h1>
+                  <div class="csp-subtitle">{{ targetTitle }}</div>
+                </div>
+                <div class="csp-badges">
+                  {% if submit %}
+                  <span class="csp-badge {% if submit.status == 'late' %}csp-badge--warn{% else %}csp-badge--ok{% endif %}">
+                    {% if submit.status == 'late' %}{{ _('补交') }}{% else %}{{ _('已提交') }}{% endif %}
+                  </span>
+                  {% else %}
+                  <span class="csp-badge">{{ _('待完成') }}</span>
+                  {% endif %}
+                  {% if submit and submit.excellent %}<span class="csp-badge csp-badge--excellent">{{ _('优秀小结') }}</span>{% endif %}
+                </div>
+              </div>
+            </div>
+            <div class="section__body">
+              <div class="csp-editor-heading">
+                <h2>{{ _('我的小结') }}</h2>
+                <span class="csp-muted">支持 Markdown</span>
+              </div>
+              <form class="csp-editor-form" method="post">
+                <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+                <textarea name="content" class="textbox csp-editor" data-markdown>{{ submit.content if submit else '' }}</textarea>
+                <div class="csp-actions">
+                  <button class="button rounded primary" type="submit">
+                    <span class="icon icon-save"></span> {{ _('提交小结') }}
+                  </button>
+                  <a class="button rounded" href="{{ backUrl }}">
+                    <span class="icon icon-back"></span> {{ _('返回课程') }}
+                  </a>
+                  {% if manageUrl %}
+                  <a class="button rounded" href="{{ manageUrl }}">
+                    <span class="icon icon-statistics"></span> {{ _('批改入口') }}
+                  </a>
+                  {% endif %}
+                </div>
+              </form>
+            </div>
+          </section>
+
+          {% if submit and submit.evaluationStatus %}
+          <section class="section csp-panel">
+            <div class="section__header">
+              <div class="csp-head">
+                <h1 class="section__title">AI 批改</h1>
+                <div class="csp-ai-meta">
+                  <span class="csp-badge {% if submit.evaluationStatus == 'succeeded' %}csp-badge--ok{% elif submit.evaluationStatus == 'failed' or submit.evaluationStatus == 'failed_to_submit' %}csp-badge--danger{% endif %}">{{ submit.evaluationStatusText }}</span>
+                  {% if submit.evaluationScore != null %}<span class="csp-badge">{{ submit.evaluationScore }} 分</span>{% endif %}
+                  {% if submit.evaluationResult and submit.evaluationResult.summary and submit.evaluationResult.summary.level %}
+                  <span class="csp-badge">{{ submit.evaluationResult.summary.level }}</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            <div class="section__body">
+              <div class="csp-ai-box">
+                {% if submit.evaluationError %}
+                <blockquote class="note csp-warn">{{ submit.evaluationError }}</blockquote>
+                {% endif %}
+                {% if submit.evaluationResult and submit.evaluationResult.summary %}
+                  {% if submit.evaluationResult.summary.overall %}
+                  <div class="csp-ai-section">
+                    <h3>总评</h3>
+                    <p class="csp-ai-text">{{ submit.evaluationResult.summary.overall }}</p>
+                  </div>
+                  {% endif %}
+                  {% if submit.evaluationResult.summary.strengths and submit.evaluationResult.summary.strengths.length or submit.evaluationResult.summary.weaknesses and submit.evaluationResult.summary.weaknesses.length %}
+                  <div class="csp-ai-columns">
+                    {% if submit.evaluationResult.summary.strengths and submit.evaluationResult.summary.strengths.length %}
+                    <div class="csp-ai-section">
+                      <h3>优点</h3>
+                      <ul class="csp-ai-list">
+                        {% for item in submit.evaluationResult.summary.strengths %}<li>{{ item }}</li>{% endfor %}
+                      </ul>
+                    </div>
+                    {% endif %}
+                    {% if submit.evaluationResult.summary.weaknesses and submit.evaluationResult.summary.weaknesses.length %}
+                    <div class="csp-ai-section">
+                      <h3>不足</h3>
+                      <ul class="csp-ai-list">
+                        {% for item in submit.evaluationResult.summary.weaknesses %}<li>{{ item }}</li>{% endfor %}
+                      </ul>
+                    </div>
+                    {% endif %}
+                  </div>
+                  {% endif %}
+                {% else %}
+                <p class="csp-muted">评测结果生成后会显示在这里。</p>
+                {% endif %}
+
+                {% if submit.evaluationResult and submit.evaluationResult.suggestions and submit.evaluationResult.suggestions.length %}
+                <div class="csp-ai-section">
+                  <h3>内容整改建议</h3>
+                  <div class="csp-suggestions">
+                    {% for item in submit.evaluationResult.suggestions %}
+                    <div class="csp-ai-suggestion">
+                      <div class="csp-ai-suggestion-title">
+                        <span>建议 {{ item.displayIndex }}</span>
+                        <span class="csp-ai-tag">{{ item.typeText }}</span>
+                        {% if item.priorityText %}<span class="csp-ai-tag">{{ item.priorityText }}</span>{% endif %}
+                      </div>
+                      {% if item.comment %}<p class="csp-ai-text">{{ item.comment }}</p>{% endif %}
+                      {% if item.original %}<div class="csp-ai-quote"><strong>原文：</strong><div class="typo richmedia">{{ item.original|markdown|safe }}</div></div>{% endif %}
+                      {% if item.suggestion %}<div class="csp-ai-quote"><strong>建议改为：</strong><div class="typo richmedia">{{ item.suggestion|markdown|safe }}</div></div>{% endif %}
+                      {% if item.anchor_text %}<p class="csp-muted">位置参考：{{ item.anchor_text }}</p>{% endif %}
+                    </div>
+                    {% endfor %}
+                  </div>
+                </div>
+                {% endif %}
+
+                {% if submit.evaluationId %}
+                <form class="csp-ai-refresh" method="post" action="{{ refreshUrl }}">
+                  <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+                  <button class="button rounded small" type="submit"><span class="icon icon-refresh"></span> 刷新 AI 结果</button>
+                </form>
+                {% endif %}
+              </div>
+            </div>
+          </section>
+          {% endif %}
+
+          {% if submit and submit.hasInlineSuggestions %}
+          <section class="section csp-panel csp-summary-review">
+            <div class="section__header">
+              <h1 class="section__title">AI 整改稿</h1>
+            </div>
+            <div class="section__body">
+              <div class="csp-content-tools">
+                <button class="button rounded small csp-toggle-suggestions" type="button">显示修改建议</button>
+                <button class="button rounded small csp-copy-revision" type="button">复制整改稿</button>
+              </div>
+              <textarea class="csp-revised-source" hidden>{{ submit.revisedContent }}</textarea>
+              <div class="typo richmedia csp-content-view csp-content-original">
+                {{ submit.content|markdown|safe }}
+              </div>
+              <div class="typo richmedia csp-content-view csp-content-annotated" hidden>
+                {{ submit.annotatedContent|markdown|safe }}
+              </div>
+            </div>
+          </section>
+          {% endif %}
+
+          {% if submit and submit.comment %}
+          <section class="section csp-panel">
+            <div class="section__header">
+              <h1 class="section__title">{{ _('教师评语') }}</h1>
+            </div>
+            <div class="section__body typo richmedia">
+              {{ submit.comment|markdown|safe }}
+            </div>
+          </section>
+          {% endif %}
+        </main>
+
+        <aside class="csp-side">
+          <section class="section csp-panel">
+            <div class="section__header">
+              <h1 class="section__title">{{ _('任务信息') }}</h1>
+            </div>
+            <div class="section__body">
+              <dl class="csp-facts">
+                <div class="csp-fact">
+                  <dt>{{ _('位置') }}</dt>
+                  <dd>{{ targetTitle }}</dd>
+                </div>
+                <div class="csp-fact">
+                  <dt>{{ _('截止') }}</dt>
+                  <dd>{% if task.deadline %}{{ datetimeSpan(task.deadline)|safe }}{% else %}{{ _('不限') }}{% endif %}</dd>
+                </div>
+                <div class="csp-fact">
+                  <dt>{{ _('最低字数') }}</dt>
+                  <dd>{{ task.minWords }}</dd>
+                </div>
+                <div class="csp-fact">
+                  <dt>{{ _('默认积分') }}</dt>
+                  <dd>{{ task.defaultPoints }}</dd>
+                </div>
+              </dl>
+              {% if task.allowLate or task.dailyReminder %}
+              <div class="csp-side-pills">
+                {% if task.allowLate %}<span class="csp-pill">{{ _('允许补交') }}</span>{% endif %}
+                {% if task.dailyReminder %}<span class="csp-pill">{{ _('每日提醒') }}</span>{% endif %}
+              </div>
+              {% endif %}
+            </div>
+          </section>
+
+          {% if hasTaskContent or referenceText %}
+          <section class="section csp-panel">
+            <div class="section__header">
+              <h1 class="section__title">写作参考</h1>
+            </div>
+            <div class="section__body">
+              <details class="csp-reference">
+                <summary>{% if hasTaskContent %}查看写作要求与课程资料{% else %}查看课程与小节资料{% endif %}</summary>
+                <div class="csp-reference-body">
+                  {% if hasTaskContent %}<div class="typo richmedia csp-guide">{{ task.content|markdown|safe }}</div>{% endif %}
+                  {% if hasTaskContent and referenceText %}<div class="csp-reference-divider"></div>{% endif %}
+                  {% if referenceText %}<div class="typo richmedia">{{ referenceText|markdown|safe }}</div>{% endif %}
+                </div>
+              </details>
+            </div>
+          </section>
+          {% endif %}
+
+          <section class="section csp-panel">
+            <div class="section__header">
+              <h1 class="section__title">{{ _('提交状态') }}</h1>
+            </div>
+            <div class="section__body">
+              {% if submit %}
+              <div class="csp-status-head">
+                <span class="csp-badge {% if submit.status == 'late' %}csp-badge--warn{% else %}csp-badge--ok{% endif %}">
+                  {% if submit.status == 'late' %}{{ _('补交') }}{% else %}{{ _('已提交') }}{% endif %}
+                </span>
+                {% if submit.excellent %}<span class="csp-badge csp-badge--excellent">{{ _('优秀小结') }}</span>{% endif %}
+              </div>
+              <div class="csp-status-grid">
+                <div class="csp-stat">
+                  <span>{{ _('字数') }}</span>
+                  <strong>{{ submit.displayWordCount if submit.displayWordCount != null else submit.wordCount }}</strong>
+                </div>
+                <div class="csp-stat">
+                  <span>{{ _('积分') }}</span>
+                  <strong>{{ submit.awardedPoints|default(0) }}</strong>
+                </div>
+                {% if submit.evaluationScore != null %}
+                <div class="csp-stat">
+                  <span>AI 分数</span>
+                  <strong>{{ submit.evaluationScore }}</strong>
+                </div>
+                {% endif %}
+                {% if submit.evaluationResult and submit.evaluationResult.summary and submit.evaluationResult.summary.level %}
+                <div class="csp-stat">
+                  <span>AI 等级</span>
+                  <strong>{{ submit.evaluationResult.summary.level }}</strong>
+                </div>
+                {% endif %}
+              </div>
+              {% if submit.evaluationStatus %}<p class="csp-muted" style="margin:12px 0 0;">AI：{{ submit.evaluationStatusText }}</p>{% endif %}
+              {% else %}
+              <p class="csp-muted">{{ _('尚未提交') }}</p>
+              {% endif %}
+            </div>
+          </section>
+
+        </aside>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  function copyText(text, button) {
+    var done = function () {
+      var old = button.textContent;
+      button.textContent = '已复制';
+      setTimeout(function () { button.textContent = old; }, 1200);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done);
+      return;
+    }
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    done();
+  }
+  document.addEventListener('click', function (event) {
+    var toggle = event.target.closest && event.target.closest('.csp-toggle-suggestions');
+    if (toggle) {
+      var box = toggle.closest('.csp-summary-review');
+      var original = box.querySelector('.csp-content-original');
+      var annotated = box.querySelector('.csp-content-annotated');
+      var showing = !annotated.hidden;
+      annotated.hidden = showing;
+      original.hidden = !showing;
+      toggle.textContent = showing ? '显示修改建议' : '隐藏修改建议';
+      return;
+    }
+    var copy = event.target.closest && event.target.closest('.csp-copy-revision');
+    if (copy) {
+      var source = copy.closest('.csp-summary-review').querySelector('.csp-revised-source');
+      copyText(source ? source.value : '', copy);
+    }
+  });
+})();
+</script>
+{% endblock %}

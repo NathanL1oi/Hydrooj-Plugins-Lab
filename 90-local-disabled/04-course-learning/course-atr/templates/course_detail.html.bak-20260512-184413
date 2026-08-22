@@ -1,0 +1,62 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+{{ set(UiContext, 'cid', cdoc.docId) }}
+<div class="row" data-sticky-parent>
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+          <h1 class="section__title"><a href="{{ url('course_detail', cid=cdoc.docId) }}">{{ _('Course') }}: {{ cdoc['title'] }}</a></h1>
+      </div>
+      <!-- <div class="section__body">
+          {{ cdoc['title'] }}
+      </div> -->
+    </div>
+    <div class="section">
+      <div class="section__body typo richmedia">
+        {{ cdoc.content|default('')|markdown|safe }}
+      </div>
+    </div>
+    <div class="section">
+      {% include "partials/course_detail.html" %}
+    </div>
+  </div>
+  <div class="medium-3 columns" data-sticky="large">
+    <div class="section side">
+      <div>
+        <ol class="menu">
+        {% if not cstdoc['enroll'] and handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+          <li class="menu__item">
+            <form action="" method="POST">
+              <input type="hidden" name="operation" value="enroll">
+              <button class="menu__link" type="submit">
+                <span class="icon icon-add"></span> {{ _('Enroll Course') }}
+              </button>
+            </form>
+          </li>
+        {% endif %}
+        {% if handler.user.hasPerm(perm.PERM_EDIT_TRAINING) %}
+          <li class="menu__item"><a class="menu__link" href="{{ url('course_edit', cid=cdoc.docId) }}">
+            <span class="icon icon-edit"></span>  {{ _('Edit') }}
+          </a></li>
+          <li class="menu__item"><a class="menu__link" href="{{ url('course_section_create', cid=cdoc.docId) }}">
+            <span class="icon icon-edit"></span> {{ _('Create Section') }}
+          </a></li>
+        {% endif %}
+          <li class="menu__seperator"></li>
+        </ol>
+      </div>
+      <div class="section__body typo">
+        <dl class="large horizontal">
+          <dt>{{ _('Created By') }}</dt>
+          <dd>{{ user.render_inline(udoc, badge=false) }}</dd>
+        </dl>
+      </div>
+    </div>
+    <div class="section side">
+      <ol class="menu">
+        {{ sidemenu.render_item('list', 'course_detail', {cid:cdoc._id}, label='sections_list', menu_item='course_detail') }}
+      </ol>
+    </div>
+  </div>
+</div>
+{% endblock %}

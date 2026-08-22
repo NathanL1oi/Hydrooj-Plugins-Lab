@@ -1,0 +1,126 @@
+{% import "components/nothing.html" as nothing with context %}
+{% import "components/paginator.html" as paginator with context %}
+{% extends "manage_base.html" %}
+{% block manage_content %}
+<div class="section">
+    <div class="section__header">
+        <h1 class="section__title">{{ _('manage_messages') }}</h1>
+        <div class="section__tools">
+        </div>
+    </div>
+    <div class="section__body no-padding">
+        {% if not mdocs.length %}
+        {{ nothing.render('没有消息！') }}
+        {% else %}
+            <div class="message-list">
+                {%- for mdoc in mdocs -%}
+                <div class="message-card">
+                    <div class="message-header">
+                        <div class="message-meta">
+                            <span class="text-gray">{{ datetimeSpan(mdoc._id)|safe }}</span>
+                            <span class="message-flag">{{ _('Flag') }}：{{ mdoc.flag }}</span>
+                        </div>
+                        <div class="message-users">
+                            <div class="message-user">
+                                <span class="user-label">{{ _('发送者') }}：</span>
+                                <a href="{{ url('manage_messages',query={uid:mdoc.from}) }}" class="recipient-item">{{ user.render_inline(udict[mdoc.from],badge=false,inline=false) }}</a>
+                            </div>
+                            <div class="message-user">
+                                <span class="user-label">{{ _('接收者') }}：</span>
+                                <div class="recipients">
+                                    {% if mdoc.to is iterable and mdoc.to is not string %}
+                                        {% for to_uid in mdoc.to %}
+                                            <a href="{{ url('manage_messages',query={uid:to_uid}) }}" class="recipient-item">
+                                                {{ user.render_inline(udict[to_uid],badge=false,inline=false) }}
+                                            </a>
+                                        {% endfor %}
+                                    {% else %}
+                                        <a href="{{ url('manage_messages',query={uid:mdoc.to}) }}" class="recipient-item">
+                                            {{ user.render_inline(udict[mdoc.to],badge=false,inline=false) }}
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="messagepad__message__body collapsible-content"><pre>{{ mdoc.content }}</pre></div>
+                    <form method="post">
+                         <input type="hidden" name="id" value="{{ mdoc._id }}">
+                         <div class="float-right">
+                             <button name="operation" value="delete" type="submit" class="rounded button">
+                                 <span class="icon icon-delete">{{ _('Delete') }}</span>
+                             </button>
+                         </div>
+                    </form>
+                </div>
+                {%- endfor -%}
+            </div>
+            {{ paginator.render(page, upcount,add_qs=('uid=' + uid)) }}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+{% block script %}
+<style>
+/* 添加卡片式布局样式 */
+.message-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.message-card {
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    position: relative;
+}
+
+.message-header {
+    margin-bottom: 1rem;
+}
+
+.message-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+}
+
+.message-users {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.message-user {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.user-label {
+    flex-shrink: 0;
+    font-weight: 500;
+    min-width: 60px;
+}
+
+.recipients {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.recipient-item {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    background: var(--hover-bg);
+    border-radius: 4px;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+</style>
+{% endblock %}

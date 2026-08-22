@@ -1,0 +1,37 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">{{ _('Course Unlock Rule') }}</h1>
+  </div>
+  <div class="section__body no-padding">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>课程</th>
+          <th>是否开启</th>
+          <th>完成要求</th>
+          <th>前置范围</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td><a href="{{ url('course_detail', cid=row.cidText) }}">{{ row.cdoc.title }}</a></td>
+          <td>{{ '开启' if row.rule.enabled else '关闭' }}</td>
+          <td>{{ row.rule.requiredRate }}%</td>
+          <td>{{ '跨章节取上一章节最后小节' if row.rule.mode == 'previous-section' else '上一小节' }}</td>
+          <td>
+            <a class="rounded button" href="{{ url('course_unlock_rule_setting', cid=row.cidText) }}">设置</a>
+            <a class="rounded button" href="{{ url('course_unlock_rule_status', cid=row.cidText) }}">查看状态</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5">暂无课程。</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

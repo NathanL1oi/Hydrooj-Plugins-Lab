@@ -1,0 +1,89 @@
+{% if handler.user.hasPerm(perm.PERM_EDIT_TRAINING) %}
+<style>
+.course-enroll-cleanup-side .section__header {
+  padding: 12px 14px;
+}
+.course-enroll-cleanup-side .section__title {
+  font-size: 1rem;
+  font-weight: 700;
+}
+.course-enroll-cleanup-side .section__body {
+  padding: 14px;
+}
+.course-enroll-cleanup-tip {
+  margin: 0 0 12px;
+  color: #6f7d90;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.course-enroll-cleanup-ok {
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #eef8f1;
+  color: #24743b;
+  font-size: 13px;
+}
+.course-enroll-cleanup-form + .course-enroll-cleanup-form {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e8eef5;
+}
+.course-enroll-cleanup-label {
+  display: block;
+  margin-bottom: 6px;
+  color: #31425a;
+  font-size: 13px;
+  font-weight: 700;
+}
+.course-enroll-cleanup-row {
+  display: flex;
+  gap: 8px;
+}
+.course-enroll-cleanup-row .textbox {
+  min-width: 0;
+  flex: 1 1 auto;
+  height: 36px;
+}
+.course-enroll-cleanup-row .button {
+  flex: 0 0 auto;
+  min-width: 58px;
+  height: 36px;
+  padding: 0 12px;
+}
+@media (max-width: 760px) {
+  .course-enroll-cleanup-row {
+    display: block;
+  }
+  .course-enroll-cleanup-row .button {
+    width: 100%;
+    margin-top: 8px;
+  }
+}
+</style>
+<div class="section side course-enroll-cleanup-side">
+  <div class="section__header">
+    <h2 class="section__title">参与统计清理</h2>
+  </div>
+  <div class="section__body">
+    {% if handler.request.query.enrollCleanup %}
+      <p class="course-enroll-cleanup-ok">已移除 {{ handler.request.query.enrollCleanup }} 名已参与学生。</p>
+    {% endif %}
+    <p class="course-enroll-cleanup-tip">移除的是课程参加关系。课程成绩分析、学习小节和课程统计将不再统计这些学生。</p>
+    <form class="course-enroll-cleanup-form" action="{{ url('course_enroll_cleanup_user', cid=cdoc.docId) }}" method="POST" onsubmit="return confirm('确认将该学生移出本课程参与名单？');">
+      <label class="course-enroll-cleanup-label" for="course-enroll-cleanup-user">单个学生</label>
+      <div class="course-enroll-cleanup-row">
+        <input id="course-enroll-cleanup-user" class="textbox" name="uidOrName" placeholder="UID / 用户名 / 邮箱">
+        <button class="button rounded" type="submit">移除</button>
+      </div>
+    </form>
+    <form class="course-enroll-cleanup-form" action="{{ url('course_enroll_cleanup_group', cid=cdoc.docId) }}" method="POST" onsubmit="return confirm('确认将该小组内已参与学生全部移出本课程？');">
+      <label class="course-enroll-cleanup-label" for="course-enroll-cleanup-group">按小组移除</label>
+      <div class="course-enroll-cleanup-row">
+        <input id="course-enroll-cleanup-group" class="textbox" name="groupName" placeholder="小组名称">
+        <button class="button rounded" type="submit">移除</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}

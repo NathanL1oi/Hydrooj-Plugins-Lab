@@ -1,0 +1,120 @@
+{% extends "layout/basic.html" %}
+{{ set(UiContext, 'tdoc', tdoc) }}
+{{ set(UiContext, 'tsdoc', tsdoc) }}
+{% set type = 'contest' %}
+{% set nativeRows = scoreboardRows %}
+{% set nativePdict = scoreboardPdict %}
+
+{% macro renderRecord(cell, canView) %}
+  {% if canView and cell.raw %}<a href="{{ url('record_detail', rid=cell.raw) }}">{% endif %}
+  {%- set _color = utils.status.getScoreColor(cell.score|default(cell.value)) -%}
+  <span {% if cell.hover %} data-tooltip="{{ cell.hover }}"{% endif %} style="font-weight:bold;color:{{ _color }}">{{ cell.value|string|nl2br|safe }}</span>
+  {% if canView and cell.raw %}</a>{% endif %}
+{% endmacro %}
+
+{% block content %}
+<div class="row"><div class="medium-12 columns scoreboard--{{ tdoc.rule }}">
+  <div class="section visible">
+    <div class="section__header">
+      {%- for ext in ['HTML', 'CSV', 'Ghost'] -%}
+        <a class="button" target="_blank" href="{{ url(type + '_scoreboard_view', tid=tdoc.docId, view=ext.toLowerCase()) }}">
+          <span class="icon icon-download"></span> {{ _('Export as {0}').format(ext) }}
+        </a>
+      {%- endfor -%}
+      {% for id, name in availableViews %}{% if not ['html', 'csv', 'default', 'ghost'].includes(id) %}
+        <a class="button" target="_blank" href="{{ url(type + '_scoreboard_view', tid=tdoc.docId, view=id) }}">
+          <span class="icon icon-copy"></span> {{ _(name) }}
+        </a>
+      {% endif %}{% endfor %}
+      {% if manager and not officialBoard %}
+        <a class="button" href="{{ url('contest_acm_group_settings', tid=tdoc.docId) }}">
+          <span class="icon icon-settings"></span> {{ _('XCPC 榜设置') }}
+        </a>
+        <a class="button" href="{{ url('contest_acm_group_scoreboard', tid=tdoc.docId, query={full: '1'}) }}">
+          <span class="icon icon-search"></span> {{ _('管理员全量预览') }}
+        </a>
+      {% endif %}
+      {% if (cutoff.done or manager) and not officialBoard %}
+        <a class="button" href="{{ url('contest_acm_group_roll', tid=tdoc.docId) }}">
+          <span class="icon icon-flag"></span> {{ _('XCPC 滚榜') }}
+        </a>
+      {% endif %}
+      <div class="section__tools">
+        <select class="select filter" name="list">
+          <option value="all">{{ _('所有小组') }}</option>
+          <option value="rank">{{ _('有排名小组') }}</option>
+        </select>
+      </div>
+    </div>
+    <div data-fragment-id="scoreboard">
+      {% if cutoff.frozen or cutoff.done %}
+        <div class="section__body no-padding">
+          <blockquote class="note">
+            {% if cutoff.done %}
+              {{ _('Please wait until contest host unfreeze the scoreboard.') }}
+            {% else %}
+              {{ _('The scoreboard was frozen with {0} minutes remaining at {1} - submissions after that time are not used for the student ranking.').format(config.freezeMinutes, datetimeSpan(cutoff.freezeAt))|safe }}
+            {% endif %}
+          </blockquote>
+        </div>
+      {% endif %}
+      <div class="section__body no-padding overflow-hidden-horizontal table-layout-guard">
+        <table class="data-table">
+          <colgroup>
+          {%- for column in nativeRows[0] -%}
+            <col class="col--{{ 'user' if column.type == 'group_user' else column.type }}">
+          {%- endfor -%}
+          </colgroup>
+          <thead>
+            <tr>
+            {%- for column in nativeRows[0] -%}
+              <th class="col--{{ column.type }}">
+              {%- if column.type == 'problem' and column.raw -%}
+                <a href="{{ url('problem_detail', pid=column.raw, query={tid:tdoc.docId}) }}" data-tooltip="{{ nativePdict[column.raw].title }}">
+                  {{ column.value }}<br />{{ nativePdict[column.raw].nAccept|default(0) }}/{{ nativePdict[column.raw].nSubmit|default(0) }}
+                </a>
+              {%- else -%}
+                {{ column.value|string|nl2br|safe }}
+              {%- endif -%}
+              </th>
+            {%- endfor -%}
+            </tr>
+          </thead>
+          <tbody>
+          {%- set canViewAll = handler.user.own(tdoc) or model.contest.canShowRecord.call(handler, tdoc) -%}
+          {%- for row in nativeRows -%}{%- if loop.index0 > 0 -%}
+            <tr>
+              {%- for column in row -%}
+                {% set header = nativeRows[0][loop.index0] %}
+                {% set colType = 'user' if column.type == 'group_user' else header.type %}
+                <td class="col--{{ colType }}"{% if column.style %} style="{{ column.style }}"{% endif %}>
+                {%- if column.type == 'rank' -%}
+                  <span class="{{ 'rank--unrank' if column.value == '0' else 'rank--normal' }}">{{ '*' if column.value == '0' else column.value|string|nl2br|safe }}</span>
+                {%- elif column.type == 'group_user' -%}
+                  <button class="star user--{{ column.raw }}" data-uid="{{ column.raw }}" type="button">
+                    <span class="starred--hide"><span class="icon icon-star--outline" data-tooltip="{{ _('Star') }}"></span></span>
+                    <span class="starred--show"><span class="icon icon-star" data-tooltip="{{ _('Unstar') }}"></span></span>
+                  </button>
+                  <span class="user-profile-link" {% if column.memberText %}data-tooltip="{{ column.memberText }}"{% endif %}>
+                    <img class="small user-profile-avatar v-center" src="{{ avatarUrl('') }}" width="20" height="20">
+                    <span class="user-profile-name">{{ column.value }}</span>
+                  </span>
+                {%- elif column.type == 'record' and column.raw -%}
+                  {{ renderRecord(column, canViewAll) }}
+                {%- else -%}
+                  <span {% if column.hover %}data-tooltip="{{ column.hover }}"{% endif %}>{{ column.value|string|nl2br|safe }}</span>
+                {%- endif -%}
+                </td>
+              {%- endfor -%}
+            </tr>
+          {%- endif -%}{%- endfor -%}
+          {% if nativeRows.length <= 1 %}
+            <tr><td colspan="{{ nativeRows[0].length }}">{{ _('暂无小组数据。请先在设置页选择小组来源或配置名单。') }}</td></tr>
+          {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div></div>
+{% endblock %}

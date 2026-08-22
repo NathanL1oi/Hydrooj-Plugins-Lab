@@ -1,0 +1,212 @@
+{% macro style() %}
+<style>
+.disable-sol-panel {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #dbe8f7;
+  border-left: 3px solid #5aa6e8;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #fbfdff 0%, #f6faff 100%);
+  box-shadow: 0 1px 2px rgba(31, 45, 61, .04);
+}
+.disable-sol-panel__title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  margin-bottom: 0;
+  color: #1d3557;
+  font-size: 14px;
+  font-weight: 700;
+}
+.disable-sol-panel__hint {
+  color: #748399;
+  font-size: 12px;
+  font-weight: 500;
+}
+.disable-sol-panel__row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+}
+.disable-sol-form,
+.disable-sol-inline-form {
+  display: inline-flex;
+  margin: 0;
+}
+.disable-sol-menu-form {
+  margin: 0;
+}
+.disable-sol-menu-button {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.disable-sol-menu-button .disable-sol-menu-text {
+  flex: 1 1 auto;
+}
+.disable-sol-menu-state {
+  flex: 0 0 auto;
+  color: #748399;
+  font-size: 12px;
+}
+.disable-sol-state {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 104px;
+  min-height: 34px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+.disable-sol-state.is-open {
+  color: #0b65c2;
+  border: 1px solid #9ed0ff;
+  background: #eff8ff;
+}
+.disable-sol-state.is-closed {
+  color: #d34220;
+  border: 1px solid #ffc8b8;
+  background: #fff4ef;
+}
+.disable-sol-toggle {
+  cursor: pointer;
+  transition: transform .15s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.disable-sol-inline-toggle {
+  min-width: auto;
+  min-height: 32px;
+  padding: 0 12px;
+  font-size: 12px;
+}
+.course-bulk-actions .disable-sol-inline-form {
+  align-items: center;
+}
+.course-bulk-actions .disable-sol-inline-toggle {
+  min-height: 32px;
+  margin: 0;
+}
+.disable-sol-toggle:hover {
+  box-shadow: 0 3px 10px rgba(32, 64, 100, .12);
+}
+.disable-sol-toggle:active {
+  transform: translateY(1px);
+}
+.theme--dark .disable-sol-panel {
+  border-color: var(--course-border, #3a4656);
+  border-left-color: var(--course-accent, #60a5fa);
+  background: var(--course-bg-soft, #242b35);
+  box-shadow: none;
+}
+.theme--dark .disable-sol-panel__title {
+  color: var(--course-heading, #e2e8f0);
+}
+.theme--dark .disable-sol-panel__hint {
+  color: var(--course-muted, #94a3b8);
+}
+.theme--dark .disable-sol-menu-button {
+  color: var(--course-link, #7ab8ff);
+}
+.theme--dark .disable-sol-menu-state {
+  color: var(--course-muted, #94a3b8);
+}
+.theme--dark .disable-sol-state.is-open {
+  color: #93c5fd;
+  border-color: #2563eb;
+  background: #10233e;
+}
+.theme--dark .disable-sol-state.is-closed {
+  color: #fca5a5;
+  border-color: #7f1d1d;
+  background: #351b1b;
+}
+.theme--dark .disable-sol-toggle:hover {
+  box-shadow: 0 3px 10px rgba(0, 0, 0, .24);
+}
+@media (max-width: 900px) {
+  .disable-sol-panel {
+    gap: 10px;
+  }
+  .disable-sol-state {
+    min-width: 96px;
+    padding: 0 14px;
+  }
+}
+</style>
+{% endmacro %}
+
+{% macro hidden_fields(scope, disable_sol, cid, csid, ssid) %}
+<input type="hidden" name="scope" value="{{ scope }}">
+<input type="hidden" name="disable_sol" value="{{ disable_sol }}">
+{% if cid %}<input type="hidden" name="cid" value="{{ cid }}">{% endif %}
+{% if csid %}<input type="hidden" name="csid" value="{{ csid }}">{% endif %}
+{% if ssid %}<input type="hidden" name="ssid" value="{{ ssid }}">{% endif %}
+{% endmacro %}
+
+{% macro button(scope, doc, stat, openLabel, closeLabel, cid, csid, ssid) %}
+{% set state = stat.state if stat and stat.state else '' %}
+{% set closed = (state == 'closed') or (state == '' and doc and doc.disable_sol) %}
+<form method="post" action="{{ url('disable_sol_course_toggle') }}" class="disable-sol-inline-form">
+  {{ hidden_fields(scope, 'false' if closed else 'true', cid, csid, ssid) }}
+  <button
+    type="submit"
+    class="disable-sol-state disable-sol-toggle disable-sol-inline-toggle {{ 'is-closed' if closed else 'is-open' }}"
+    title="{{ openLabel if closed else closeLabel }}"
+  >
+    <span class="icon icon-edit"></span>
+    {{ openLabel if closed else closeLabel }}
+  </button>
+</form>
+{% endmacro %}
+
+{% macro menu_item(scope, doc, stat, openLabel, closeLabel, cid, csid, ssid) %}
+{% set state = stat.state if stat and stat.state else '' %}
+{% set closed = (state == 'closed') or (state == '' and doc and doc.disable_sol) %}
+<li class="menu__item">
+  <form method="post" action="{{ url('disable_sol_course_toggle') }}" class="disable-sol-menu-form">
+    {{ hidden_fields(scope, 'false' if closed else 'true', cid, csid, ssid) }}
+    <button type="submit" class="menu__link disable-sol-menu-button" title="{{ openLabel if closed else closeLabel }}">
+      <span class="icon icon-edit"></span>
+      <span class="disable-sol-menu-text">{{ openLabel if closed else closeLabel }}</span>
+      <span class="disable-sol-menu-state">{{ '已关闭' if closed else '开放中' }}</span>
+    </button>
+  </form>
+</li>
+{% endmacro %}
+
+{% macro panel(scope, doc, stat, label, openLabel, closeLabel, cid, csid, ssid) %}
+{% set state = stat.state if stat and stat.state else '' %}
+{% set closed = (state == 'closed') or (state == '' and doc and doc.disable_sol) %}
+<div class="disable-sol-panel">
+  <div class="disable-sol-panel__title">
+    <span class="icon icon-edit"></span>
+    <span>{{ label }}</span>
+    <span class="disable-sol-panel__hint">{{ '当前关闭' if closed else '当前开放' }}</span>
+  </div>
+  <div class="disable-sol-panel__row">
+    <form method="post" action="{{ url('disable_sol_course_toggle') }}" class="disable-sol-form">
+      {{ hidden_fields(scope, 'false' if closed else 'true', cid, csid, ssid) }}
+      <button
+        type="submit"
+        class="disable-sol-state disable-sol-toggle {{ 'is-closed' if closed else 'is-open' }}"
+        title="{{ openLabel if closed else closeLabel }}"
+      >
+        {{ openLabel if closed else closeLabel }}
+      </button>
+    </form>
+  </div>
+</div>
+{% endmacro %}

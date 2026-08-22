@@ -1,0 +1,796 @@
+﻿{
+    "schema":  1,
+    "plugins":  [
+                    {
+                        "id":  "hydrooj-ui-default",
+                        "title":  "Hydro 默认前端",
+                        "packageName":  "@hydrooj/ui-default",
+                        "category":  "官方核心",
+                        "description":  "Hydro 默认 UI、模板、前端资源和页面渲染基础能力。",
+                        "serverPath":  "@hydrooj/ui-default",
+                        "type":  "核心前端",
+                        "locked":  true,
+                        "note":  "核心包不建议运行时关闭，否则整站页面可能失效。"
+                    },
+                    {
+                        "id":  "hydrooj-hydrojudge",
+                        "title":  "Hydro Judge",
+                        "packageName":  "@hydrooj/hydrojudge",
+                        "category":  "官方核心",
+                        "description":  "Hydro 原生评测服务接入，负责提交评测链路。",
+                        "serverPath":  "@hydrooj/hydrojudge",
+                        "type":  "评测核心",
+                        "locked":  true,
+                        "note":  "关闭评测核心会影响所有提交。"
+                    },
+                    {
+                        "id":  "hydrooj-fps-importer",
+                        "title":  "FPS 导入器",
+                        "packageName":  "@hydrooj/fps-importer",
+                        "category":  "官方导入",
+                        "description":  "支持 FPS 格式题目包导入。",
+                        "serverPath":  "@hydrooj/fps-importer",
+                        "type":  "官方工具",
+                        "locked":  true
+                    },
+                    {
+                        "id":  "hydrooj-a11y",
+                        "title":  "A11y 辅助能力",
+                        "packageName":  "@hydrooj/a11y",
+                        "category":  "官方核心",
+                        "description":  "Hydro 可访问性相关增强。",
+                        "serverPath":  "@hydrooj/a11y",
+                        "type":  "官方增强",
+                        "locked":  true
+                    },
+                    {
+                        "id":  "hydrooj-import-hoj",
+                        "title":  "HOJ 导入器",
+                        "packageName":  "@hydrooj/import-hoj",
+                        "category":  "官方导入",
+                        "description":  "支持 HOJ 数据导入。",
+                        "serverPath":  "@hydrooj/import-hoj",
+                        "type":  "官方工具",
+                        "locked":  true
+                    },
+                    {
+                        "id":  "hydrooj-vjudge",
+                        "title":  "VJudge",
+                        "packageName":  "@hydrooj/vjudge",
+                        "category":  "官方扩展",
+                        "description":  "远程评测与外部 OJ 接入能力。",
+                        "serverPath":  "@hydrooj/vjudge",
+                        "type":  "官方扩展",
+                        "locked":  true
+                    },
+                    {
+                        "id":  "badge-33oj",
+                        "title":  "徽章系统",
+                        "packageName":  "badge-33oj",
+                        "category":  "互动激励",
+                        "description":  "提供徽章创建、发放、展示和管理能力。",
+                        "serverPath":  "/home/hydro-plugins/badge-33oj",
+                        "localPath":  "02-account-interaction/badge-33oj",
+                        "routePatterns":  [
+                                              "^/badge(?:$|/)"
+                                          ],
+                        "type":  "路由 / 管理"
+                    },
+                    {
+                        "id":  "checkin-33oj",
+                        "title":  "每日签到",
+                        "packageName":  "checkin-33oj",
+                        "category":  "互动激励",
+                        "description":  "学生每日签到、连续签到和首页签到入口。",
+                        "serverPath":  "/home/hydro-plugins/checkin-33oj",
+                        "localPath":  "02-account-interaction/checkin-33oj",
+                        "routePatterns":  [
+                                              "^/checkin(?:$|/)"
+                                          ],
+                        "type":  "路由 / 首页扩展"
+                    },
+                    {
+                        "id":  "coin-33oj",
+                        "title":  "金币系统",
+                        "packageName":  "coin-33oj",
+                        "category":  "互动激励",
+                        "description":  "金币发放、金币流水、排行榜和用户激励。",
+                        "serverPath":  "/home/hydro-plugins/coin-33oj",
+                        "localPath":  "02-account-interaction/coin-33oj",
+                        "routePatterns":  [
+                                              "^/coin(?:$|/)"
+                                          ],
+                        "type":  "路由 / 用户激励"
+                    },
+                    {
+                        "id":  "pastebin-33oj",
+                        "title":  "剪贴板",
+                        "packageName":  "pastebin-33oj",
+                        "category":  "题库与题解",
+                        "description":  "创建、查看、编辑和管理代码或文本片段。",
+                        "serverPath":  "/home/hydro-plugins/pastebin-33oj",
+                        "localPath":  "02-account-interaction/pastebin-33oj",
+                        "routePatterns":  [
+                                              "^/paste(?:$|/)"
+                                          ],
+                        "type":  "路由 / 工具"
+                    },
+                    {
+                        "id":  "realname",
+                        "title":  "实名信息",
+                        "packageName":  "realname",
+                        "category":  "账号与认证",
+                        "description":  "维护学生实名信息，用于账号识别和域内管理。",
+                        "serverPath":  "/home/hydro-plugins-v2/hydro-plugins/realname",
+                        "localPath":  "02-account-interaction/realname",
+                        "routePatterns":  [
+                                              "^/realname(?:$|/)",
+                                              "^/domain/realname(?:$|/)",
+                                              "^/manage/realname(?:$|/)"
+                                          ],
+                        "type":  "路由 / 管理"
+                    },
+                    {
+                        "id":  "contest-pdf",
+                        "title":  "比赛 PDF",
+                        "packageName":  "contest-pdf",
+                        "category":  "比赛与评测",
+                        "description":  "为比赛题面提供 PDF 导出和下载入口。",
+                        "serverPath":  "/home/hydro-plu/contest-pdf",
+                        "localPath":  "06-contest-rating/contest-pdf",
+                        "routePatterns":  [
+                                              "^/contest/[^/]+/pdf(?:$|/)"
+                                          ],
+                        "type":  "比赛工具"
+                    },
+                    {
+                        "id":  "download-first",
+                        "title":  "先下载后查看数据",
+                        "packageName":  "download-first",
+                        "category":  "题库与题解",
+                        "description":  "控制记录页测试数据查看方式，引导先下载再查看。",
+                        "serverPath":  "/home/hydro-plu/download-first",
+                        "localPath":  "05-problem-solution/download-first",
+                        "type":  "记录页增强"
+                    },
+                    {
+                        "id":  "disable_sol",
+                        "title":  "题解隐藏控制",
+                        "packageName":  "disable_sol",
+                        "category":  "题库与题解",
+                        "description":  "按题目控制题解访问，限制学生查看未开放题解。",
+                        "serverPath":  "/home/hydro-plu/disable_sol",
+                        "localPath":  "05-problem-solution/disable_sol",
+                        "type":  "题解钩子",
+                        "note":  "钩子类插件运行时只能登记开关状态，彻底停用建议重启。"
+                    },
+                    {
+                        "id":  "contest-solution",
+                        "title":  "比赛题解附件",
+                        "packageName":  "contest-solution",
+                        "category":  "比赛与评测",
+                        "description":  "比赛题解附件上传、下载与查看。",
+                        "serverPath":  "/root/.hydro/addons/contest-solution",
+                        "localPath":  "06-contest-rating/contest-solution",
+                        "routePatterns":  [
+                                              "^/contest/[^/]+/solution(?:$|/)"
+                                          ],
+                        "type":  "比赛路由"
+                    },
+                    {
+                        "id":  "announce-bpjudge",
+                        "title":  "公告模块",
+                        "packageName":  "announce-bpjudge",
+                        "category":  "内容与导航",
+                        "description":  "公告列表、公告详情、公告编辑和首页公告展示。",
+                        "serverPath":  "/home/hydro-plugins/announce-bpjudge",
+                        "localPath":  "07-content-system/announce-bpjudge",
+                        "routePatterns":  [
+                                              "^/announce(?:$|/)"
+                                          ],
+                        "uiNodes":  [
+                                        "announce_main"
+                                    ],
+                        "type":  "路由 / 首页入口"
+                    },
+                    {
+                        "id":  "frontend-bpjudge",
+                        "title":  "BPJudge 前端增强",
+                        "packageName":  "frontend-bpjudge",
+                        "category":  "首页与前端",
+                        "description":  "提供 BPJudge 风格的页面和前端交互增强。",
+                        "serverPath":  "/home/hydro-plugins/frontend-bpjudge",
+                        "localPath":  "01-homepage-frontend/frontend-bpjudge",
+                        "type":  "前端增强",
+                        "note":  "纯前端资源通常需要刷新缓存或重启后完全生效。"
+                    },
+                    {
+                        "id":  "frontend-33oj",
+                        "title":  "33OJ 前端模板",
+                        "packageName":  "frontend-33oj",
+                        "category":  "首页与前端",
+                        "description":  "33OJ 首页、训练和作业相关模板覆盖与展示增强。",
+                        "serverPath":  "/home/hydro-plugins/frontend-33oj",
+                        "localPath":  "01-homepage-frontend/frontend-33oj",
+                        "type":  "模板 / 前端"
+                    },
+                    {
+                        "id":  "swiper-for-hydrooj-main",
+                        "title":  "首页轮播图",
+                        "packageName":  "swiper-for-hydrooj-main",
+                        "category":  "首页与前端",
+                        "description":  "首页轮播图配置、展示和轮播资源加载。",
+                        "serverPath":  "/home/hydro-plugins/swiper-for-hydrooj-main",
+                        "localPath":  "01-homepage-frontend/swiper-for-hydrooj-main",
+                        "routePatterns":  [
+                                              "^/domain/swiper(?:$|/)"
+                                          ],
+                        "uiNodes":  [
+                                        "domain_swiper"
+                                    ],
+                        "type":  "首页 / 域管理"
+                    },
+                    {
+                        "id":  "ac-celebration-bpjudge",
+                        "title":  "AC 庆祝效果",
+                        "packageName":  "ac-celebration-bpjudge",
+                        "category":  "互动激励",
+                        "description":  "提交通过后提供前端庆祝动画或提示效果。",
+                        "serverPath":  "/home/hydro-plu/ac-celebration-bpjudge",
+                        "localPath":  "01-homepage-frontend/ac-celebration-bpjudge",
+                        "type":  "前端增强"
+                    },
+                    {
+                        "id":  "hydrooj-history",
+                        "title":  "用户历史统计",
+                        "packageName":  "hydrooj-history",
+                        "category":  "学习成长",
+                        "description":  "在用户页展示历史提交、通过和能力变化统计图。",
+                        "serverPath":  "/root/.hydro/addons/hydrooj-history",
+                        "localPath":  "07-content-system/hydrooj-history",
+                        "type":  "用户页增强"
+                    },
+                    {
+                        "id":  "problem-vote",
+                        "title":  "题目投票",
+                        "packageName":  "problem-vote",
+                        "category":  "题库与题解",
+                        "description":  "为题目提供投票、反馈或受欢迎度统计。",
+                        "serverPath":  "/home/hydro-plugins/problem-vote",
+                        "localPath":  "05-problem-solution/problem-vote",
+                        "routePatterns":  [
+                                              "^/problem-vote(?:$|/)"
+                                          ],
+                        "type":  "题目互动"
+                    },
+                    {
+                        "id":  "hydrooj-exportex",
+                        "title":  "导出增强",
+                        "packageName":  "hydrooj-exportex",
+                        "category":  "系统工具",
+                        "description":  "扩展题目、提交、题解等数据导出和导出日志管理。",
+                        "serverPath":  "/home/hydro-plu/hydrooj-exportex",
+                        "localPath":  "05-problem-solution/hydrooj-exportex",
+                        "routePatterns":  [
+                                              "^/export(?:$|/)",
+                                              "^/domain/export(?:$|/)"
+                                          ],
+                        "type":  "导出工具"
+                    },
+                    {
+                        "id":  "domain-userData",
+                        "title":  "域用户数据",
+                        "packageName":  "domain-userData",
+                        "category":  "域与用户管理",
+                        "description":  "按域汇总学生训练、提交、比赛等学习数据。",
+                        "serverPath":  "/home/hydro-plu/domain-userData",
+                        "localPath":  "03-domain-user-management/domain-userData",
+                        "routePatterns":  [
+                                              "^/domain/user-data(?:$|/)"
+                                          ],
+                        "uiNodes":  [
+                                        "domain_user_data"
+                                    ],
+                        "type":  "域管理 / 数据"
+                    },
+                    {
+                        "id":  "turtle-display",
+                        "title":  "Turtle 绘图展示",
+                        "packageName":  "turtle-display",
+                        "category":  "题库与题解",
+                        "description":  "为 Python Turtle 或图形题提供运行结果可视化展示。",
+                        "serverPath":  "/root/.hydro/addons/turtle-display",
+                        "localPath":  "01-homepage-frontend/turtle-display",
+                        "type":  "前端 / 记录页增强"
+                    },
+                    {
+                        "id":  "countdown",
+                        "title":  "新版倒计时",
+                        "packageName":  "hydrooj-countdown",
+                        "category":  "首页与前端",
+                        "description":  "新版首页倒计时组件，用于活动、考试或课程节点提醒。",
+                        "serverPath":  "/home/hydro-plugins-v2/hydro-plugins/countdown/countdown",
+                        "localPath":  "01-homepage-frontend/countdown",
+                        "type":  "首页扩展"
+                    },
+                    {
+                        "id":  "hydro-float-widget",
+                        "title":  "悬浮工具组件",
+                        "packageName":  "hydro-float-widget",
+                        "category":  "首页与前端",
+                        "description":  "全站悬浮按钮或快捷工具入口。",
+                        "serverPath":  "/home/hydro-plugins/hydro-float-widget",
+                        "localPath":  "01-homepage-frontend/hydro-float-widget",
+                        "type":  "全站前端"
+                    },
+                    {
+                        "id":  "hydrooj-problemQA",
+                        "title":  "题目问答",
+                        "packageName":  "hydrooj-problemQA",
+                        "category":  "题库与题解",
+                        "description":  "题目答疑、提问列表、回答人设置和问答详情。",
+                        "serverPath":  "/home/hydro-plu/hydrooj-problemQA",
+                        "localPath":  "05-problem-solution/hydrooj-problemQA",
+                        "routePatterns":  [
+                                              "^/question(?:$|/)",
+                                              "^/domain/answerer(?:$|/)"
+                                          ],
+                        "uiNodes":  [
+                                        "domain_answerer"
+                                    ],
+                        "type":  "题目问答 / 域管理"
+                    },
+                    {
+                        "id":  "copy-solution",
+                        "title":  "题解复制工具",
+                        "packageName":  "copy-solution",
+                        "category":  "题库与题解",
+                        "description":  "复制、迁移或辅助整理题解内容。",
+                        "serverPath":  "/home/hydro-plu/copy-solution",
+                        "localPath":  "05-problem-solution/copy-solution",
+                        "type":  "题解工具"
+                    },
+                    {
+                        "id":  "userimport-domain-main",
+                        "title":  "域用户导入",
+                        "packageName":  "userimport-domain-main",
+                        "category":  "域与用户管理",
+                        "description":  "在域内批量导入用户、分组或学生账号。",
+                        "serverPath":  "/home/hydro-plu/userimport-domain-main",
+                        "localPath":  "03-domain-user-management/userimport-domain-main",
+                        "routePatterns":  [
+                                              "^/domain/userimport(?:$|/)"
+                                          ],
+                        "type":  "域管理 / 用户导入"
+                    },
+                    {
+                        "id":  "group-batch-manage-main",
+                        "title":  "用户组批量管理",
+                        "packageName":  "group-batch-manage-main",
+                        "category":  "域与用户管理",
+                        "description":  "批量维护域内用户组、成员和分组关系。",
+                        "serverPath":  "/home/hydro-plu/group-batch-manage-main",
+                        "localPath":  "03-domain-user-management/group-batch-manage-main",
+                        "routePatterns":  [
+                                              "^/domain/group-batch(?:$|/)"
+                                          ],
+                        "type":  "域管理 / 用户组"
+                    },
+                    {
+                        "id":  "contest-userimport-main",
+                        "title":  "比赛用户导入",
+                        "packageName":  "contest-userimport-main",
+                        "category":  "比赛与评测",
+                        "description":  "为比赛批量导入参赛用户、非正式用户或名单。",
+                        "serverPath":  "/home/hydro-plu/contest-userimport-main",
+                        "localPath":  "06-contest-rating/contest-userimport-main",
+                        "routePatterns":  [
+                                              "^/contest/[^/]+/batch-user(?:$|/)"
+                                          ],
+                        "type":  "比赛管理"
+                    },
+                    {
+                        "id":  "hydro-profile-lock-main",
+                        "title":  "资料锁定",
+                        "packageName":  "hydro-profile-lock-main",
+                        "category":  "账号与认证",
+                        "description":  "限制或锁定用户资料字段，避免学生随意修改关键信息。",
+                        "serverPath":  "/home/hydro-plu/hydro-profile-lock-main",
+                        "localPath":  "02-account-interaction/hydro-profile-lock-main",
+                        "routePatterns":  [
+                                              "^/manage/profile-lock(?:$|/)"
+                                          ],
+                        "type":  "系统管理"
+                    },
+                    {
+                        "id":  "mistake-reflection",
+                        "title":  "错题反思",
+                        "packageName":  "mistake-reflection",
+                        "category":  "学习成长",
+                        "description":  "为题目、课程或学生学习过程提供错题反思和复盘入口。",
+                        "serverPath":  "/home/hydro-plugins/mistake-reflection",
+                        "localPath":  "04-course-learning/mistake-reflection",
+                        "routePatterns":  [
+                                              "^/mistake-reflection(?:$|/)"
+                                          ],
+                        "uiNodes":  [
+                                        "mistake_reflection_insights"
+                                    ],
+                        "type":  "学习分析"
+                    },
+                    {
+                        "id":  "peer-summary-hub",
+                        "title":  "同伴总结中心",
+                        "packageName":  "peer-summary-hub",
+                        "category":  "学习成长",
+                        "description":  "汇总学生学习总结、同伴反馈和首页学习动态。",
+                        "serverPath":  "/home/hydro-plugins/peer-summary-hub",
+                        "localPath":  "04-course-learning/peer-summary-hub",
+                        "routePatterns":  [
+                                              "^/peer-summary(?:$|/)"
+                                          ],
+                        "uiNodes":  [
+                                        "peer_summary_hub"
+                                    ],
+                        "type":  "学习内容 / 首页"
+                    },
+                    {
+                        "id":  "course-summary-points",
+                        "title":  "课程总结积分",
+                        "packageName":  "course-summary-points",
+                        "category":  "学习成长",
+                        "description":  "课程总结提交、积分统计、学习中心和积分表。",
+                        "serverPath":  "/home/hydro-plugins/course-summary-points",
+                        "localPath":  "04-course-learning/course-summary-points",
+                        "routePatterns":  [
+                                              "^/course-summary(?:$|/)",
+                                              "^/domain/learning(?:$|/)"
+                                          ],
+                        "uiNodes":  [
+                                        "domain_learning_center",
+                                        "domain_learning_point_table"
+                                    ],
+                        "type":  "课程学习 / 域管理"
+                    },
+                    {
+                        "id":  "domain-student-visibility",
+                        "title":  "学生可见性控制",
+                        "packageName":  "domain-student-visibility",
+                        "category":  "域与用户管理",
+                        "description":  "控制域内学生列表、实名或展示信息的可见范围。",
+                        "serverPath":  "/home/hydro-plugins/domain-student-visibility",
+                        "localPath":  "03-domain-user-management/domain-student-visibility",
+                        "routePatterns":  [
+                                              "^/domain/student-visibility(?:$|/)"
+                                          ],
+                        "uiNodes":  [
+                                        "domain_student_visibility"
+                                    ],
+                        "type":  "域管理 / 访问控制"
+                    },
+                    {
+                        "id":  "contest_bulk_submit",
+                        "title":  "比赛批量提交",
+                        "packageName":  "contest_bulk_submit",
+                        "category":  "比赛与评测",
+                        "description":  "比赛中批量提交代码或批量执行提交相关操作。",
+                        "serverPath":  "/home/hydro-plu/contest_bulk_submit",
+                        "localPath":  "06-contest-rating/contest_bulk_submit",
+                        "routePatterns":  [
+                                              "^/contest/[^/]+/bulk-submit(?:$|/)"
+                        ],
+                        "type":  "比赛工具"
+                    },
+                    {
+                        "id":  "contest-problem-order",
+                        "title":  "比赛题目排序",
+                        "packageName":  "hydrooj-contest-problem-order",
+                        "category":  "比赛与评测",
+                        "description":  "在比赛编辑页以插件方式注入题目顺序调整面板，不修改 Hydro 核心模板。",
+                        "serverPath":  "/root/.hydro/addons/hydroplugin/06-contest-rating/contest-problem-order",
+                        "localPath":  "06-contest-rating/contest-problem-order",
+                        "routePatterns":  [
+                                              "^/d/[^/]+/contest/[^/]+/edit(?:$|/|\\?)",
+                                              "^/contest/[^/]+/edit(?:$|/|\\?)"
+                                          ],
+                        "type":  "比赛前端增强"
+                    },
+                    {
+                        "id":  "contest-rating-arena",
+                        "title":  "比赛 Rating 竞技场",
+                        "packageName":  "contest-rating-arena",
+                        "category":  "比赛与评测",
+                        "description":  "比赛 Rating 展示、计算、榜单和赛后时间线。",
+                        "serverPath":  "/home/hydro-plu/contest-rating-arena",
+                        "localPath":  "06-contest-rating/contest-rating-arena",
+                        "routePatterns":  [
+                                              "^/contest-rating(?:$|/)",
+                                              "^/domain/contest-rating(?:$|/)"
+                                          ],
+                        "uiNodes":  [
+                                        "domain_contest_rating"
+                                    ],
+                        "type":  "比赛 Rating"
+                    },
+                    {
+                        "id":  "class-team-hub",
+                        "title":  "班级小队",
+                        "packageName":  "class-team-hub",
+                        "category":  "域与用户管理",
+                        "description":  "维护班级、小队、成员分配和比赛组队数据。",
+                        "serverPath":  "/home/hydro-plugins/class-team-hub",
+                        "localPath":  "03-domain-user-management/class-team-hub",
+                        "routePatterns":  [
+                                              "^/domain/class-teams(?:$|/)"
+                                          ],
+                        "uiNodes":  [
+                                        "domain_class_teams"
+                                    ],
+                        "type":  "域管理 / 小队"
+                    },
+                    {
+                        "id":  "contest-fun-kit",
+                        "title":  "比赛互动套件",
+                        "packageName":  "contest-fun-kit",
+                        "category":  "比赛与评测",
+                        "description":  "比赛目标、战术、团队进度、亮点和赛后复盘互动。",
+                        "serverPath":  "/home/hydro-plugins/contest-fun-kit",
+                        "localPath":  "06-contest-rating/contest-fun-kit",
+                        "routePatterns":  [
+                                              "^/contest/[^/]+/fun(?:$|/)"
+                                          ],
+                        "type":  "比赛互动"
+                    },
+                    {
+                        "id":  "rating-season",
+                        "title":  "Rating 赛季",
+                        "packageName":  "rating-season",
+                        "category":  "比赛与评测",
+                        "description":  "按域配置 Rating 赛季，展示赛季榜单和用户赛季变化。",
+                        "serverPath":  "/home/hydro-plugins/rating-season",
+                        "localPath":  "06-contest-rating/rating-season",
+                        "routePatterns":  [
+                                              "^/domain/rating-season(?:$|/)",
+                                              "^/rating-season(?:$|/)"
+                                          ],
+                        "uiNodes":  [
+                                        "domain_rating_season"
+                                    ],
+                        "type":  "域管理 / Rating"
+                    },
+                    {
+                        "id":  "code-streak-flame",
+                        "title":  "刷题连续天数",
+                        "packageName":  "code-streak-flame",
+                        "category":  "学习成长",
+                        "description":  "统计提交或 AC 连续天数，在用户页和排行页展示学习火苗。",
+                        "serverPath":  "/home/hydro-plugins/code-streak-flame",
+                        "localPath":  "04-course-learning/code-streak-flame",
+                        "routePatterns":  [
+                                              "^/code-streak(?:$|/)",
+                                              "^/domain/code-streak(?:$|/)"
+                                          ],
+                        "uiNodes":  [
+                                        "domain_code_streak"
+                                    ],
+                        "type":  "学习激励 / 域管理"
+                    },
+                    {
+                        "id":  "problem-batch-pid",
+                        "title":  "题号批量管理",
+                        "packageName":  "problem-batch-pid",
+                        "category":  "题库与题解",
+                        "description":  "在题库页批量调整题号，适合导入题目后统一编号。",
+                        "serverPath":  "/home/hydro-plugins/problem-batch-pid",
+                        "localPath":  "05-problem-solution/problem-batch-pid",
+                        "routePatterns":  [
+                                              "^/domain/problem-batch-pid(?:$|/)"
+                                          ],
+                        "uiNodes":  [
+                                        "problem_batch_pid"
+                                    ],
+                        "type":  "题库工具"
+                    },
+                    {
+                        "id":  "plugin-switch-center",
+                        "title":  "插件主控",
+                        "packageName":  "hydrooj-plugin-switch-center",
+                        "category":  "系统工具",
+                        "description":  "集中展示插件安装清单、功能描述、路径和运行时开关。",
+                        "serverPath":  "/home/hydro-plugins/plugin-switch-center",
+                        "localPath":  "07-content-system/plugin-switch-center",
+                        "routePatterns":  [
+                                              "^/manage/plugin-switch(?:$|/)",
+                                              "^/plugin-switch(?:$|/)"
+                                          ],
+                        "type":  "系统管理",
+                        "locked":  true,
+                        "note":  "主控插件保持锁定，避免关闭后无法进入本页面。"
+                    },
+                    {
+                        "id":  "intro-blank-kit",
+                        "title":  "入门填空练习",
+                        "packageName":  "hydrooj-intro-blank-kit",
+                        "category":  "课程教学",
+                        "description":  "在原题基础上提供概念填空和程序填空练习入口。",
+                        "serverPath":  "/home/hydro-plugins/intro-blank-kit",
+                        "localPath":  "04-course-learning/intro-blank-kit",
+                        "routePatterns":  [
+                                              "^/p/[^/]+/intro-blank(?:$|/)"
+                                          ],
+                        "type":  "题目学习工具"
+                    },
+                    {
+                        "id":  "problem-duplicate-detector",
+                        "title":  "重复题检测",
+                        "packageName":  "problem-duplicate-detector",
+                        "category":  "题库与题解",
+                        "description":  "检测题库中可能重复或高度相似的题目，并支持忽略标记。",
+                        "serverPath":  "/home/hydro-plu/problem-duplicate-detector",
+                        "localPath":  "05-problem-solution/problem-duplicate-detector",
+                        "routePatterns":  [
+                                              "^/domain/problem-duplicates(?:$|/)"
+                                          ],
+                        "uiNodes":  [
+                                        "problem_duplicate_detector"
+                                    ],
+                        "type":  "题库管理"
+                    },
+                    {
+                        "id":  "course-unlock-rule",
+                        "title":  "课程解锁规则",
+                        "packageName":  "course-unlock-rule",
+                        "category":  "课程教学",
+                        "description":  "按课程或章节配置学习内容解锁条件。",
+                        "serverPath":  "/home/hydro-plu/course-unlock-rule",
+                        "localPath":  "04-course-learning/course-unlock-rule",
+                        "routePatterns":  [
+                                              "^/course-unlock-rule(?:$|/)"
+                                          ],
+                        "uiNodes":  [
+                                        "course_unlock_rule_index"
+                                    ],
+                        "type":  "课程控制"
+                    },
+                    {
+                        "id":  "onlineuser-bpjudge",
+                        "title":  "在线用户",
+                        "packageName":  "onlineuser-bpjudge",
+                        "category":  "系统工具",
+                        "description":  "查看当前在线用户和在线状态。",
+                        "serverPath":  "/home/hydro-plugins/onlineuser-bpjudge",
+                        "localPath":  "03-domain-user-management/onlineuser-bpjudge",
+                        "routePatterns":  [
+                                              "^/onlineuser(?:$|/)",
+                                              "^/domain/onlineuser(?:$|/)"
+                                          ],
+                        "uiNodes":  [
+                                        "domain_onlineuser"
+                                    ],
+                        "type":  "系统监控"
+                    },
+                    {
+                        "id":  "codeforces-round-rule",
+                        "title":  "Codeforces 比赛规则",
+                        "packageName":  "codeforces-round-rule",
+                        "category":  "比赛与评测",
+                        "description":  "为比赛提供类似 Codeforces 的计分或排名规则扩展。",
+                        "serverPath":  "/home/hydro-plu/codeforces-round-rule",
+                        "localPath":  "06-contest-rating/codeforces-round-rule",
+                        "routePatterns":  [
+                                              "^/domain/codeforces-round-rule(?:$|/)"
+                                          ],
+                        "type":  "比赛规则"
+                    },
+                    {
+                        "id":  "course-package",
+                        "title":  "课程包",
+                        "packageName":  "course-package",
+                        "category":  "课程教学",
+                        "description":  "课程包创建、版本管理、题目同步、导入导出和复制到课程。",
+                        "serverPath":  "/home/hydro-plu/course-package",
+                        "localPath":  "04-course-learning/course-package",
+                        "routePatterns":  [
+                                              "^/course-package(?:$|/)"
+                                          ],
+                        "uiNodes":  [
+                                        "course_package_main"
+                                    ],
+                        "type":  "课程内容管理"
+                    },
+                    {
+                        "id":  "domain-nav-manager",
+                        "title":  "域导航管理",
+                        "packageName":  "domain-nav-manager",
+                        "category":  "内容与导航",
+                        "description":  "按域配置导航链接、入口显示和导航排序。",
+                        "serverPath":  "/home/hydro-plu/domain-nav-manager",
+                        "localPath":  "03-domain-user-management/domain-nav-manager",
+                        "routePatterns":  [
+                                              "^/domain/nav-manager(?:$|/)"
+                                          ],
+                        "uiNodes":  [
+                                        "domain_nav_manager"
+                                    ],
+                        "type":  "域管理 / 导航"
+                    },
+                    {
+                        "id":  "domain-student-admin",
+                        "title":  "学生账号管理",
+                        "packageName":  "hydrooj-domain-student-admin",
+                        "category":  "域与用户管理",
+                        "description":  "按域管理学生账号、实名、分组和批量操作。",
+                        "serverPath":  "/home/hydro-plugins/domain-student-admin",
+                        "localPath":  "03-domain-user-management/domain-student-admin",
+                        "routePatterns":  [
+                                              "^/domain/student-admin(?:$|/)"
+                                          ],
+                        "uiNodes":  [
+                                        "domain_student_admin"
+                                    ],
+                        "type":  "域管理 / 学生"
+                    },
+                    {
+                        "id":  "course-atr",
+                        "title":  "课程与文章系统",
+                        "packageName":  "course-atr",
+                        "category":  "课程教学",
+                        "description":  "课程、章节、子章节、文章、博客和课程关联内容管理。",
+                        "serverPath":  "/home/hydro-plugins/course-atr",
+                        "localPath":  "04-course-learning/course-atr",
+                        "routePatterns":  [
+                                              "^/course(?:$|/)",
+                                              "^/article(?:$|/)",
+                                              "^/blog(?:$|/)"
+                                          ],
+                        "uiNodes":  [
+                                        "course_main",
+                                        "article_main"
+                                    ],
+                        "type":  "课程 / 文章"
+                    },
+                    {
+                        "id":  "contest-summary",
+                        "title":  "比赛总结",
+                        "packageName":  "hydrooj-contest-summary",
+                        "category":  "内容与导航",
+                        "description":  "为比赛提供赛后总结提交、可见比赛总结中心、AI 评测和优秀总结展示。",
+                        "serverPath":  "/home/hydro-plugins/contest-summary",
+                        "localPath":  "07-content-system/contest-summary",
+                        "routePatterns":  [
+                                              "^/contest-summary(?:$|/|\\?)",
+                                              "^/contest/[^/]+/summary(?:$|\\?)"
+                                          ],
+                        "uiNodes":  [
+                                        "contest_summary_entry"
+                                    ],
+                        "type":  "比赛内容 / AI 评测"
+                    },
+                    {
+                        "id":  "problem-reference",
+                        "title":  "题目引用增强",
+                        "packageName":  "problem-reference",
+                        "category":  "题库与题解",
+                        "description":  "引用原题题面和题解，让引用题展示原题内容并复用题解图片。",
+                        "serverPath":  "/root/.hydro/add/problem-reference",
+                        "localPath":  "05-problem-solution/problem-reference",
+                        "type":  "题目钩子 / 引用题"
+                    },
+                    {
+                        "id":  "sol-image",
+                        "title":  "题解图片渲染",
+                        "packageName":  "hydrooj-sol2image",
+                        "category":  "题库与题解",
+                        "description":  "将题解 Markdown 渲染为图片，支持单题自动渲染和子域批量重渲染。",
+                        "serverPath":  "/root/.hydro/add/sol-image",
+                        "localPath":  "05-problem-solution/sol-image",
+                        "routePatterns":  [
+                                              "^/domain/sol2image/render(?:$|/)"
+                                          ],
+                        "uiNodes":  [
+                                        "sol2image_batch_render"
+                                    ],
+                        "type":  "题解渲染 / 域管理"
+                    }
+                ]
+}

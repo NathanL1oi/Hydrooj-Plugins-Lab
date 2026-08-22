@@ -1,0 +1,12 @@
+{
+    "name": "@hydrooj/std-time-calibrator",
+    "version": "0.0.3",
+    "main": "index.ts",
+    "repository": "https://github.com/hydro-dev/Hydro.git",
+    "license": "AGPL-3.0-or-later",
+    "dependencies": {
+        "@hydrooj/common": "workspace:^",
+        "js-yaml": "^4.1.1"
+    },
+    "preferUnplugged": true
+}

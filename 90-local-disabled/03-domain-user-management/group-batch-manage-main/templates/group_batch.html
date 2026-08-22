@@ -1,0 +1,369 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.gb-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 18px;
+}
+.gb-hero {
+  margin-bottom: 14px;
+  padding: 16px 18px;
+  border: 1px solid #dce8f6;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #fbfdff 0%, #f6fbff 100%);
+}
+.gb-title {
+  margin: 0 0 8px;
+  color: #17365d;
+  font-size: 24px;
+  font-weight: 700;
+}
+.gb-domain {
+  color: #6b778c;
+  font-size: 13px;
+}
+.gb-domain code {
+  color: #d63384;
+  font-size: 13px;
+}
+.gb-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 16px;
+}
+.gb-step {
+  padding: 10px 12px;
+  border: 1px solid #dce8f6;
+  border-radius: 8px;
+  background: #fff;
+}
+.gb-step b {
+  display: block;
+  margin-bottom: 4px;
+  color: #17365d;
+}
+.gb-step span {
+  color: #6b778c;
+  font-size: 12px;
+}
+.gb-form {
+  padding: 18px;
+}
+.gb-field {
+  margin-bottom: 18px;
+}
+.gb-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  color: #17365d;
+  font-weight: 700;
+}
+.gb-help {
+  color: #7d8798;
+  font-size: 12px;
+  font-weight: 400;
+}
+.gb-actions,
+.gb-radio-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+.gb-radio {
+  min-width: 160px;
+  padding: 10px 12px;
+  border: 1px solid #dce8f6;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+}
+.gb-radio input {
+  margin-right: 6px;
+}
+.gb-radio.is-active {
+  border-color: #7db8ef;
+  background: #eef7ff;
+  box-shadow: inset 3px 0 0 #5aa6e8;
+}
+.gb-select,
+.gb-textarea {
+  width: 100%;
+}
+.gb-textarea {
+  min-height: 220px;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+  line-height: 1.55;
+  resize: vertical;
+}
+.gb-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.gb-chip {
+  padding: 4px 9px;
+  border: 1px solid #cfe2f7;
+  border-radius: 999px;
+  background: #f5fbff;
+  color: #0b66c3;
+  cursor: pointer;
+  font-size: 12px;
+}
+.gb-chip:hover {
+  border-color: #7db8ef;
+  background: #eef7ff;
+}
+.gb-log {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 360px;
+  overflow: auto;
+  border: 1px solid #dce8f6;
+  border-radius: 8px;
+  background: #fff;
+}
+.gb-log__item {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 10px;
+  padding: 8px 10px;
+  border-bottom: 1px solid #edf2f8;
+  color: #30445f;
+  line-height: 1.45;
+}
+.gb-log__item:last-child {
+  border-bottom: 0;
+}
+.gb-tag {
+  align-self: start;
+  padding: 2px 6px;
+  border-radius: 999px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+.gb-log__item--ok .gb-tag {
+  background: #e7f8ef;
+  color: #16834b;
+}
+.gb-log__item--skip .gb-tag {
+  background: #fff4df;
+  color: #9a6500;
+}
+.gb-log__item--error .gb-tag {
+  background: #ffecec;
+  color: #d33f49;
+}
+.gb-log__item--info .gb-tag {
+  background: #eef7ff;
+  color: #0b66c3;
+}
+.gb-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid #dce8f6;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+.gb-summary b {
+  color: #17365d;
+}
+.gb-summary span {
+  color: #6b778c;
+}
+.gb-side .section__body {
+  color: #596579;
+  line-height: 1.65;
+}
+.gb-side code {
+  color: #d63384;
+}
+.theme--dark .gb-hero,
+.theme--dark .gb-step,
+.theme--dark .gb-radio,
+.theme--dark .gb-summary,
+.theme--dark .gb-log {
+  background: rgba(15, 23, 42, .42);
+  border-color: rgba(148, 163, 184, .26);
+}
+.theme--dark .gb-title,
+.theme--dark .gb-step b,
+.theme--dark .gb-label,
+.theme--dark .gb-summary b {
+  color: #dbe7f5;
+}
+.theme--dark .gb-domain,
+.theme--dark .gb-step span,
+.theme--dark .gb-help,
+.theme--dark .gb-summary span,
+.theme--dark .gb-side .section__body {
+  color: #9fb0c6;
+}
+.theme--dark .gb-domain code,
+.theme--dark .gb-side code {
+  color: #f0abfc;
+}
+.theme--dark .gb-radio.is-active,
+.theme--dark .gb-chip:hover {
+  background: rgba(59, 130, 246, .20);
+  border-color: rgba(96, 165, 250, .52);
+}
+.theme--dark .gb-chip {
+  background: rgba(15, 23, 42, .46);
+  border-color: rgba(96, 165, 250, .34);
+  color: #93c5fd;
+}
+.theme--dark .gb-log__item {
+  border-bottom-color: rgba(148, 163, 184, .18);
+  color: #dbe7f5;
+}
+@media (max-width: 900px) {
+  .gb-page,
+  .gb-steps {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+
+<div class="gb-page">
+  <div>
+    <div class="gb-hero">
+      <h1 class="gb-title">批量管理小组成员</h1>
+      <div class="gb-domain">
+        当前域：<code>{{ domainName }} ({{ domainId }})</code>
+        &nbsp;·&nbsp;
+        <a href="{{ url('domain_group') }}">返回小组列表</a>
+      </div>
+    </div>
+
+    <div class="gb-steps">
+      <div class="gb-step">
+        <b>1. 选择小组</b>
+        <span>常用方式：先选一个小组。</span>
+      </div>
+      <div class="gb-step">
+        <b>2. 粘贴用户名</b>
+        <span>一行一个，也可用空格或逗号分隔。</span>
+      </div>
+      <div class="gb-step">
+        <b>3. 先预览再执行</b>
+        <span>预览不会修改数据。</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section__body gb-form">
+        {% if summary %}
+        <div class="gb-summary">
+          <b>{% if summary.preview %}预览结果{% else %}执行结果{% endif %}</b>
+          <span>读取 {{ summary.total }} 条</span>
+          <span>{% if summary.preview %}可执行{% else %}成功{% endif %} {{ summary.ok }} 条</span>
+          <span>跳过 {{ summary.skipped }} 条</span>
+          <span>错误 {{ summary.fail }} 条</span>
+        </div>
+        {% endif %}
+
+        {% if messages and messages|length %}
+        <ul class="gb-log">
+          {% for m in messages %}
+          <li class="gb-log__item gb-log__item--{{ m.level }}">
+            <span class="gb-tag">
+              {% if m.level == 'ok' %}成功{% elif m.level == 'skip' %}跳过{% elif m.level == 'error' %}错误{% else %}提示{% endif %}
+            </span>
+            <span>{{ m.text }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        <br>
+        {% endif %}
+
+        <form method="post" data-group-batch-form {% if summary and summary.preview %}data-preview-ready="1"{% endif %}>
+          <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+
+          <div class="gb-field">
+            <div class="gb-label">
+              <span>操作类型</span>
+              <span class="gb-help">添加会自动把不在当前域的用户加入当前域</span>
+            </div>
+            <div class="gb-radio-row">
+              <label class="gb-radio" data-action-card>
+                <input type="radio" name="action" value="add" {% if action != 'delete' %}checked{% endif %}>
+                添加到小组
+              </label>
+              <label class="gb-radio" data-action-card>
+                <input type="radio" name="action" value="delete" {% if action == 'delete' %}checked{% endif %}>
+                从小组移除
+              </label>
+            </div>
+          </div>
+
+          <div class="gb-field">
+            <div class="gb-label">
+              <span>目标小组</span>
+              <span class="gb-help">不选时，可在每行写：小组名, 用户名</span>
+            </div>
+            <select name="group" class="select gb-select" data-group-select>
+              <option value="">不固定小组，使用每行的小组名</option>
+              {% for g in groups %}
+              <option value="{{ g.name }}" {% if selectedGroup == g.name %}selected{% endif %}>{{ g.name }}</option>
+              {% endfor %}
+            </select>
+            {% if groups and groups|length %}
+            <div class="gb-chips">
+              {% for g in groups %}
+              <button type="button" class="gb-chip" data-group-chip="{{ g.name }}">{{ g.name }}</button>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="gb-field">
+            <div class="gb-label">
+              <span>用户名</span>
+              <span class="gb-help"><span data-line-counter>0</span> 行有效输入</span>
+            </div>
+            <textarea name="users" class="textbox gb-textarea" rows="12" data-group-users
+              placeholder="user1&#10;user2&#10;user3&#10;&#10;高级格式也支持：&#10;小组A, user1&#10;小组B, user2">{{ users|default('') }}</textarea>
+          </div>
+
+          <div class="gb-actions">
+            <button type="submit" name="draft" value="1" class="button rounded primary">
+              <span class="icon icon-check"></span> 预览检查
+            </button>
+            <button type="submit" name="draft" value="" class="button rounded" data-execute-button>
+              <span class="icon icon-play"></span> 确认执行
+            </button>
+            <a href="{{ url('domain_group') }}" class="button rounded">返回小组列表</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="gb-side">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">使用说明</h1>
+      </div>
+      <div class="section__body typo">
+        <p><b>推荐用法</b>：选择一个小组，然后直接粘贴用户名。</p>
+        <p>支持一行一个，也支持空格、逗号分隔。</p>
+        <p><b>高级用法</b>：不固定小组时，每行写 <code>小组名, 用户名</code>，可以一次处理多个小组。</p>
+        <p>以 <code>#</code> 开头的行会被当作注释忽略。</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

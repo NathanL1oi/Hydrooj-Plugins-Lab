@@ -1,0 +1,72 @@
+{% extends "manage_base.html" %}
+{% block manage_content %}
+<style>
+.cvsub-page { display: grid; gap: 16px; font-size: 14px; }
+.cvsub-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; align-items: center; }
+.cvsub-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.cvsub-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.cvsub-card { border: 1px solid #dfeaf5; border-radius: 8px; background: #fff; padding: 16px; }
+.cvsub-card h2 { margin: 0 0 14px; font-size: 18px; color: #24364d; }
+.cvsub-form { display: grid; gap: 12px; }
+.cvsub-form .textbox, .cvsub-form .select { width: 100%; min-height: 36px; }
+.cvsub-note { padding: 10px 12px; border-left: 3px solid #5aa3e6; background: #f8fbff; color: #506680; }
+@media screen and (max-width: 900px) { .cvsub-grid { grid-template-columns: 1fr; } }
+</style>
+{% include "course_video_theme.html" %}
+<div class="cvsub-page">
+  <div class="section">
+    <div class="section__header cvsub-head">
+      <h1 class="section__title">新建课程 / 章</h1>
+      <div class="cvsub-actions">
+        <a class="rounded button" href="{{ url('course_video_main') }}">返回视频库</a>
+        <a class="rounded button" href="{{ url('course_video_folder_manage') }}">管理已有目录</a>
+        <a class="rounded button" href="{{ url('course_video_manual_register') }}">登记 VOD FileId</a>
+      </div>
+    </div>
+    <div class="section__body">
+      <p class="cvsub-note">这里建立的是视频库自己的目录，只用于整理视频；不会自动同步 Hydro 课程。</p>
+      <div class="cvsub-grid">
+        <div class="cvsub-card">
+          <h2>新建课程</h2>
+          <form method="post" class="cvsub-form">
+            <input type="hidden" name="operation" value="create_course">
+            <label>
+              课程名称
+              <input class="textbox" name="name" placeholder="例如：语法 v1" required>
+            </label>
+            <label>
+              排序值
+              <input class="textbox" name="order" value="100">
+            </label>
+            <button class="rounded primary button" type="submit">新建课程</button>
+          </form>
+        </div>
+        <div class="cvsub-card">
+          <h2>新建章</h2>
+          <form method="post" class="cvsub-form">
+            <input type="hidden" name="operation" value="create_chapter">
+            <label>
+              所属课程
+              <select class="select" name="folderCourseId" required>
+                <option value="">请选择课程</option>
+                {% for course in folderTree %}
+                  <option value="{{ course.id }}" {% if currentCourseId == course.id %}selected{% endif %}>{{ course.name }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label>
+              章名称
+              <input class="textbox" name="name" placeholder="例如：顺序结构" required>
+            </label>
+            <label>
+              排序值
+              <input class="textbox" name="order" value="100">
+            </label>
+            <button class="rounded primary button" type="submit">新建章</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

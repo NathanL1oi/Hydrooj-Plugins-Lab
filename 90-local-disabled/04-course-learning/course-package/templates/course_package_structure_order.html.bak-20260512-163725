@@ -1,0 +1,227 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+{% include "course_package_style.html" %}
+<style>
+.cp-tree-sort { --cp-border: #dbe4ef; --cp-soft: #f8fafc; --cp-text: #172033; --cp-muted: #64748b; font-size: 14px; }
+.cp-tree-sort .section { border-radius: 8px; overflow: hidden; }
+.cp-tree-sort .section__header { padding: 14px 16px; border-bottom: 1px solid #bfdbfe; background: #eff6ff; }
+.cp-tree-sort .section__title { font-size: 20px; line-height: 1.35; }
+.cp-tree-list, .cp-lesson-sort-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.cp-sort-status { margin: 0 0 12px; padding: 11px 13px; border: 1px solid #bfdbfe; border-left: 4px solid #2563eb; border-radius: 8px; background: #eff6ff; color: #1e40af; font-weight: 600; }
+.cp-sort-status.is-active { border-left-color: #f59e0b; background: #fff7ed; color: #9a3412; }
+.cp-chapter-sort { border: 1px solid var(--cp-border); border-left: 4px solid #2563eb; border-radius: 8px; background: #fff; overflow: hidden; transition: background .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+.cp-chapter-sort.is-moving,
+.cp-lesson-sort.is-moving { opacity: .72; transform: scale(.995); }
+.cp-chapter-sort.is-moved,
+.cp-lesson-sort.is-moved { border-color: #fb923c; border-left-color: #f97316; background: #fff7ed; box-shadow: 0 0 0 3px rgba(249, 115, 22, .18); animation: cpMovedPulse 1.1s ease; }
+.cp-chapter-sort.is-moved .cp-sort-head { background: #fff7ed; }
+.cp-chapter-sort.is-moved > .cp-sort-head .cp-sort-index,
+.cp-lesson-sort.is-moved .cp-sort-index { background: #fed7aa; color: #9a3412; font-weight: 700; }
+.cp-sort-head, .cp-lesson-sort { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 14px; }
+.cp-sort-head { background: #fbfdff; border-bottom: 1px solid #edf2f7; }
+.cp-lesson-sort { margin: 8px 12px; border: 1px solid #edf2f7; border-left: 3px solid #93c5fd; border-radius: 8px; background: #fff; transition: background .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+.cp-sort-index { display: inline-flex; width: 30px; height: 30px; align-items: center; justify-content: center; border-radius: 50%; background: #e8f2ff; color: #0f172a; }
+.cp-lesson-sort .cp-sort-index { width: 26px; height: 26px; background: #f1f5f9; font-size: 12px; }
+.cp-sort-title { margin: 0; color: var(--cp-text); font-size: 16px; line-height: 1.35; }
+.cp-lesson-sort .cp-sort-title { font-size: 14px; }
+.cp-sort-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; color: var(--cp-muted); font-size: 12px; }
+.cp-sort-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.cp-sort-actions .button { margin: 0 !important; height: 30px; padding: 0 10px; border-color: #bfdbfe; background: #eff6ff; color: #1d4ed8; line-height: 28px; font-size: 13px; font-weight: 600; }
+.cp-sort-actions .button:hover { border-color: #60a5fa; background: #dbeafe; }
+.cp-sort-actions .button[disabled] { border-color: #e2e8f0; background: #f8fafc; color: #94a3b8; box-shadow: none; }
+.cp-tree-sort .section__tools .primary,
+.cp-sort-footer .primary { border-color: #2563eb !important; background: #2563eb !important; color: #fff !important; font-weight: 600; box-shadow: 0 4px 12px rgba(37, 99, 235, .22); }
+.cp-sort-footer { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.cp-empty { margin: 8px 12px 12px; padding: 12px; border: 1px dashed #cbd5e1; border-radius: 8px; color: var(--cp-muted); }
+@keyframes cpMovedPulse {
+  0% { transform: translateY(-4px); }
+  45% { transform: translateY(2px); }
+  100% { transform: translateY(0); }
+}
+@media screen and (max-width: 760px) {
+  .cp-sort-head, .cp-lesson-sort { grid-template-columns: 36px minmax(0, 1fr); }
+  .cp-sort-actions { grid-column: 2; justify-content: flex-start; }
+}
+</style>
+<div class="row cp-tree-sort course-package-ui">
+  <div class="medium-12 columns">
+    <form method="post" data-cp-tree-sort>
+      <input type="hidden" name="order" data-cp-structure-input>
+      <div class="section">
+        <div class="section__header">
+          <h1 class="section__title">{{ _('结构排序') }}: {{ cpdoc.title }} / {{ vpdoc.version }}</h1>
+          <div class="section__tools">
+            <button type="submit" class="rounded primary button">{{ _('保存排序') }}</button>
+            <button type="button" class="rounded button" data-cp-reset>{{ _('撤销更改') }}</button>
+            <a class="rounded button" href="{{ url('course_package_version_detail', cpid=cpdoc.docId, vid=vpdoc.docId) }}">{{ _('返回') }}</a>
+          </div>
+        </div>
+        <div class="section__body">
+          {% if not chapters.length %}
+          <p>{{ _('这个版本还没有章。') }}</p>
+          {% else %}
+          <div class="cp-sort-status" data-cp-sort-status aria-live="polite">{{ _('移动记录：点击上移、下移、置顶或置底后，这里会显示刚刚移动的章或节。') }}</div>
+          <ol class="cp-tree-list" data-chapter-list>
+            {% for chapter in chapters %}
+            <li class="cp-chapter-sort" data-cp-chapter-item data-id="{{ chapter.id }}">
+              <div class="cp-sort-head">
+                <span class="cp-sort-index" data-cp-chapter-index>{{ loop.index }}</span>
+                <div>
+                  <h2 class="cp-sort-title">{{ chapter.title }}</h2>
+                  <div class="cp-sort-meta">
+                    <span>{{ chapter.lessons.length }} {{ _('节') }}</span>
+                  </div>
+                </div>
+                <div class="cp-sort-actions">
+                  <button type="button" class="rounded button" data-sort-scope="chapter" data-sort-action="top">{{ _('置顶') }}</button>
+                  <button type="button" class="rounded button" data-sort-scope="chapter" data-sort-action="up">{{ _('上移') }}</button>
+                  <button type="button" class="rounded button" data-sort-scope="chapter" data-sort-action="down">{{ _('下移') }}</button>
+                  <button type="button" class="rounded button" data-sort-scope="chapter" data-sort-action="bottom">{{ _('置底') }}</button>
+                </div>
+              </div>
+              {% if chapter.lessons.length %}
+              <ol class="cp-lesson-sort-list" data-lesson-list>
+                {% for lesson in chapter.lessons %}
+                <li class="cp-lesson-sort" data-cp-lesson-item data-id="{{ lesson.id }}">
+                  <span class="cp-sort-index" data-cp-lesson-index>{{ loop.index }}</span>
+                  <div>
+                    <h3 class="cp-sort-title">{{ lesson.title }}</h3>
+                    <div class="cp-sort-meta">
+                      <span>{{ lesson.pids.length }} {{ _('题目') }}</span>
+                    </div>
+                  </div>
+                  <div class="cp-sort-actions">
+                    <button type="button" class="rounded button" data-sort-scope="lesson" data-sort-action="top">{{ _('置顶') }}</button>
+                    <button type="button" class="rounded button" data-sort-scope="lesson" data-sort-action="up">{{ _('上移') }}</button>
+                    <button type="button" class="rounded button" data-sort-scope="lesson" data-sort-action="down">{{ _('下移') }}</button>
+                    <button type="button" class="rounded button" data-sort-scope="lesson" data-sort-action="bottom">{{ _('置底') }}</button>
+                  </div>
+                </li>
+                {% endfor %}
+              </ol>
+              {% else %}
+              <div class="cp-empty">{{ _('本章还没有节。') }}</div>
+              {% endif %}
+            </li>
+            {% endfor %}
+          </ol>
+          <div class="cp-sort-footer">
+            <button type="submit" class="rounded primary button">{{ _('保存排序') }}</button>
+            <button type="button" class="rounded button" data-cp-reset>{{ _('撤销更改') }}</button>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+(function() {
+  var root = document.querySelector('[data-cp-tree-sort]');
+  if (!root) return;
+  var chapterList = root.querySelector('[data-chapter-list]');
+  var input = root.querySelector('[data-cp-structure-input]');
+  var status = root.querySelector('[data-cp-sort-status]');
+  var highlightTimer = null;
+  if (!chapterList || !input) return;
+  function directItems(parent, selector) {
+    return Array.prototype.filter.call(parent.children, function(child) {
+      return child.matches(selector);
+    });
+  }
+  function refreshList(parent, itemSelector, indexSelector) {
+    var rows = directItems(parent, itemSelector);
+    rows.forEach(function(row, index) {
+      var indexNode = row.querySelector(indexSelector);
+      if (indexNode) indexNode.textContent = String(index + 1);
+      row.querySelectorAll('[data-sort-action]').forEach(function(button) {
+        var action = button.getAttribute('data-sort-action');
+        if (action === 'top' || action === 'up') button.disabled = index === 0;
+        if (action === 'down' || action === 'bottom') button.disabled = index === rows.length - 1;
+      });
+    });
+  }
+  function refresh() {
+    refreshList(chapterList, '[data-cp-chapter-item]', '[data-cp-chapter-index]');
+    directItems(chapterList, '[data-cp-chapter-item]').forEach(function(chapter) {
+      var lessonList = chapter.querySelector('[data-lesson-list]');
+      if (lessonList) refreshList(lessonList, '[data-cp-lesson-item]', '[data-cp-lesson-index]');
+    });
+    input.value = JSON.stringify(directItems(chapterList, '[data-cp-chapter-item]').map(function(chapter) {
+      var lessonList = chapter.querySelector('[data-lesson-list]');
+      return {
+        chapterId: chapter.getAttribute('data-id'),
+        lessonIds: lessonList ? directItems(lessonList, '[data-cp-lesson-item]').map(function(lesson) {
+          return lesson.getAttribute('data-id');
+        }) : [],
+      };
+    }));
+  }
+  function moveItem(row, parent, action) {
+    if (action === 'top') parent.insertBefore(row, parent.firstElementChild);
+    if (action === 'up' && row.previousElementSibling) parent.insertBefore(row, row.previousElementSibling);
+    if (action === 'down' && row.nextElementSibling) parent.insertBefore(row.nextElementSibling, row);
+    if (action === 'bottom') parent.appendChild(row);
+  }
+  function getTitle(row) {
+    var title = row.querySelector('.cp-sort-title');
+    return title ? title.textContent.trim() : '当前项目';
+  }
+  function listItems(parent, scope) {
+    return directItems(parent, scope === 'chapter' ? '[data-cp-chapter-item]' : '[data-cp-lesson-item]');
+  }
+  function clearMoved() {
+    root.querySelectorAll('.is-moving, .is-moved').forEach(function(row) {
+      row.classList.remove('is-moving', 'is-moved');
+    });
+  }
+  function showMoved(row, scope, from, to) {
+    if (highlightTimer) window.clearTimeout(highlightTimer);
+    clearMoved();
+    row.classList.add('is-moved');
+    if (status) {
+      status.classList.add('is-active');
+      status.textContent = '移动记录：' + (scope === 'chapter' ? '章' : '节') + '「' + getTitle(row) + '」从第 ' + from + ' 位移动到第 ' + to + ' 位。';
+    }
+    row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    highlightTimer = window.setTimeout(function() {
+      row.classList.remove('is-moved');
+    }, 1800);
+  }
+  root.addEventListener('click', function(ev) {
+    var button = ev.target.closest('[data-sort-action]');
+    if (!button) return;
+    var scope = button.getAttribute('data-sort-scope');
+    var action = button.getAttribute('data-sort-action');
+    if (scope === 'chapter') {
+      var chapter = button.closest('[data-cp-chapter-item]');
+      if (chapter) {
+        var from = listItems(chapterList, 'chapter').indexOf(chapter) + 1;
+        chapter.classList.add('is-moving');
+        moveItem(chapter, chapterList, action);
+        refresh();
+        showMoved(chapter, scope, from, listItems(chapterList, 'chapter').indexOf(chapter) + 1);
+        return;
+      }
+    }
+    if (scope === 'lesson') {
+      var lesson = button.closest('[data-cp-lesson-item]');
+      var list = button.closest('[data-lesson-list]');
+      if (lesson && list) {
+        var lessonFrom = listItems(list, 'lesson').indexOf(lesson) + 1;
+        lesson.classList.add('is-moving');
+        moveItem(lesson, list, action);
+        refresh();
+        showMoved(lesson, scope, lessonFrom, listItems(list, 'lesson').indexOf(lesson) + 1);
+        return;
+      }
+    }
+    refresh();
+  });
+  root.querySelectorAll('[data-cp-reset]').forEach(function(button) {
+    button.addEventListener('click', function() { window.location.reload(); });
+  });
+  refresh();
+})();
+</script>
+{% endblock %}

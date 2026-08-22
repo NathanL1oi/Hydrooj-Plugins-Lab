@@ -1,0 +1,91 @@
+{% macro style() %}
+<style>
+.course-visibility-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  margin-left: 8px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #fff2e5;
+  color: #b45b00;
+  font-size: 12px;
+  font-weight: 700;
+  vertical-align: middle;
+}
+.course-visibility-inline {
+  display: inline-flex;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.course-visibility-menu-form {
+  margin: 0;
+}
+.course-visibility-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border: 1px solid #bad8ff;
+  border-radius: 999px;
+  background: #f4f9ff;
+  color: #0b6fd6;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+.course-visibility-btn.is-hidden {
+  border-color: #ffd1d1;
+  background: #fff6f6;
+  color: #d34040;
+}
+.course-visibility-menu-form .menu__link {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+</style>
+{% endmacro %}
+
+{% macro badge(doc) %}
+  {% if doc.hidden %}
+    <span class="course-visibility-badge">已隐藏</span>
+  {% endif %}
+{% endmacro %}
+
+{% macro fields(kind, cid, csid, ssid, doc) %}
+  <input type="hidden" name="kind" value="{{ kind }}">
+  <input type="hidden" name="cid" value="{{ cid }}">
+  {% if csid %}<input type="hidden" name="csid" value="{{ csid }}">{% endif %}
+  {% if ssid %}<input type="hidden" name="ssid" value="{{ ssid }}">{% endif %}
+  <input type="hidden" name="hidden" value="{% if doc.hidden %}0{% else %}1{% endif %}">
+{% endmacro %}
+
+{% macro inline(kind, doc, cid, csid, ssid) %}
+  {% if handler.user.hasPerm(perm.PERM_EDIT_TRAINING) or handler.user.hasPerm(perm.PERM_EDIT_DOMAIN) %}
+    <form method="post" action="{{ url('course_visibility_toggle') }}" class="course-visibility-inline">
+      {{ fields(kind, cid, csid, ssid, doc) }}
+      <button class="course-visibility-btn {% if not doc.hidden %}is-hidden{% endif %}" type="submit">
+        {% if doc.hidden %}打开{% else %}隐藏{% endif %}
+      </button>
+    </form>
+  {% endif %}
+{% endmacro %}
+
+{% macro menu_item(kind, doc, cid, csid, ssid) %}
+  {% if handler.user.hasPerm(perm.PERM_EDIT_TRAINING) or handler.user.hasPerm(perm.PERM_EDIT_DOMAIN) %}
+    <li class="menu__item">
+      <form method="post" action="{{ url('course_visibility_toggle') }}" class="course-visibility-menu-form">
+        {{ fields(kind, cid, csid, ssid, doc) }}
+        <button class="menu__link" type="submit">
+          <span class="icon icon-edit"></span>
+          {% if doc.hidden %}打开显示{% else %}隐藏{% endif %}
+        </button>
+      </form>
+    </li>
+  {% endif %}
+{% endmacro %}

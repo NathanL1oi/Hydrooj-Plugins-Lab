@@ -1,0 +1,65 @@
+{% import "components/nothing.html" as nothing with context %}
+{% import "components/user.html" as user with context %}
+{% import "components/paginator.html" as paginator with context %}
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('课程包') }}</h1>
+        <div class="section__tools">
+          <form method="get">
+            <input type="text" class="inline compact textbox" name="q" value="{{ q }}" placeholder="{{ _('搜索课程包...') }}">
+            <button type="submit" class="button hasjs--hide">{{ _('Search') }}</button>
+          </form>
+        </div>
+      </div>
+      {% if not cpdocs.length %}
+      {{ nothing.render('暂无课程包') }}
+      {% else %}
+      <ol class="section__list discussion__list">
+        {%- for cpdoc in cpdocs -%}
+        <li class="section__list__item discussion__item">
+          <div class="media">
+            <div class="media__left middle">
+              <div class="discussion__replies numbox">
+                <div class="numbox__num large">{{ cpdoc.nVersion|default(0) }}</div>
+                <div class="numbox__text">{{ _('版本') }}</div>
+              </div>
+            </div>
+            <div class="media__body middle">
+              <h1 class="discussion__title">
+                <a href="{{ url('course_package_detail', cpid=cpdoc.docId) }}">{{ cpdoc.title }}</a>
+              </h1>
+              <ul class="supplementary list">
+                <li><div class="training__intro typo"><p>{{ cpdoc.content|truncate(60, true)|safe }}</p></div></li>
+                {% if udict[cpdoc.owner] %}
+                <li>|</li>
+                <li>{{ user.render_inline(udict[cpdoc.owner], badge=false) }}</li>
+                {% endif %}
+              </ul>
+            </div>
+          </div>
+        </li>
+        {%- endfor -%}
+      </ol>
+      {% if page and cpcount %}{{ paginator.render(page, cpcount) }}{% endif %}
+      {% endif %}
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    {% if handler.user.hasPerm(perm.PERM_CREATE_TRAINING) %}
+    <div class="section side">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('课程包') }}</h1>
+      </div>
+      <ol class="menu">
+        <li class="menu__item"><a href="{{ url('course_package_create') }}" class="menu__link"><span class="icon icon-add"></span> {{ _('创建课程包') }}</a></li>
+        <li class="menu__item"><a href="{{ url('course_package_import') }}" class="menu__link"><span class="icon icon-upload"></span> {{ _('导入课程包') }}</a></li>
+      </ol>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

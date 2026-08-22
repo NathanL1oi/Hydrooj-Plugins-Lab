@@ -1,0 +1,16 @@
+{
+  "name": "hydrooj-contest-acm-group-roll",
+  "version": "0.1.3",
+  "description": "ACM group scoreboard freeze and post-contest rolling board for Hydro contests",
+  "main": "index.js",
+  "license": "MIT",
+  "hydrooj": {
+    "frontend": {
+      "contest_acm_group_roll.page.js": "frontend/contest_acm_group_roll.page.js"
+    }
+  },
+  "devDependencies": {
+    "hydrooj": "latest",
+    "@hydrooj/ui-default": "latest"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "name": "hydrooj-course-lecture-problem",
+  "version": "0.1.0",
+  "description": "Select course subsection problems as protected lecture handouts without counting them in course scores.",
+  "main": "index.js",
+  "license": "MIT",
+  "hydrooj": {
+    "frontend": {
+      "course_lecture_problem.page.js": "frontend/course_lecture_problem.page.js"
+    }
+  },
+  "dependencies": {
+    "@fontsource-variable/noto-sans-sc": "^5.2.9",
+    "@fontsource/jetbrains-mono": "^5.2.8",
+    "@fontsource/source-code-pro": "^5.2.7",
+    "@hydrooj/ui-default": "latest",
+    "chrome-finder": "^1.0.7",
+    "github-markdown-css": "^5.8.1",
+    "katex": "^0.16.25",
+    "prismjs": "^1.30.0",
+    "puppeteer-core": "^24.29.0",
+    "puppeteer-extra": "^3.3.6"
+  },
+  "devDependencies": {
+    "hydrooj": "latest"
+  }
+}

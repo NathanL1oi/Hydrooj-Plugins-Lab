@@ -1,0 +1,6 @@
+{
+  "name": "@hydrooj/profile-lock",
+  "version": "0.0.1",
+  "repository": "https://github.com/hydro-dev/Hydro",
+  "main": "index.ts"
+}

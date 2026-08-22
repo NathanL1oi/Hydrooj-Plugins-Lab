@@ -1,0 +1,40 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('复制到课程') }}</h1>
+      </div>
+      <div class="section__body">
+        <form method="post">
+          <input type="hidden" name="mode" value="{{ mode }}">
+          <input type="hidden" name="nodeId" value="{{ nodeId }}">
+          <label>
+            {{ _('目标课程') }}
+            <select name="targetCourseId" class="select">
+              {% for course in courses %}
+              <option value="{{ course.docId }}">{{ course.title }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <p class="help-text">{{ _('将当前选择复制为目标课程中的章节和小节。') }}</p>
+          <button type="submit" class="rounded primary button">{{ _('复制') }}</button>
+          <button type="button" class="rounded button" onclick="window.history.go(-1)">{{ _('Cancel') }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    <div class="section side">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('当前选择') }}</h1>
+      </div>
+      <div class="section__body typo">
+        <p>{{ cpdoc.title }} / {{ vpdoc.version }}</p>
+        <p>{{ mode }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

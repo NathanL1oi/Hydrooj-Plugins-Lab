@@ -1,0 +1,49 @@
+<table class="data-table">
+  <colgroup>
+    {% if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+      <col class="col--training-status" style="width: 8rem; border-right: 1px solid #e4e4e4;">
+    {% endif %}
+    <col class="col--training-title">
+    <col class="col--training-intro">
+    <col class="col--training-num" style="width: 8rem; border-left: 1px solid #e4e4e4;">
+    <col class="col--attend" style="width:6rem">
+  </colgroup>
+  <thead>
+    <tr>
+      {% if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+        <th class="col--training-status">{{ _('Status') }}</th>
+      {% endif %}
+      <th class="col--training-title"> {{ _('Title') }}</th>
+      <th class="col--training-intro">{{ _('Introduce') }}</th>
+      <th class="col--training-num">{{ _('题目数量') }}</th>
+      <th class="col--attend">{{ _('Enrollees') }}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {%- for tdoc in tdocs -%}
+      <tr>
+        {% if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+          <td class="col--training-status">
+            {% if tsdict[tdoc.docId]['enroll'] %}
+              {% if not tsdict[tdoc.docId]['done'] %}
+                <span class="icon training-status--icon progress"></span>
+                <span class="training-status--text progress">{{ _('Completed') }} {{ (100 * tsdict[tdoc.docId]['donePids']|length / model.training.getPids(tdoc.dag)|length)|round|int }}%</span>
+              {% else %}
+                <span class="icon training-status--icon done"></span>
+                <span class="training-status--text done">{{ _('Completed') }} 100%</span>
+              {% endif %}
+            {% else %}
+              <span class="icon training-status--icon outside"></span> <span class="training-status--text outside">{{ _('Not Enrolled') }}</span>
+            {% endif %}
+          </td>
+        {% endif %}
+        <td class="col--training-title"><a href="{{ url('training_detail', tid=tdoc.docId) }}" data-emoji-enabled>{{ tdoc.title }}</a></td>
+        <td class="col--training-intro"><a href="{{ url('training_detail', tid=tdoc.docId) }}" data-emoji-enabled>{{ tdoc['content'] }}</a></td>
+        <td class="col--training-num">
+          {{ _('{0} sections').format(tdoc['dag']|length) }}, {{ _('{0} problems').format(model.training.getPids(tdoc.dag)|length) }}
+        </td>
+        <td class="col--attend">{{ tdoc.attend|default(0) }} {{ _('Enrolled') }}</td>
+      </tr>
+    {%- endfor -%}
+  </tbody>
+</table>

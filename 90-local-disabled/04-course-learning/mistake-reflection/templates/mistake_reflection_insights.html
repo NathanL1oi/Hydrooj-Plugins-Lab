@@ -1,0 +1,186 @@
+{% import "components/user.html" as user with context %}
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.mri-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.mri-filter { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; }
+.mri-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.mri-card { border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; }
+.mri-card h2 { margin: 0; padding: 12px 14px; font-size: 1.05rem; border-bottom: 1px solid #edf2f7; }
+.mri-card .inner { padding: 12px 14px; }
+.mri-muted { color: #64748b; }
+.mri-user-row { border-top: 1px solid #edf2f7; padding: 10px 0; }
+.mri-user-row:first-child { border-top: 0; padding-top: 0; }
+.mri-mini { margin: 6px 0 0 0; padding-left: 18px; color: #475569; }
+.theme--dark .mri-card {
+  border-color: #3a4656;
+  background: #1f242c;
+  color: #cbd5e1;
+}
+.theme--dark .mri-card h2,
+.theme--dark .mri-user-row {
+  border-color: #303a48;
+}
+.theme--dark .mri-card h2 {
+  color: #e2e8f0;
+}
+.theme--dark .mri-muted {
+  color: #94a3b8;
+}
+.theme--dark .mri-mini {
+  color: #cbd5e1;
+}
+@media screen and (max-width: 768px) { .mri-grid { grid-template-columns: 1fr; } }
+</style>
+<div class="section">
+  <div class="section__header">
+    <div class="mri-head">
+      <h1 class="section__title">{{ _('错因复盘') }}</h1>
+      <form method="get" class="mri-filter">
+        <label>
+          {{ _('小组') }}
+          <select name="groupName" class="select">
+            <option value="all" {% if filterGroupName == 'all' %}selected{% endif %}>{{ _('全部') }}</option>
+            {% for group in groups %}
+            <option value="{{ group.name }}" {% if filterGroupName == group.name %}selected{% endif %}>{{ group.name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <button class="button rounded" type="submit">{{ _('筛选') }}</button>
+      </form>
+    </div>
+  </div>
+  {% if not courseEnabled %}
+  <div class="section__body">
+    <blockquote class="warn">{{ _('未检测到课程插件，章和小节统计会先显示为未绑定课程。') }}</blockquote>
+  </div>
+  {% endif %}
+</div>
+
+<div class="mri-grid">
+  <div class="mri-card">
+    <h2>{{ _('错因类型分布') }}</h2>
+    <div class="inner">
+      <table class="data-table">
+        <tbody>
+          {% for row in byCause %}
+          <tr><td>{{ row.label }}</td><td>{{ row.count }}</td><td>{{ row.userCount }} {{ _('人') }}</td></tr>
+          {% else %}
+          <tr><td colspan="3" class="mri-muted">{{ _('暂无错因记录') }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="mri-card">
+    <h2>{{ _('高频复盘题') }}</h2>
+    <div class="inner">
+      <table class="data-table">
+        <tbody>
+          {% for row in byProblem %}
+          <tr>
+            <td><a href="{{ url('problem_detail', pid=row.pid) }}">P{{ row.pid }}</a></td>
+            <td>{{ row.count }}</td>
+            <td>{{ row.causeText }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3" class="mri-muted">{{ _('暂无题目数据') }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section__header"><h1 class="section__title">{{ _('按章统计') }}</h1></div>
+  <table class="data-table">
+    <thead>
+      <tr><th>{{ _('课程') }}</th><th>{{ _('章') }}</th><th>{{ _('错因数') }}</th><th>{{ _('学生') }}</th><th>{{ _('题目') }}</th><th>{{ _('主要错因') }}</th></tr>
+    </thead>
+    <tbody>
+      {% for row in bySection %}
+      <tr>
+        <td>{{ row.courseTitle }}</td>
+        <td>{% if row.url %}<a href="{{ row.url }}">{{ row.sectionTitle }}</a>{% else %}{{ row.sectionTitle }}{% endif %}</td>
+        <td>{{ row.count }}</td>
+        <td>{{ row.userCount }}</td>
+        <td>{{ row.problemCount }}</td>
+        <td>{{ row.causeText }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="mri-muted">{{ _('暂无章统计') }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <div class="section__header"><h1 class="section__title">{{ _('按小节统计') }}</h1></div>
+  <table class="data-table">
+    <thead>
+      <tr><th>{{ _('章') }}</th><th>{{ _('小节') }}</th><th>{{ _('错因数') }}</th><th>{{ _('学生') }}</th><th>{{ _('题目') }}</th><th>{{ _('主要错因') }}</th></tr>
+    </thead>
+    <tbody>
+      {% for row in bySubsection %}
+      <tr>
+        <td>{{ row.sectionTitle }}</td>
+        <td>{% if row.url %}<a href="{{ row.url }}">{{ row.subsecTitle }}</a>{% else %}{{ row.subsecTitle }}{% endif %}</td>
+        <td>{{ row.count }}</td>
+        <td>{{ row.userCount }}</td>
+        <td>{{ row.problemCount }}</td>
+        <td>{{ row.causeText }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="mri-muted">{{ _('暂无小节统计') }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <div class="section__header"><h1 class="section__title">{{ _('按学生查看错因') }}</h1></div>
+  <div class="section__body">
+    {% for row in byUser %}
+    <div class="mri-user-row">
+      <strong>{% if udict[row.uid] %}{{ user.render_inline(udict[row.uid], badge=false) }}{% else %}UID {{ row.uid }}{% endif %}</strong>
+      <span class="mri-muted"> · {{ row.count }} {{ _('条') }} · {{ row.causeText }}</span>
+      <ul class="mri-mini">
+        {% for doc in row.recent %}
+        <li>
+          <a href="{{ url('problem_detail', pid=doc.pid) }}">P{{ doc.pid }}</a>
+          · {{ causeLabel(doc.cause) }}
+          {% if doc.courseRef %} · {{ doc.courseRef.sectionTitle }} / {{ doc.courseRef.subsecTitle }}{% endif %}
+          · {{ doc.next|striptags|truncate(70) }}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% else %}
+    <p class="mri-muted">{{ _('暂无学生错因记录') }}</p>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="section">
+  <div class="section__header"><h1 class="section__title">{{ _('最近错因卡') }}</h1></div>
+  <table class="data-table">
+    <thead>
+      <tr><th>{{ _('学生') }}</th><th>{{ _('题目') }}</th><th>{{ _('章节') }}</th><th>{{ _('错因') }}</th><th>{{ _('下次策略') }}</th></tr>
+    </thead>
+    <tbody>
+      {% for doc in recent %}
+      <tr>
+        <td>{% if udict[doc.uid] %}{{ user.render_inline(udict[doc.uid], badge=false) }}{% else %}UID {{ doc.uid }}{% endif %}</td>
+        <td><a href="{{ url('problem_detail', pid=doc.pid) }}">P{{ doc.pid }}</a></td>
+        <td>{% if doc.courseRef %}{{ doc.courseRef.sectionTitle }} / {{ doc.courseRef.subsecTitle }}{% else %}<span class="mri-muted">{{ _('未绑定') }}</span>{% endif %}</td>
+        <td>{{ causeLabel(doc.cause) }}</td>
+        <td>{{ doc.next|striptags|truncate(80) }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" class="mri-muted">{{ _('暂无最近记录') }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

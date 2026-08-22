@@ -1,0 +1,121 @@
+{% import "components/form.html" as form with context %}
+{% extends "layout/basic.html" %}
+{% block content %}
+{{ set(UiContext, 'forcedRef', forcedRef) }}
+<style>.hidden{display:none}</style>
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__body">
+        <form method="post">
+          <div class="row">
+            <div class="medium-8 columns">
+              <label>
+                {{ _('Title') }}
+                <input name="title" placeholder="{{ _('title') }}" value="{{ ddoc.title|default('') }}" class="textbox"
+                  autofocus>
+                </label>
+            </div>
+            <div class="medium-4 columns">
+              <label>
+                <br>
+                <label class="checkbox">
+                  <input type="checkbox" name="hidden" value="on" class="checkbox" {%- if ddoc.hidden %} checked{% endif
+                    -%}>{{ _('Hidden') }}
+                </label>
+                <p class="help-text">博客隐藏后将不会被推荐到文章栏目</p>
+              </label>
+            </div>
+          </div>
+          <div class="row">
+            {{ form.form_select({
+            columns:3,
+            label:'Category',
+            name:'category',
+            options:categories,
+            value:ddoc['category']|default(''),
+            row:false
+            }) }}
+            {% if forcedRef %}
+              <input type="hidden" id="courseId" value="{{ forcedRef.courseId|default('') }}">
+              <input type="hidden" id="sectionId" value="{{ forcedRef.sectionId|default('') }}">
+              <input type="hidden" id="subsecId"  value="{{ forcedRef.subsecId|default('') }}">
+            {% elif handler.user.hasPerm(perm.PERM_EDIT_DOMAIN) %}
+              <div class="medium-3 columns" id="select_course_for_admin">
+                <div name="form_item_course" class="select-container">
+                  <label>
+                    {{ _('Course') }}
+                    <select id="course_select" class="select" name="courseId">
+                      <option value="">{{ _('Select a course') }}</option>
+                    </select>
+                    <p class="help-text">将博客关联到课程（需关联到具体小节）</p>
+                  </label>
+                </div>
+              </div>
+              <div class="medium-3 columns" id="select_section_for_admin">
+                <div name="form_item_section" class="select-container">
+                  <label>
+                    {{ _('Section') }}
+                    <select id="section_select" class="select" name="sectionId" disabled>
+                      <option value="">{{ _('Select a section') }}</option>
+                    </select>
+                    <p class="help-text">选择关联章节</p>
+                  </label>
+                </div>
+              </div>
+              <div class="medium-3 columns" id="select_subsec_for_admin">
+                <div name="form_item_subsec" class="select-container">
+                  <label>
+                    {{ _('SubSection') }}
+                    <select id="subsec_select" class="select" name="subsecId" disabled>
+                      <option value="">{{ _('Select a subsec') }}</option>
+                    </select>
+                    <p class="help-text">选择关联小节</p>
+                  </label>
+                </div>
+              </div>
+              <input type="hidden" id="preCourseId" value="{{ ddoc.courseRef.courseId|default('') }}">
+              <input type="hidden" id="preSectionId" value="{{ ddoc.courseRef.sectionId|default('') }}">
+              <input type="hidden" id="preSubId"  value="{{ ddoc.courseRef.subsecId|default('') }}">
+            {% else %}
+              <input type="hidden" id="courseId" value="{{ ddoc.courseRef.courseId|default('') }}">
+              <input type="hidden" id="sectionId" value="{{ ddoc.courseRef.sectionId|default('') }}">
+              <input type="hidden" id="subsecId"  value="{{ ddoc.courseRef.subsecId|default('') }}">
+            {% endif %}
+          </div>
+          {{ form.form_textarea({
+          columns:12,
+          label:'Content',
+          name:'content',
+          value:ddoc.content|default(''),
+          hotkeys:'ctrl+enter:submit',
+          markdown:true,
+          required:true,
+          extra_style:'height: 500px',
+          extra_textarea_class:'auto-resize'
+          }) }}
+          <div class="row">
+            <div class="columns">
+              <button name="operation" value="{{ 'update' if ddoc else 'create' }}" data-default-submit type="submit"
+                class="rounded primary button">
+                {{ _('Update') if ddoc else _('Create') }} (Ctrl+Enter)
+              </button>
+              {% if ddoc and (handler.user.hasPerm(perm.PERM_EDIT_DOMAIN) or handler.user.own(ddoc)) %}
+              <button name="operation" value="delete" type="submit" class="rounded button" onclick="return confirm('确认删除这篇文章吗？')">
+                {{ _('Delete') }}
+              </button>
+              {% endif %}
+              <button type="button" class="rounded button" onclick="window.history.go(-1)">
+                {{ _('Cancel') }}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    {% include 'components/md_hint.html' %}
+  </div>
+</div>
+{% endblock %}

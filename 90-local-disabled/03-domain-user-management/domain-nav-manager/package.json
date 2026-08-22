@@ -1,0 +1,10 @@
+{
+  "name": "hydrooj-plugin-domain-nav-manager",
+  "version": "0.1.6-context-nav-guard",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "hydrooj": "latest",
+    "@hydrooj/ui-default": "latest"
+  }
+}

@@ -1,0 +1,24 @@
+{% if codeStreak and codeStreak.config and codeStreak.config.enabled %}
+<li class="section__tab-item">
+  <h1 class="section__tab-title">{{ _('训练火苗') }}</h1>
+  <div class="section__tab-main">
+    <div class="typo section__body">
+      {% if codeStreak.stat %}
+      <p>
+        <span style="display:inline-block;width:18px;height:22px;border-radius:60% 60% 55% 55%;background:linear-gradient(135deg,#f97316,#ef4444 58%,#facc15);vertical-align:middle"></span>
+        <strong style="color:#ea580c">{{ codeStreak.stat.current }}</strong> {{ _('天连续训练') }}
+        ，{{ _('最长') }} {{ codeStreak.stat.best }} {{ _('天') }}，
+        {{ codeStreak.stat.modeText }}。
+      </p>
+      <p>{{ _('最近') }} {{ codeStreak.config.windowDays }} {{ _('天活跃') }} {{ codeStreak.stat.activeDays }} {{ _('天') }}，{{ _('提交') }} {{ codeStreak.stat.submissions }}，AC {{ codeStreak.stat.accepts }}。</p>
+      <p>
+        <a href="{{ codeStreakRankingUrl }}">{{ _('查看火苗榜') }}</a>
+        {% if handler.user._id == codeStreak.stat.uid %} · <a href="{{ codeStreakHomeUrl }}">{{ _('我的火苗') }}</a>{% endif %}
+      </p>
+      {% else %}
+      <p>{{ _('还没有训练记录。') }}</p>
+      {% endif %}
+    </div>
+  </div>
+</li>
+{% endif %}

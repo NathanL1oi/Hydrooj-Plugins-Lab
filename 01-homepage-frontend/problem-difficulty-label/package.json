@@ -1,0 +1,12 @@
+{
+  "name": "hydrooj-problem-difficulty-label",
+  "version": "0.1.0",
+  "description": "Luogu-style problem difficulty labels for HydroOJ.",
+  "main": "index.ts",
+  "author": "zacktan",
+  "license": "AGPL-3.0",
+  "devDependencies": {
+    "@hydrooj/ui-default": "^4.58.0-beta.6",
+    "hydrooj": "^5.0.0-beta.6"
+  }
+}

@@ -1,0 +1,128 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.cth .cth-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.cth .cth-muted { color: #64748b; font-size: 13px; line-height: 1.55; }
+.cth .cth-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.cth .cth-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; background: #fff; }
+.cth .cth-card h2 { margin: 0 0 8px; font-size: 16px; line-height: 1.35; }
+.cth .cth-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.cth .cth-member { display: inline-block; margin: 0 6px 6px 0; border-radius: 999px; padding: 2px 8px; background: #eef2ff; color: #3730a3; }
+.cth textarea { min-height: 70px; }
+.cth .cth-danger { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+.theme--dark .cth .cth-muted { color: #9fb0c6; }
+.theme--dark .cth .cth-card {
+  background: rgba(15, 23, 42, .42);
+  border-color: rgba(148, 163, 184, .26);
+  color: #dbe7f5;
+}
+.theme--dark .cth .cth-member {
+  background: rgba(99, 102, 241, .24);
+  color: #c7d2fe;
+}
+.theme--dark .cth .cth-danger {
+  background: rgba(127, 29, 29, .34);
+  color: #fca5a5;
+  border-color: rgba(248, 113, 113, .38);
+}
+@media (max-width: 800px) { .cth .cth-grid { grid-template-columns: 1fr; } }
+</style>
+<div class="row cth">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <div class="cth-head">
+          <h1 class="section__title">{{ _('班级小队') }}</h1>
+          <span class="cth-muted">{{ _('建议每队 2-3 人，可被比赛互动设置一键套用。') }}</span>
+        </div>
+      </div>
+      <div class="section__body">
+        {% for msg in messages %}
+          <blockquote class="note">{{ msg }}</blockquote>
+        {% endfor %}
+        <form method="post">
+          <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+          <div class="cth-grid">
+            <label>
+              {{ _('小队名') }}
+              <input class="textbox" name="name" placeholder="{{ _('例如：冲刺一队') }}">
+            </label>
+            <label>
+              {{ _('备注') }}
+              <input class="textbox" name="note" placeholder="{{ _('可写座位、层次、目标') }}">
+            </label>
+          </div>
+          <label>
+            {{ _('成员') }}
+            <textarea class="textbox" name="membersText" placeholder="{{ _('填写 2-3 个 uid、用户名或邮箱，用空格/逗号分隔') }}"></textarea>
+          </label>
+          <div class="cth-actions">
+            <button class="button rounded primary" name="operation" value="save" type="submit">
+              <span class="icon icon-add"></span> {{ _('创建小队') }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('已有小队') }}</h1>
+      </div>
+      <div class="section__body cth-grid">
+        {% for team in teams %}
+        <div class="cth-card">
+          <form method="post">
+            <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+            <input type="hidden" name="teamId" value="{{ team.teamId }}">
+            <h2>{{ team.name }}</h2>
+            <p>
+              {% for name in team.memberNames %}
+                <span class="cth-member">{{ name }}</span>
+              {% endfor %}
+            </p>
+            <label>
+              {{ _('小队名') }}
+              <input class="textbox" name="name" value="{{ team.name }}">
+            </label>
+            <label>
+              {{ _('成员') }}
+              <textarea class="textbox" name="membersText">{{ team.membersText }}</textarea>
+            </label>
+            <label>
+              {{ _('备注') }}
+              <input class="textbox" name="note" value="{{ team.note }}">
+            </label>
+            <div class="cth-actions">
+              <button class="button rounded primary" name="operation" value="save" type="submit">{{ _('保存') }}</button>
+              <button class="button rounded cth-danger" name="operation" value="delete" type="submit" onclick="return confirm('{{ _('确认删除这个班级小队？') }}')">{{ _('删除') }}</button>
+            </div>
+          </form>
+        </div>
+        {% endfor %}
+        {% if not teams.length %}
+          <p class="cth-muted">{{ _('还没有班级小队。') }}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    <div class="section side">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('托管学生') }}</h1>
+      </div>
+      <div class="section__body typo">
+        {% if students.length %}
+        <ul>
+          {% for student in students %}
+          <li><code>{{ student.uid }}</code> {{ student.name or student.uname }}{% if student.studentId %}<br><span class="cth-muted">{{ student.studentId }}</span>{% endif %}</li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="cth-muted">{{ _('暂无托管学生，也可以直接填写 uid / 用户名。') }}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

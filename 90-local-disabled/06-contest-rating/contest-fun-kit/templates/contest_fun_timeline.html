@@ -1,0 +1,225 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.cfk-timeline-page { display: grid; gap: 14px; }
+.cfk-note { color: #64748b; font-size: 13px; line-height: 1.55; }
+.cfk-filter { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+.cfk-filter label { display: grid; gap: 4px; min-width: 160px; }
+.cfk-metrics { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.cfk-metric { border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; background: #f8fafc; }
+.cfk-metric strong { display: block; font-size: 22px; line-height: 1.2; color: #0f172a; }
+.cfk-metric span { color: #64748b; font-size: 13px; }
+.cfk-two { display: grid; grid-template-columns: minmax(220px, .68fr) minmax(0, 1.55fr); gap: 16px; align-items: start; }
+.cfk-timeline-compact h2, .cfk-analysis h2, .cfk-team-rank h2 { margin: 0 0 8px; }
+.cfk-team-rank { border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; background: #fff; overflow-x: auto; }
+.cfk-team-rank table { min-width: 680px; }
+.cfk-analysis { display: grid; gap: 14px; min-width: 0; overflow-x: auto; }
+.cfk-events { display: grid; gap: 6px; max-height: 560px; overflow: auto; padding-right: 4px; }
+.cfk-event { position: relative; border: 1px solid #e2e8f0; border-radius: 6px; padding: 7px 9px; background: #fff; }
+.cfk-event.is-ac { border-color: #bbf7d0; background: #f0fdf4; }
+.cfk-event-title { display: flex; justify-content: space-between; gap: 8px; font-weight: 600; font-size: 13px; line-height: 1.35; }
+.cfk-meta { color: #64748b; font-size: 12px; display: flex; gap: 6px; flex-wrap: wrap; margin-top: 3px; }
+.cfk-table { width: 100%; }
+.cfk-table th, .cfk-table td { white-space: nowrap; }
+.cfk-empty { border: 1px dashed #cbd5e1; border-radius: 8px; padding: 16px; color: #64748b; background: #f8fafc; }
+.theme--dark .cfk-note,
+.theme--dark .cfk-meta,
+.theme--dark .cfk-metric span,
+.theme--dark .cfk-empty {
+  color: #94a3b8;
+}
+.theme--dark .cfk-metric,
+.theme--dark .cfk-team-rank,
+.theme--dark .cfk-event,
+.theme--dark .cfk-empty {
+  border-color: #3a4656;
+  background: #1f242c;
+  color: #cbd5e1;
+}
+.theme--dark .cfk-metric strong {
+  color: #e2e8f0;
+}
+.theme--dark .cfk-event.is-ac {
+  border-color: #166534;
+  background: #12351f;
+}
+@media (max-width: 900px) {
+  .cfk-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cfk-two { grid-template-columns: 1fr; }
+  .cfk-events { max-height: 360px; }
+}
+</style>
+<div class="row" data-sticky-parent>
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('赛后复盘时间线') }}</h1>
+      </div>
+      <div class="section__body cfk-timeline-page">
+        {% if not config.timelineEnabled and not canManage %}
+          <div class="cfk-empty">{{ _('本场比赛尚未开启赛后复盘时间线。') }}</div>
+        {% elif not isDone and not canManage %}
+          <div class="cfk-empty">{{ _('比赛结束后这里会自动开放你的复盘时间线。') }}</div>
+        {% else %}
+          {% if canManage %}
+            <form method="get" class="cfk-filter">
+              <label>
+                <span>{{ _('小组') }}</span>
+                <select name="teamName" class="select">
+                  <option value="">{{ _('全部小组') }}</option>
+                  {% for team in filters.teams %}
+                    <option value="{{ team }}" {% if selectedTeam == team %}selected{% endif %}>{{ team }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label>
+                <span>{{ _('学生') }}</span>
+                <select name="uid" class="select">
+                  <option value="0">{{ _('全部学生') }}</option>
+                  {% for item in filters.users %}
+                    <option value="{{ item.uid }}" {% if selectedUid == item.uid %}selected{% endif %}>{{ item.name }} #{{ item.uid }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <button class="rounded button" type="submit">{{ _('筛选') }}</button>
+            </form>
+            <p class="cfk-note">{{ _('教师可提前预览；学生端只在比赛结束后看到自己的复盘。') }}</p>
+          {% endif %}
+
+          {% if timeline.summary %}
+            <div class="cfk-metrics">
+              <div class="cfk-metric"><strong>{{ timeline.summary.participants }}</strong><span>{{ _('参与人数') }}</span></div>
+              <div class="cfk-metric"><strong>{{ timeline.summary.submissions }}</strong><span>{{ _('提交次数') }}</span></div>
+              <div class="cfk-metric"><strong>{{ timeline.summary.acSubmissions }}</strong><span>{{ _('AC 提交') }}</span></div>
+              <div class="cfk-metric"><strong>{{ timeline.summary.solvedProblems }}/{{ timeline.summary.totalProblems }}</strong><span>{{ _('已攻克题目') }}</span></div>
+              <div class="cfk-metric"><strong>{{ timeline.userRows.length }}</strong><span>{{ _('复盘对象') }}</span></div>
+            </div>
+          {% endif %}
+
+          {% if config.groupModeEnabled %}
+            <div class="cfk-team-rank">
+              <h2>{{ _('小组平均分排名') }}</h2>
+              <p class="cfk-note">{{ _('小组平均分 = 组内实际参赛学生最终分数之和 / 实际参赛人数，始终展示本场全部小组，不随上方小组/学生筛选变化。') }}</p>
+              <table class="data-table cfk-table">
+                <thead>
+                  <tr>
+                    <th>{{ _('排名') }}</th>
+                    <th>{{ _('小组') }}</th>
+                    <th>{{ _('参赛人数') }}</th>
+                    <th>{{ _('平均分') }}</th>
+                    <th>{{ _('最高分') }}</th>
+                    <th>{{ _('AC') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in timeline.teamRows %}
+                    <tr>
+                      <td>#{{ row.rank }}</td>
+                      <td>{{ row.teamName }}</td>
+                      <td>{{ row.members }}</td>
+                      <td>{{ row.averageScoreText }}</td>
+                      <td>{{ row.topScoreText }}</td>
+                      <td>{{ row.solved }}</td>
+                    </tr>
+                  {% else %}
+                    <tr><td colspan="6">{{ _('暂无小组数据') }}</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% endif %}
+
+          <div class="cfk-two">
+            <div class="cfk-timeline-compact">
+              <h2>{{ _('时间线') }}</h2>
+              <div class="cfk-events">
+                {% for event in timeline.events %}
+                  <div class="cfk-event {% if event.isAc %}is-ac{% endif %}">
+                    <div class="cfk-event-title">
+                      <span>{{ event.problemLabel }} {{ _('题') }} · {{ event.statusText }}</span>
+                      <span>{{ _('第') }} {{ event.minute }} {{ _('分钟') }}</span>
+                    </div>
+                    <div class="cfk-meta">
+                      <span>{{ event.uname }}</span>
+                      {% if event.teamName %}<span>{{ event.teamName }}</span>{% endif %}
+                      {% if event.score %}<span>{{ _('分数') }} {{ event.score }}</span>{% endif %}
+                      {% if event.lang %}<span>{{ event.lang }}</span>{% endif %}
+                    </div>
+                  </div>
+                {% else %}
+                  <div class="cfk-empty">{{ _('暂无提交记录') }}</div>
+                {% endfor %}
+              </div>
+            </div>
+            <div class="cfk-analysis">
+              <h2>{{ _('个人概览') }}</h2>
+              <table class="data-table cfk-table">
+                <thead>
+                  <tr>
+                    <th>{{ _('学生') }}</th>
+                    <th>{{ _('AC') }}</th>
+                    <th>{{ _('提交') }}</th>
+                    <th>{{ _('目标') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in timeline.userRows %}
+                    <tr>
+                      <td>
+                        {{ row.uname }}
+                        {% if row.teamName %}<br><span class="cfk-note">{{ row.teamName }}</span>{% endif %}
+                      </td>
+                      <td>{{ row.solved }}</td>
+                      <td>{{ row.submissions }}</td>
+                      <td>
+                        {% if row.targetSolve %}
+                          {{ row.solved }}/{{ row.targetSolve }}{% if row.goalMet %} ✓{% endif %}
+                        {% else %}
+                          -
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% else %}
+                    <tr><td colspan="4">{{ _('暂无数据') }}</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+
+              <h2>{{ _('题目攻克') }}</h2>
+              <table class="data-table cfk-table">
+                <thead>
+                  <tr>
+                    <th>{{ _('题目') }}</th>
+                    <th>{{ _('提交') }}</th>
+                    <th>{{ _('AC 人数') }}</th>
+                    <th>{{ _('首 AC') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in timeline.problemRows %}
+                    <tr>
+                      <td>{{ row.label }}</td>
+                      <td>{{ row.submissions }}</td>
+                      <td>{{ row.acUsers }}</td>
+                      <td>
+                        {% if row.firstAc %}
+                          {{ row.firstAc.uname }}<br><span class="cfk-note">{{ _('第') }} {{ row.firstAc.minute }} {{ _('分钟') }}</span>
+                        {% else %}
+                          -
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns" data-sticky="large">
+    {% include "partials/contest_sidebar.html" %}
+  </div>
+</div>
+{% endblock %}

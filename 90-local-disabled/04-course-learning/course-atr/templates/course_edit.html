@@ -1,0 +1,83 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+{% include "course_ui_style.html" %}
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('Edit Course') }}</h1>
+      </div>
+      <div class="section__body">
+        <form method="post">
+          <div class="row">
+            <div class="medium-9 columns">
+              <label>
+                {{ _('Title') }}
+                <input name="title" placeholder="{{ _('title') }}" value="{{ cdoc.title|default('') }}" class="textbox"
+                  autofocus>
+              </label>
+            </div>
+            <div class="medium-3 columns">
+              <label>
+                {{ _('Pin') }}
+                <input name="pin" placeholder="{{ _('Pin level') }}" value="{{ cdoc.pin|default(0) }}" class="textbox">
+                <p class="help-text">{{ _('pin_help-text') }}</p>
+              </label>
+            </div>
+          </div>
+          <div class="row">
+            <div class="columns">
+              <label>
+                {{ _('Assign') }}
+                <input name="assign" placeholder="{{ _('Group / UID') }}" value="{{ cdoc.assign|default('') }}" class="textbox">
+                <p class="help-text">{{ _('Split by \', \'.') }}</p>
+              </label>
+            </div>
+          </div>
+          <div class="row">
+            <div class="columns">
+              <label>
+                {{ _('Description') }}
+                <textarea name="content" class="textbox" data-markdown
+                  style="height: 200px">{{ cdoc['content']|default('') }}</textarea>
+                <p class="help-text">{{ _('It will be truncated to a portion of characters and displayed in the list view.') }}</p>
+              </label>
+            </div>
+          </div>
+          <div class="row">
+            <div class="columns">
+              <label>
+                <p class="help-text">{{ _('section_help-text') }}</p>
+              </label>
+            </div>
+          </div>
+          <div class="row">
+            <div class="columns">
+              {% if page_name == 'course_edit' %}
+              <button type="submit" class="rounded primary button">
+                {{ _('Update') }}
+              </button>
+              {% if handler.user.hasPerm(perm.PERM_EDIT_TRAINING) %}
+              <button name="operation" value="delete" type="submit" class="rounded button">
+                {{ _('Delete') }}
+              </button>
+              {% endif %}
+              {% else %}
+              <button type="submit" class="rounded primary button">
+                {{ _('Create') }}
+              </button>
+              {% endif %}
+              <button type="button" class="rounded button" onclick="window.history.go(-1)">
+                {{ _('Cancel') }}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    {% include 'components/md_hint.html' %}
+  </div>
+</div>
+{% endblock %}

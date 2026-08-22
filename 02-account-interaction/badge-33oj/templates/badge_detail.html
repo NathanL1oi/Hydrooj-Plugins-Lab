@@ -1,0 +1,58 @@
+{% extends "badge_base.html" %}
+{% block badge_content %}
+<div class="row">
+    <div class="medium-12 columns">
+        <div class="section">
+            <div class="section__header">
+                <div class="section__title">
+                    <h1 style="text-align: center;">{{ badge.title }}</h1>
+                </div>
+            </div>
+            <div class="section__body">
+                <div class="typo richmedia topic__content" data-emoji-enabled>
+                    {{ badge.content|markdown|safe }}
+                </div>
+            </div>
+            <div class="section__footer" style="display:flex;justify-content: space-between;">
+                <h3>
+                    {{ _('徽章预览')}}：{{ user.render_inline(handler.user,badge=false)}}
+                    <span class="user-profile-badge v-center" style="background-color:{{ badge.backgroundColor }};color:{{ badge.fontColor }};" data-tooltip="{{ badge.title }}">{{ badge.short }}</span>
+                </h3>
+                <h3>{{_('创建于')}}：{{ datetimeSpan(badge.createAt, false, 'YYYY-MM-DD')|safe}}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="section">
+    <div class="section__header">
+        <h1 class="section__title">{{ _('拥有徽章的用户') }}</h1>
+    </div>
+    <div class="section__body no-padding">
+        {% if not badge.users.length %}
+        {{ nothing.render('抱歉，目前没人拥有徽章。') }}
+        {% else %}
+        <table class="data-table">
+            <colgroup>
+                <col class="col--uid" style="width:5rem">
+                <col class="col--user">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>{{ _('User ID') }}</th>
+                    <th>{{ _('Username') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {%- for udoc in udocs -%}
+                <tr>
+                    <td>{{ udoc._id }}</td>
+                    <td>{{ user.render_inline(udoc,badge=false) }}</td>
+                </tr>
+                {%- endfor -%}
+            </tbody>
+        </table>
+        {{ paginator.render(page, upcount) }}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,11 @@
+{
+  "name": "badge",
+  "version": "0.0.1",
+  "description": "Badge for QLUOJ",
+  "main": "index.ts",
+  "author": "Godtokoo<admin@funfs.com>",
+  "license": "MIT",
+  "devDependencies": {
+      "hydrooj": "^4.18.0"
+    }
+}

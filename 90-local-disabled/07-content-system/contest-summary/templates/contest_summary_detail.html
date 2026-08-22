@@ -1,0 +1,190 @@
+{% extends "layout/basic.html" %}
+{% import "components/user.html" as user with context %}
+{% block content %}
+<style>
+.contest-summary-detail { --csd-accent: #2563eb; --csd-line: #e5edf7; --csd-soft: #f8fbff; --csd-ink: #17324d; --csd-muted: #64748b; }
+.contest-summary-detail .csd-shell { display: grid; gap: 16px; }
+.contest-summary-detail .csd-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 18px; align-items: start; }
+.contest-summary-detail .csd-panel { overflow: hidden; border-radius: 8px; }
+.contest-summary-detail .csd-actions,
+.contest-summary-detail .csd-meta,
+.contest-summary-detail .csd-badges { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.contest-summary-detail .csd-muted { color: var(--csd-muted); }
+.contest-summary-detail .csd-title { color: var(--csd-ink); line-height: 1.3; }
+.contest-summary-detail .csd-meta { margin-top: 2px; font-size: 13px; }
+.contest-summary-detail .csd-meta span + span::before { content: ""; width: 4px; height: 4px; margin-right: 8px; border-radius: 50%; background: #cbd5e1; }
+.contest-summary-detail .csd-badge { display: inline-flex; align-items: center; min-height: 22px; padding: 2px 8px; border-radius: 999px; background: #eef7ff; color: #0b66c3; font-size: 12px; font-weight: 700; }
+.contest-summary-detail .csd-badge--excellent { background: #fff0f6; color: #c2255c; }
+.contest-summary-detail .csd-badge--ai { background: #ecfdf5; color: #047857; }
+.contest-summary-detail .csd-body { padding-top: 18px; border-top: 1px solid var(--csd-line); }
+.contest-summary-detail .csd-ai-box { display: grid; gap: 16px; padding: 16px; border: 1px solid #dbeafe; border-radius: 8px; background: var(--csd-soft); }
+.contest-summary-detail .csd-ai-content { display: grid; gap: 16px; }
+.contest-summary-detail .csd-ai-box h3 { margin: 0; color: var(--csd-ink); font-size: 15px; font-weight: 700; line-height: 1.45; }
+.contest-summary-detail .csd-ai-text { margin: 0; color: #25364d; font-size: 14px; line-height: 1.85; white-space: pre-wrap; overflow-wrap: anywhere; }
+.contest-summary-detail .csd-ai-list { display: grid; gap: 6px; margin: 0; padding-left: 20px; color: #25364d; font-size: 14px; line-height: 1.7; }
+.contest-summary-detail .csd-ai-list li { margin: 0; padding-left: 2px; }
+.contest-summary-detail .csd-side { position: sticky; top: 12px; display: grid; gap: 16px; }
+.contest-summary-detail .csd-actions .button { width: 100%; justify-content: flex-start; }
+.contest-summary-detail .csd-score { display: grid; gap: 4px; padding: 14px; border: 1px solid var(--csd-line); border-radius: 8px; background: #fff; }
+.contest-summary-detail .csd-score strong { color: var(--csd-ink); font-size: 28px; line-height: 1; }
+.contest-summary-detail .csd-actions form { width: 100%; margin: 0; }
+.theme--dark .contest-summary-detail .csd-muted { color: #94a3b8; }
+.theme--dark .contest-summary-detail .csd-title { color: #e2e8f0; }
+.theme--dark .contest-summary-detail .csd-body { border-color: #303a48; }
+.theme--dark .contest-summary-detail .csd-ai-box h3 { color: #e2e8f0; }
+.theme--dark .contest-summary-detail .csd-ai-text,
+.theme--dark .contest-summary-detail .csd-ai-list { color: #cbd5e1; }
+.theme--dark .contest-summary-detail .csd-ai-box,
+.theme--dark .contest-summary-detail .csd-score { border-color: #303a48; background: #1f242c; }
+@media screen and (max-width: 960px) {
+  .contest-summary-detail .csd-grid { grid-template-columns: 1fr; }
+  .contest-summary-detail .csd-side { position: static; }
+  .contest-summary-detail .csd-actions .button { width: auto; }
+}
+</style>
+
+<div class="row contest-summary-detail">
+  <div class="medium-12 columns">
+    <div class="csd-shell">
+      <div class="csd-grid">
+        <main>
+          <section class="section csd-panel">
+            <div class="section__header">
+              <h1 class="section__title csd-title">{{ submit.title }}</h1>
+            </div>
+            <div class="section__body">
+              <div class="csd-meta csd-muted">
+                <span><a href="{{ submit.listUrl }}">{{ submit.contestTitle }}</a></span>
+                <span>{% if udoc %}{{ user.render_inline(udoc, badge=false) }}{% else %}UID {{ submit.uid }}{% endif %}</span>
+                <span>{{ datetimeSpan(submit.updatedAt)|safe }}</span>
+                <span>{{ submit.wordCount }} 字</span>
+              </div>
+              <div class="csd-badges" style="margin-top:10px;">
+                {% if submit.excellent %}<span class="csd-badge csd-badge--excellent">优秀总结</span>{% endif %}
+                {% if submit.hidden %}<span class="csd-badge">已隐藏</span>{% endif %}
+                {% if submit.evaluationStatus %}<span class="csd-badge csd-badge--ai">AI {{ submit.evaluationStatusText }}</span>{% endif %}
+                {% if submit.evaluationScore != null %}<span class="csd-badge">AI {{ submit.evaluationScore }}</span>{% endif %}
+              </div>
+            </div>
+            <div class="section__body typo richmedia csd-body">
+              {{ submit.content|markdown|safe }}
+            </div>
+          </section>
+
+          <section class="section csd-panel">
+            <div class="section__header">
+              <h1 class="section__title">AI 评测</h1>
+            </div>
+            <div class="section__body">
+              {% if submit.evaluationStatus %}
+              <div class="csd-ai-box">
+                <div class="csd-badges">
+                  <span class="csd-badge csd-badge--ai">{{ submit.evaluationStatusText }}</span>
+                  {% if submit.evaluationScore != null %}<span class="csd-badge">{{ submit.evaluationScore }}</span>{% endif %}
+                  {% if submit.evaluationResult and submit.evaluationResult.summary and submit.evaluationResult.summary.level %}
+                  <span class="csd-badge">{{ submit.evaluationResult.summary.level }}</span>
+                  {% endif %}
+                </div>
+                {% if submit.evaluationError %}
+                <blockquote class="note">{{ submit.evaluationError }}</blockquote>
+                {% endif %}
+                {% if submit.evaluationResult and submit.evaluationResult.summary %}
+                <div class="csd-ai-content">
+                  {% if submit.evaluationResult.summary.overall %}
+                  <p class="csd-ai-text">{{ submit.evaluationResult.summary.overall }}</p>
+                  {% endif %}
+                  {% if submit.evaluationResult.summary.strengths and submit.evaluationResult.summary.strengths.length %}
+                  <h3>优点</h3>
+                  <ul class="csd-ai-list">
+                    {% for item in submit.evaluationResult.summary.strengths %}<li>{{ item }}</li>{% endfor %}
+                  </ul>
+                  {% endif %}
+                  {% if submit.evaluationResult.summary.weaknesses and submit.evaluationResult.summary.weaknesses.length %}
+                  <h3>不足</h3>
+                  <ul class="csd-ai-list">
+                    {% for item in submit.evaluationResult.summary.weaknesses %}<li>{{ item }}</li>{% endfor %}
+                  </ul>
+                  {% endif %}
+                </div>
+                {% else %}
+                <p class="csd-muted">评测结果生成后会显示在这里。</p>
+                {% endif %}
+              </div>
+              {% else %}
+              <p class="csd-muted">当前还没有创建 AI 评测。请确认评测服务配置是否完整。</p>
+              {% endif %}
+            </div>
+          </section>
+        </main>
+
+        <aside class="csd-side">
+          {% if submit.evaluationScore != null %}
+          <section class="section csd-panel">
+            <div class="section__body">
+              <div class="csd-score">
+                <span class="csd-muted">AI 评分</span>
+                <strong>{{ submit.evaluationScore }}</strong>
+                {% if submit.evaluationResult and submit.evaluationResult.summary and submit.evaluationResult.summary.level %}
+                <span>{{ submit.evaluationResult.summary.level }}</span>
+                {% endif %}
+              </div>
+            </div>
+          </section>
+          {% endif %}
+
+          <section class="section csd-panel">
+            <div class="section__header">
+              <h1 class="section__title">操作</h1>
+            </div>
+            <div class="section__body">
+              <div class="csd-actions">
+                <a class="button rounded" href="{{ listUrl }}"><span class="icon icon-back"></span> 返回列表</a>
+                {% if submit.canEdit %}<a class="button rounded" href="{{ writeUrl }}"><span class="icon icon-edit"></span> 修改</a>{% endif %}
+                {% if canManage %}<a class="button rounded" href="{{ settingsUrl }}"><span class="icon icon-settings"></span> 设置</a>{% endif %}
+                {% if submit.canRetryEvaluation %}
+                <form method="post" action="{{ retryEvaluationUrl }}" onsubmit="return confirm('确认重新提交这篇总结的 AI 评测吗？');">
+                  <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+                  <button class="button rounded" type="submit"><span class="icon icon-refresh"></span> 重新提交 AI 评测</button>
+                </form>
+                {% endif %}
+              </div>
+            </div>
+          </section>
+
+          {% if submit.teacherComment %}
+          <section class="section csd-panel">
+            <div class="section__header">
+              <h1 class="section__title">老师评语</h1>
+            </div>
+            <div class="section__body typo richmedia">{{ submit.teacherComment|markdown|safe }}</div>
+          </section>
+          {% endif %}
+
+          {% if canManage %}
+          <section class="section csd-panel">
+            <div class="section__header">
+              <h1 class="section__title">管理</h1>
+            </div>
+            <div class="section__body">
+              <form method="post">
+                <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+                <input type="hidden" name="operation" value="review">
+                <p><label><input type="checkbox" name="excellent" value="true" {% if submit.excellent %}checked{% endif %}> 设为优秀总结</label></p>
+                <p><label><input type="checkbox" name="hidden" value="true" {% if submit.hidden %}checked{% endif %}> 隐藏这篇总结</label></p>
+                <p><textarea class="textbox" name="teacherComment" rows="5" placeholder="老师评语">{{ submit.teacherComment }}</textarea></p>
+                <button class="button rounded primary" type="submit">保存管理状态</button>
+              </form>
+              <form method="post" style="margin-top:12px;" onsubmit="return confirm('确认删除这篇总结吗？');">
+                <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+                <input type="hidden" name="operation" value="delete">
+                <button class="button rounded inverse" type="submit">删除总结</button>
+              </form>
+            </div>
+          </section>
+          {% endif %}
+        </aside>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.csp-points .csp-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.csp-points .csp-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.csp-points .csp-muted { color: #64748b; }
+.csp-points .csp-table-wrap { overflow-x: auto; }
+.csp-points table { min-width: 720px; }
+.csp-points .csp-panel { border-radius: 8px; overflow: hidden; }
+.theme--dark .csp-points .csp-muted {
+  color: #94a3b8;
+}
+</style>
+<div class="row csp-points">
+  <div class="columns">
+    <div class="section csp-panel">
+      <div class="section__header">
+        <div class="csp-head">
+          <h1 class="section__title">{{ _('积分榜') }}</h1>
+          <div class="csp-actions">
+            {% if canManagePoints %}
+            <a class="button rounded" href="{{ centerUrl }}"><span class="icon icon-back"></span> {{ _('返回积分管理') }}</a>
+            <a class="button rounded primary" href="{{ exportUrl }}"><span class="icon icon-download"></span> {{ _('导出 CSV') }}</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="section__body">
+        <form method="get" class="csp-actions">
+          <label>
+            {{ _('小组') }}
+            <select name="groupName" class="select">
+              <option value="all" {% if filterGroupName == 'all' %}selected{% endif %}>{{ _('全部') }}</option>
+              {% for group in groups %}
+              <option value="{{ group.name }}" {% if filterGroupName == group.name %}selected{% endif %}>{{ group.name }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <button class="button rounded" type="submit">{{ _('筛选') }}</button>
+        </form>
+      </div>
+      <div class="section__body no-padding csp-table-wrap table-layout-guard">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>{{ _('排名') }}</th>
+              <th>{{ _('用户') }}</th>
+              <th>{{ _('小组') }}</th>
+              <th>{{ _('总积分') }}</th>
+              <th>{{ _('小结') }}</th>
+              <th>{{ _('比赛') }}</th>
+              <th>{{ _('近期状态') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+            <tr>
+              <td>{{ row.rank }}</td>
+              <td>{% if udict[row.uid] %}{{ user.render_inline(udict[row.uid], badge=false) }}{% else %}UID {{ row.uid }}{% endif %}</td>
+              <td>{{ row.groups.join(', ') if row.groups.length else _('无小组') }}</td>
+              <td><strong>{{ row.total }}</strong></td>
+              <td>{{ row.summary }}</td>
+              <td>{{ row.contest }}</td>
+              <td>{{ row.recentStatus }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" class="csp-muted">{{ _('暂无用户') }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

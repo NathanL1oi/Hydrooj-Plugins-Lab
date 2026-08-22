@@ -1,0 +1,23 @@
+import {
+    i18n, pjax, request, tpl, NamedPage, ConfirmDialog, $, addPage
+} from '@hydrooj/ui-default';
+
+addPage(new NamedPage(['course_edit', 'course_section_edit', 'course_subsec_edit'], () => {
+    let confirmed = false;
+    $(document).on('click', '[name="operation"]', (ev) => {
+        ev.preventDefault();
+        if (confirmed) {
+            return request.post('.', { operation: 'delete' }).then((res) => {
+                window.location.href = res.url;
+            });
+        }
+        const message = '确认要删除此课程（章节）吗？';
+        return new ConfirmDialog({
+            $body: tpl.typoMsg(i18n(message)),
+        }).open().then((action) => {
+            if (action !== 'yes') return;
+            confirmed = true;
+            ev.target.click();
+        });
+    });
+}));

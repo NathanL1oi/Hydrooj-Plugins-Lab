@@ -1,0 +1,50 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">CF 分数设置 - {{ tdoc.title }}</h1>
+    <div class="section__tools">
+      <a class="rounded button" href="{{ url('contest_detail', tid=tdoc.docId) }}">返回比赛</a>
+      <a class="rounded button" href="{{ url('contest_scoreboard', tid=tdoc.docId) }}">查看榜单</a>
+    </div>
+  </div>
+  <div class="section__body">
+    {% if saved %}
+    <blockquote class="note">分数已保存，比赛状态已重新计算。</blockquote>
+    {% endif %}
+    <p>留空表示使用默认分。默认分按题目顺序为 500、1000、1500、2000、2500……</p>
+    <form method="post">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 80px;">题号</th>
+            <th>题目</th>
+            <th style="width: 140px;">默认分</th>
+            <th style="width: 160px;">自定义初始分</th>
+            <th style="width: 180px;">当前最低分 / 每分钟下降</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <td><strong>{{ row.label }}</strong><br><small>P{{ row.pid }}</small></td>
+            <td><a href="{{ url('problem_detail', pid=row.pid) }}">{{ row.title }}</a></td>
+            <td>{{ row.defaultScore }}</td>
+            <td>
+              <input class="textbox" type="number" min="1" max="1000000" step="1" name="{{ row.field }}" value="{{ row.customScore }}" placeholder="{{ row.defaultScore }}">
+            </td>
+            <td>{{ row.minScore }} / {{ row.minuteLoss }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5">当前比赛没有题目。</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div style="margin-top: 1rem;">
+        <button class="rounded primary button" type="submit" name="operation" value="save">保存并重算</button>
+        <button class="rounded button" type="submit" name="operation" value="reset">恢复默认分并重算</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

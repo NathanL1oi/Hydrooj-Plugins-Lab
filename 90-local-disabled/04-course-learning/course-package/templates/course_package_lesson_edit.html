@@ -1,0 +1,167 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.course-package-problem-picker {
+  margin: 0 0 1rem;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background: #fafafa;
+}
+.course-package-problem-picker__tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  align-items: flex-end;
+}
+.course-package-problem-picker__tools label {
+  flex: 1 1 11rem;
+  margin-bottom: 0;
+}
+.course-package-problem-picker__actions {
+  display: flex;
+  flex: 1 1 14rem;
+  gap: .5rem;
+  align-items: center;
+}
+.course-package-problem-picker__meta {
+  margin: .75rem 0 .25rem;
+  color: #6b7280;
+  font-size: .875rem;
+}
+.course-package-problem-picker table {
+  margin: .5rem 0;
+  table-layout: fixed;
+}
+.course-package-problem-picker .col--check { width: 3rem; text-align: center; }
+.course-package-problem-picker .col--pid { width: 6rem; }
+.course-package-problem-picker .col--difficulty { width: 7rem; }
+.course-package-problem-picker .col--stat { width: 7rem; }
+.course-package-problem-picker__tag {
+  display: inline-block;
+  margin: 0 .25rem .25rem 0;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #eef2ff;
+  color: #374151;
+  font-size: .75rem;
+}
+.course-package-problem-picker__pager {
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+}
+</style>
+{% include "course_package_style.html" %}
+<div class="row course-package-lesson-edit course-package-ui">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{% if lesson %}{{ _('编辑节') }}{% else %}{{ _('创建节') }}{% endif %}</h1>
+      </div>
+      <div class="section__body">
+        <form method="post">
+          <div class="row">
+            <div class="medium-9 columns">
+              <label>
+                {{ _('Title') }}
+                <input name="title" value="{{ lesson.title|default('') }}" class="textbox" autofocus>
+              </label>
+            </div>
+            <div class="medium-3 columns">
+              <label>
+                {{ _('标签') }}
+                <input name="tags" value="{{ lesson.tags|join(', ') if lesson and lesson.tags else '' }}" class="textbox">
+              </label>
+            </div>
+          </div>
+          <label>
+            {{ _('Problems') }}
+            <input type="text" name="pids" value="{{ lesson.pids|join(', ') if lesson and lesson.pids else '' }}" placeholder="{{ _('Seperated with \',\'') }}" class="textbox autocomplete-dummy">
+          </label>
+          <div class="course-package-problem-picker" data-search-url="{{ url('course_package_problem_search') }}" data-problem-url-template="{{ url('problem_detail', pid='__pid__') }}">
+            <div class="course-package-problem-picker__tools">
+              <label>
+                {{ _('关键词') }}
+                <input type="text" class="textbox" data-problem-search-q placeholder="P1000 / 标题 / Trie001">
+              </label>
+              <label>
+                {{ _('标记') }}
+                <input type="text" class="textbox" data-problem-search-tags placeholder="#Trie001. 字典树入门">
+              </label>
+              <label>
+                {{ _('难度') }}
+                <input type="text" class="textbox" data-problem-search-difficulty placeholder="入门 / 普及-">
+              </label>
+              <div class="course-package-problem-picker__actions">
+                <button type="button" class="rounded button" data-problem-search-submit>{{ _('搜索') }}</button>
+                <button type="button" class="rounded button" data-problem-search-add>{{ _('加入选中') }}</button>
+              </div>
+            </div>
+            <div class="course-package-problem-picker__meta">
+              {{ _('当前已选') }} <span data-problem-selected-count>0</span> {{ _('题') }}
+              <span data-problem-search-count></span>
+            </div>
+            <table class="data-table">
+              <colgroup>
+                <col class="col--check">
+                <col class="col--pid">
+                <col>
+                <col class="col--difficulty">
+                <col class="col--stat">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th><input type="checkbox" data-problem-search-check-all></th>
+                  <th>{{ _('题号') }}</th>
+                  <th>{{ _('题目') }}</th>
+                  <th>{{ _('难度') }}</th>
+                  <th>{{ _('通过') }}</th>
+                </tr>
+              </thead>
+              <tbody data-problem-search-results>
+                <tr><td colspan="5">{{ _('输入条件后搜索题目') }}</td></tr>
+              </tbody>
+            </table>
+            <div class="course-package-problem-picker__pager">
+              <button type="button" class="rounded button" data-problem-search-prev>{{ _('上一页') }}</button>
+              <span data-problem-search-page>1 / 1</span>
+              <button type="button" class="rounded button" data-problem-search-next>{{ _('下一页') }}</button>
+            </div>
+          </div>
+          <label>
+            {{ _('Description') }}
+            <textarea name="content" class="textbox" data-markdown style="height: 240px">{{ lesson.content|default('') }}</textarea>
+          </label>
+          <label>
+            <input type="checkbox" name="hidden" value="true" {% if lesson and lesson.hidden %}checked{% endif %}>
+            {{ _('隐藏本节') }}
+          </label>
+          <p class="help-text">{{ _('隐藏后普通用户不可见，域管理员仍可编辑和恢复显示。') }}</p>
+          {% if lesson %}
+          <button type="submit" class="rounded primary button">{{ _('Update') }}</button>
+          <button name="operation" value="delete" type="submit" class="rounded button">{{ _('Delete') }}</button>
+          {% else %}
+          <button type="submit" class="rounded primary button">{{ _('Create') }}</button>
+          {% endif %}
+          <button type="button" class="rounded button" onclick="window.history.go(-1)">{{ _('Cancel') }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    <div class="section side">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('位置') }}</h1>
+      </div>
+      <div class="section__body typo">
+        <p>{{ _('章') }}: {{ chapter.title }}</p>
+      </div>
+      <ol class="menu">
+        <li class="menu__item"><a href="{{ url('problem_create') }}" class="menu__link" target="_blank"><span class="icon icon-add"></span> {{ _('创建题目') }}</a></li>
+      </ol>
+    </div>
+    {% include 'components/md_hint.html' %}
+  </div>
+</div>
+{% endblock %}

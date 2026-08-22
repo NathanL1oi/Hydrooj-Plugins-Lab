@@ -1,0 +1,40 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{% if chapter %}{{ _('编辑章') }}{% else %}{{ _('创建章') }}{% endif %}</h1>
+      </div>
+      <div class="section__body">
+        <form method="post">
+          <label>
+            {{ _('Title') }}
+            <input name="title" value="{{ chapter.title|default('') }}" class="textbox" autofocus>
+          </label>
+          <label>
+            {{ _('Description') }}
+            <textarea name="content" class="textbox" data-markdown style="height: 240px">{{ chapter.content|default('') }}</textarea>
+          </label>
+          {% if chapter %}
+          <button type="submit" class="rounded primary button">{{ _('Update') }}</button>
+          <button name="operation" value="delete" type="submit" class="rounded button">{{ _('Delete') }}</button>
+          {% else %}
+          <button type="submit" class="rounded primary button">{{ _('Create') }}</button>
+          {% endif %}
+          <button type="button" class="rounded button" onclick="window.history.go(-1)">{{ _('Cancel') }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    <div class="section side">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('所属阶段') }}</h1>
+      </div>
+      <div class="section__body typo">{{ stage.title }}</div>
+    </div>
+    {% include 'components/md_hint.html' %}
+  </div>
+</div>
+{% endblock %}

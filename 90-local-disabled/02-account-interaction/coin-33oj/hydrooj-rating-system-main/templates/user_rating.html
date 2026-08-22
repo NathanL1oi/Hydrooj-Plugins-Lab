@@ -1,0 +1,325 @@
+{% import "components/user.html" as user with context %}
+{% extends "layout/basic.html" %}
+
+{% block content %}
+<div class="row">
+  <div class="medium-12 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">
+          {{ user.render_inline(udoc, badge=false) }} {{ _('Rating Information') }}
+        </h1>
+      </div>
+      
+      <div class="section__body">
+        <!-- Rating 概览信息 -->
+        <div class="rating-overview">
+          <div class="rating-stats">
+            <div class="rating-stat-item">
+              <div class="stat-label">{{ _('Current Rating') }}</div>
+              <div class="stat-value rating-current">{{ rating.rating }}</div>
+            </div>
+            <div class="rating-stat-item">
+              <div class="stat-label">{{ _('Max Rating') }}</div>
+              <div class="stat-value rating-max">{{ rating.maxRating }}</div>
+            </div>
+            <div class="rating-stat-item">
+              <div class="stat-label">{{ _('Rank') }}</div>
+              <div class="stat-value">{{ rank }}</div>
+            </div>
+            <div class="rating-stat-item">
+              <div class="stat-label">{{ _('Contests') }}</div>
+              <div class="stat-value">{{ rating.contestCount }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rating 历史图表 -->
+        {% if history.length > 0 %}
+        <div class="rating-chart-container">
+          <h3>{{ _('Rating History') }}</h3>
+          <canvas id="ratingChart" width="800" height="400"></canvas>
+        </div>
+
+        <!-- Rating 历史表格 -->
+        <div class="rating-history-table">
+          <h3>{{ _('Contest History') }}</h3>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>{{ _('Date') }}</th>
+                <th>{{ _('Contest') }}</th>
+                <th>{{ _('Rank') }}</th>
+                <th>{{ _('Rating Change') }}</th>
+                <th>{{ _('New Rating') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {%- for record in history -%}
+                <tr>
+                  <td>{{ datetimeSpan(record.date, 'YYYY-MM-DD')|safe }}</td>
+                  <td>{{ record.contestName }}</td>
+                  <td>{{ record.rank }}</td>
+                  <td class="rating-change {% if record.newRating > record.oldRating %}positive{% elif record.newRating < record.oldRating %}negative{% else %}neutral{% endif %}">
+                    {% set change = record.newRating - record.oldRating %}
+                    {% if change > 0 %}+{{ change }}{% elif change < 0 %}{{ change }}{% else %}0{% endif %}
+                  </td>
+                  <td class="rating-value">{{ record.newRating }}</td>
+                </tr>
+              {%- endfor -%}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="no-history">
+          <p>{{ _('No contest history available yet.') }}</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.rating-overview {
+  margin-bottom: 30px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.rating-stats {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+}
+
+.rating-stat-item {
+  text-align: center;
+  margin: 10px;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 5px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+}
+
+.rating-current, .rating-max {
+  font-size: 28px;
+}
+
+.rating-chart-container {
+  margin: 30px 0;
+  text-align: center;
+}
+
+.rating-chart-container h3 {
+  margin-bottom: 20px;
+}
+
+.rating-history-table {
+  margin-top: 30px;
+}
+
+.rating-history-table h3 {
+  margin-bottom: 15px;
+}
+
+.rating-change.positive {
+  color: #28a745;
+  font-weight: bold;
+}
+
+.rating-change.negative {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.rating-change.neutral {
+  color: #6c757d;
+}
+
+.rating-value {
+  font-weight: bold;
+}
+
+.no-history {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+
+/* Rating 颜色 */
+.rating-red { color: #ff0000; }
+.rating-orange { color: #ff8c00; }
+.rating-yellow { color: #ffd700; }
+.rating-blue { color: #0080ff; }
+.rating-purple { color: #8000ff; }
+.rating-green { color: #00ff00; }
+.rating-gray { color: #808080; }
+.theme--dark .rating-overview,
+.theme--dark .rating-chart-container,
+.theme--dark .rating-history-table {
+  background: rgba(15, 23, 42, .42);
+  border: 1px solid rgba(148, 163, 184, .22);
+  color: #dbe7f5;
+}
+.theme--dark .stat-label,
+.theme--dark .no-history {
+  color: #9fb0c6;
+}
+.theme--dark .stat-value,
+.theme--dark .rating-chart-container h3,
+.theme--dark .rating-history-table h3 {
+  color: #e2e8f0;
+}
+.theme--dark .rating-change.positive { color: #4ade80; }
+.theme--dark .rating-change.negative { color: #f87171; }
+.theme--dark .rating-change.neutral { color: #94a3b8; }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+function getRatingColor(rating) {
+  if (rating >= 2400) return '#ff0000';
+  if (rating >= 2100) return '#ff8c00';
+  if (rating >= 1900) return '#ffd700';
+  if (rating >= 1600) return '#0080ff';
+  if (rating >= 1400) return '#8000ff';
+  if (rating >= 1200) return '#00ff00';
+  return '#808080';
+}
+
+function getRatingColorClass(rating) {
+  if (rating >= 2400) return 'rating-red';
+  if (rating >= 2100) return 'rating-orange';
+  if (rating >= 1900) return 'rating-yellow';
+  if (rating >= 1600) return 'rating-blue';
+  if (rating >= 1400) return 'rating-purple';
+  if (rating >= 1200) return 'rating-green';
+  return 'rating-gray';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  // 设置Rating颜色
+  const currentRating = {{ rating.rating }};
+  const maxRating = {{ rating.maxRating }};
+  
+  document.querySelector('.rating-current').classList.add(getRatingColorClass(currentRating));
+  document.querySelector('.rating-max').classList.add(getRatingColorClass(maxRating));
+
+  // 绘制Rating历史图表
+  {% if history.length > 0 %}
+  const ctx = document.getElementById('ratingChart').getContext('2d');
+  const historyData = {{ history | tojson }};
+  
+  // 添加初始Rating点（1500）
+  const chartData = [{ x: 0, y: 1500, contestName: 'Initial' }];
+  
+  historyData.forEach((record, index) => {
+    chartData.push({
+      x: index + 1,
+      y: record.newRating,
+      contestName: record.contestName,
+      date: record.date,
+      rank: record.rank
+    });
+  });
+
+  const chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      datasets: [{
+        label: 'Rating',
+        data: chartData,
+        borderColor: '#007bff',
+        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.1,
+        pointBackgroundColor: function(context) {
+          const rating = context.parsed.y;
+          return getRatingColor(rating);
+        },
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 6,
+        pointHoverRadius: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          type: 'linear',
+          position: 'bottom',
+          title: {
+            display: true,
+            text: 'Contest Number'
+          },
+          ticks: {
+            stepSize: 1,
+            callback: function(value) {
+              return value === 0 ? 'Start' : value;
+            }
+          }
+        },
+        y: {
+          title: {
+            display: true,
+            text: 'Rating'
+          },
+          min: Math.max(0, Math.min(...chartData.map(d => d.y)) - 100),
+          max: Math.max(...chartData.map(d => d.y)) + 100
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            title: function(context) {
+              const point = context[0];
+              const data = chartData[point.dataIndex];
+              return data.contestName;
+            },
+            label: function(context) {
+              const point = context;
+              const data = chartData[point.dataIndex];
+              let label = `Rating: ${point.parsed.y}`;
+              if (data.rank) {
+                label += `\nRank: ${data.rank}`;
+              }
+              if (data.date) {
+                label += `\nDate: ${new Date(data.date).toLocaleDateString()}`;
+              }
+              return label;
+            }
+          }
+        },
+        legend: {
+          display: false
+        }
+      },
+      interaction: {
+        intersect: false,
+        mode: 'index'
+      }
+    }
+  });
+  {% endif %}
+
+  // 设置表格中Rating值的颜色
+  document.querySelectorAll('.rating-value').forEach(function(element) {
+    const rating = parseInt(element.textContent);
+    element.classList.add(getRatingColorClass(rating));
+  });
+});
+</script>
+{% endblock %}

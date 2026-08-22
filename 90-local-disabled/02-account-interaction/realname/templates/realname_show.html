@@ -1,0 +1,67 @@
+{% set page_name = "查看实名认证" %}
+{% import "components/nothing.html" as nothing with context %}
+{% import "components/paginator.html" as paginator with context %}
+{% extends "realname_base.html" %}
+{% block realname_content %}
+<div class="section">
+    <div class="section__header">
+        <h1 class="section__title">{{ _('实名认证用户') }}</h1>
+    </div>
+    <div class="section__body no-padding">
+        {% if not udocs.length %}
+        {{ nothing.render('没有实名认证用户！') }}
+        {% else %}
+        <table class="data-table">
+            <colgroup>
+                <col class="col--uid" style="width:5rem">
+                <col class="col--flag" style="width:6rem">
+                <col class="col--name" style="width:5rem">
+                <col class="col--user">
+                <col class="col--groups" style="width:8rem">
+                <col class="col--actions" style="width:6rem">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>{{ _('User ID') }}</th>
+                    <th>{{ _('标记') }}</th>
+                    <th>{{ _('姓名') }}</th>
+                    <th>{{ _('Username') }}</th>
+                    <th>
+                      <form method="get" class="inline">  
+                        <select name="groupName" class="select" onchange="this.form.submit()">  
+                          <option value="">{{ _('所有小组') }}</option>  
+                          {% for group in groups %}  
+                            <option value="{{ group.name }}" {% if groupName == group.name %}selected{% endif %}>  
+                              {{ group.name }} ({{ group.uids.length }} {{ _('users') }})  
+                            </option>  
+                          {% endfor %}  
+                        </select>  
+                      </form> 
+                    </th>
+                    <th>{{ _('Actions') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {%- for udoc in udocs -%}
+                <tr>
+                    <td>{{ udoc._id }}</td>
+                    <td>{% if udoc.realname_flag == 1 %}{{ _('学生') }}{% elif udoc.realname_flag == 2 %}{{ _('老师') }}{% else %}{{ _('未设置身份') }}{% endif %}</td>
+                    <td>{% if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}{{ udoc.realname_name }}{% endif %}</td>
+                    <td>{{ user.render_inline(udoc) }}</td>
+                    <td>
+                        {%- for group in groups -%}
+                        {%- if udoc._id in group.uids -%}
+                        {{ group.name }}{{ ' ' }}
+                        {%- endif -%}
+                        {%- endfor -%}
+                    </td>
+                    <td><a href="{{ url('realname_resetpwd') }}?uidOrName={{ udoc.uname }}" class="typo-a">{{ _('Reset Password') }}</a></td>
+                </tr>
+                {%- endfor -%}
+            </tbody>
+        </table>
+        {{ paginator.render(page, upcount,add_qs=('groupName=' + groupName if groupName else '')) }}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

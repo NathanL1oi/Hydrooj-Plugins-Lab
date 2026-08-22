@@ -1,0 +1,14 @@
+{% import "components/user.html" as user with context %}
+<tbody data-fragment-id="domain_user_data-tbody">
+  {%- for row in users -%}
+  <tr>
+    <td class="col--uid">{{ row.uid }}</td>
+    <td class="col--user">{{ user.render_inline(udict[row.uid], badge=false) }}</td>
+    <td class="col--accept">{{ row.accept }}</td>
+    <td class="col--submit">{{ row.submit }}</td>
+    <td class="col--online">{{ row.onlineReadable }}</td>
+    <td class="col--contest">{{ row.contestAvgRank|round(2) if row.contestAvgRank is not none else '-' }}</td>
+    <td class="col--blog">{{ row.blogCount }}</td>
+  </tr>
+  {%- endfor -%}
+</tbody>

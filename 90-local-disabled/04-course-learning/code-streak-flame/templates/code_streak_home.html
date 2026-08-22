@@ -1,0 +1,68 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.csf-home .csf-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; background: #fff; }
+.csf-home .csf-top { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.csf-home .csf-flame { width: 34px; height: 42px; border-radius: 60% 60% 55% 55%; background: linear-gradient(135deg,#f97316,#ef4444 58%,#facc15); transform: rotate(8deg); box-shadow: inset 0 -8px 0 rgba(127,29,29,.18); }
+.csf-home .csf-num { font-size: 34px; line-height: 1; font-weight: 800; color: #ea580c; }
+.csf-home .csf-muted { color: #64748b; font-size: 13px; }
+.csf-home .csf-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+.csf-home .csf-stat { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: #f8fafc; }
+.csf-home .csf-stat b { display: block; font-size: 22px; }
+.csf-home .csf-heat { display: grid; grid-template-columns: repeat(7, 18px); gap: 5px; margin-top: 14px; }
+.csf-home .csf-day { width: 18px; height: 18px; border-radius: 4px; background: #e2e8f0; }
+.csf-home .csf-day.on { background: linear-gradient(135deg,#fb923c,#ef4444); }
+.theme--dark .csf-home .csf-card,
+.theme--dark .csf-home .csf-stat {
+  border-color: rgba(148, 163, 184, .28);
+  background: rgba(31, 41, 55, .72);
+  color: #e2e8f0;
+}
+.theme--dark .csf-home .csf-muted { color: #94a3b8; }
+.theme--dark .csf-home .csf-day { background: rgba(148, 163, 184, .24); }
+html.hydro-user-background-enabled .csf-home .csf-card,
+html.hydro-user-background-enabled .csf-home .csf-stat {
+  background: var(--hub-surface) !important;
+  border-color: var(--hub-border) !important;
+  color: var(--hub-text) !important;
+  box-shadow: var(--hub-shadow) !important;
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+}
+@media (max-width: 700px) { .csf-home .csf-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+</style>
+<div class="row csf-home">
+  <div class="columns">
+    <div class="section">
+      <div class="section__header"><h1 class="section__title">{{ _('我的训练火苗') }}</h1></div>
+      <div class="section__body">
+        {% if not config.enabled %}
+          <blockquote class="note">{{ _('当前子域未启用训练火苗。') }}</blockquote>
+        {% else %}
+        <div class="csf-card">
+          <div class="csf-top">
+            <span class="csf-flame"></span>
+            <div>
+              <div><span class="csf-num">{{ stat.current }}</span> {{ _('天连续训练') }}</div>
+              <div class="csf-muted">{{ stat.modeText }}，统计最近 {{ config.windowDays }} 天</div>
+            </div>
+          </div>
+          <div class="csf-grid">
+            <div class="csf-stat"><b>{{ stat.best }}</b>{{ _('最长连续') }}</div>
+            <div class="csf-stat"><b>{{ stat.activeDays }}</b>{{ _('活跃天数') }}</div>
+            <div class="csf-stat"><b>{{ stat.submissions }}</b>{{ _('提交') }}</div>
+            <div class="csf-stat"><b>{{ stat.accepts }}</b>{{ _('AC') }}</div>
+          </div>
+          <div class="csf-heat">
+            {% for day in stat.heatmap %}
+              <span class="csf-day {% if day.active %}on{% endif %}" title="{{ day.date }}: {{ day.submissions }} submit / {{ day.accepts }} AC"></span>
+            {% endfor %}
+          </div>
+          <p><a href="{{ rankingUrl }}">{{ _('查看火苗榜') }}</a></p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

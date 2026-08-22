@@ -1,0 +1,111 @@
+{% import "components/nothing.html" as nothing with context %}
+{% import "components/user.html" as user with context %}
+{% import "components/paginator.html" as paginator with context %}
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('Article') }}</h1>
+        <div class="section__tools">
+          <form method="get" name="filter-form">
+            <input type="text" class="inline compact textbox" name="q" value="{{ q }}" placeholder="{{ _('Search aricles...') }}">
+            <select class="inline compact select" name="category">
+              <option value=""{% if not category %} selected{% endif %}>{{ _('All') }}</option>
+              {%- for c in categories -%}
+                <option value="{{ c }}"{% if category == c %} selected{% endif %}>{{ c }}</option>
+              {%- endfor -%}
+            </select>
+            <button type="submit" class="button hasjs--hide">
+              {{ _('Search') }}
+            </button>
+          </form>
+        </div>
+      </div>
+      {% if not ddocs.length %}
+      {{ nothing.render('No article yet...') }}
+      {% else %}
+      <ol class="section__list discussion__list">
+        {%- for ddoc in ddocs -%}
+        <li class="section__list__item discussion__item highlight">
+          <div class="media">
+            <div class="media__left">
+              <div class="discussion__replies numbox">
+                <div class="numbox__num large">{{ datetimeSpan(ddoc._id, false, 'D')|safe }}</div>
+                <div class="numbox__text">{{ datetimeSpan(ddoc._id, false, 'YYYY-M')|safe }}</div>
+              </div>
+            </div>
+            <div class="media__body top">
+              <h1 class="discussion__title"><a href="{{ url('blog_detail', uid=ddoc.owner, did=ddoc._id) }}"
+                  data-emoji-enabled>{{
+                  ddoc['title'] }}</a></h1>
+              <ul class="supplementary list">
+                <li>{{ _('{0} views').format(ddoc.views) }}</li>
+                <li>{{ user.render_inline(udict[ddoc.owner]) }}</li>
+                <li>{{ datetimeSpan(ddoc.updateAt)|safe }}</li>
+                {% if handler.user.hasPerm(perm.PERM_EDIT_DOMAIN) %}
+                <li>
+                  <a name="set_nice" data-did="{{ ddoc._id }}">{% if ddoc.nice %}撤下{% else %}推荐{% endif %}</a>
+                  <a name="set_hidden" data-did="{{ ddoc._id }}">{% if ddoc.hidden %}显示{% else %}隐藏{% endif %}</a>
+                </li>
+                {% endif %}
+              </ul>
+            </div>
+          </div>
+        </li>
+        {%- endfor -%}
+      </ol>
+      {% if page and dpcount %}{{ paginator.render(page, dpcount, add_qs=qs) }}{% endif %}
+      {% endif %}
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    <div data-sticky="large">
+      <div class="section side">
+        <ol class="menu">
+          <li class="menu__item">
+            <div class="menu__link expandable">
+              <span class="icon icon-info"></span> {{ _('Article') }}
+            </div>
+            <ol class="menu collapsed">
+              <li class="menu__item" id="menu-item-{{ menu_item or page_name }}">
+                {% set target_url = url('article_main') %}
+                <a href="{{ target_url }}"
+                  class="menu__link{% if handler.request.path == target_url %} active{% endif %}">
+                  {{ _('Article') }}
+                </a>
+              </li>
+              <li class="menu__item" id="menu-item-{{ menu_item or page_name }}">
+                {% set target_url = url('blog_main', uid=handler.user._id) %}
+                <a href="{{ target_url }}"
+                  class="menu__link{% if handler.request.path == target_url %} active{% endif %}">
+                  {{ _('Blog') }}
+                </a>
+              </li>
+              {% if handler.user.hasPerm(perm.PERM_EDIT_DOMAIN) %}
+              <li class="menu__item" id="menu-item-{{ menu_item or page_name }}">
+                {% set target_url = url('article_main_admin') %}
+                <a href="{{ target_url }}"
+                  class="menu__link{% if handler.request.path == target_url %} active{% endif %}">
+                  {{ _('Article Management') }}
+                </a>
+              </li>
+              {% endif %}
+              {% if handler.user.hasPerm(perm.PERM_EDIT_DOMAIN) %}
+              <li class="menu__item" id="menu-item-{{ menu_item or page_name }}">
+                {% set target_url = url('blog_user_admin') %}
+                <a href="{{ target_url }}"
+                  class="menu__link{% if handler.request.path == target_url %} active{% endif %}">
+                  {{ _('User Management') }}
+                </a>
+              </li>
+              {% endif %}
+            </ol>
+          </li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

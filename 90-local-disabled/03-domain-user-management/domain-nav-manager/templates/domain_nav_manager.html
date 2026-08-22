@@ -1,0 +1,62 @@
+{% extends "domain_base.html" %}
+{% block domain_content %}
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">导航管理</h1>
+  </div>
+  <div class="section__body">
+    {% if saved %}
+    <blockquote class="note">导航配置已保存。</blockquote>
+    {% endif %}
+    <p>此配置只作用于当前域：<code>{{ domainId }}</code>。隐藏导航只影响顶部入口，不改变路由权限。</p>
+    <form method="post">
+      <input type="hidden" name="count" value="{{ rows|length }}">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 220px;">节点</th>
+            <th style="width: 140px;">显示位置</th>
+            <th style="width: 150px;">交换位置</th>
+            <th>显示名称</th>
+            <th style="width: 120px;">默认位置</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <td>
+              <strong>{{ _(row.displayName) }}</strong><br>
+              <small>{{ row.name }}</small>
+              <input type="hidden" name="name_{{ loop.index0 }}" value="{{ row.name }}">
+            </td>
+            <td>
+              <select name="area_{{ loop.index0 }}" class="select">
+                <option value="main" {{ 'selected' if row.area == 'main' else '' }}>主导航</option>
+                <option value="more" {{ 'selected' if row.area == 'more' else '' }}>更多</option>
+                <option value="hidden" {{ 'selected' if row.area == 'hidden' else '' }}>隐藏</option>
+              </select>
+            </td>
+            <td>
+              <button class="rounded button" type="submit" name="navAction" value="move_up:{{ loop.index0 }}">上移</button>
+              <button class="rounded button" type="submit" name="navAction" value="move_down:{{ loop.index0 }}">下移</button>
+            </td>
+            <td>
+              <input class="textbox" type="text" name="title_{{ loop.index0 }}" value="{{ row.title }}" placeholder="{{ _(row.displayName) }}">
+            </td>
+            <td>
+              {{ '更多' if row.defaultArea == 'more' else '主导航' }}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5">没有可配置的导航节点。</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div style="margin-top: 1rem;">
+        <button class="rounded primary button" type="submit" name="navAction" value="save">保存</button>
+        <button class="rounded button" type="submit" name="navAction" value="reset">恢复默认</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

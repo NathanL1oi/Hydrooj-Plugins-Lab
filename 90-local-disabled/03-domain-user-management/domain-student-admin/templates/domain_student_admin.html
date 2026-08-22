@@ -1,0 +1,261 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.student-admin .section { border-radius: 8px; overflow: hidden; }
+.student-admin .sa-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.student-admin .sa-meta { display: flex; flex-wrap: wrap; gap: 8px; color: #64748b; }
+.student-admin .sa-meta span { padding: 4px 8px; border-radius: 6px; background: #f1f5f9; }
+.student-admin .sa-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.student-admin textarea.sa-box { min-height: 180px; font-family: Consolas, monospace; }
+.student-admin .sa-table-wrap { overflow-x: auto; }
+.student-admin table.sa-table { width: 100%; min-width: 640px; }
+.student-admin .sa-ok { color: #15803d; }
+.student-admin .sa-error { color: #b91c1c; }
+.student-admin .sa-muted { color: #64748b; }
+.student-admin .sa-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.student-admin .sa-pill { display: inline-block; margin: 0 4px 4px 0; padding: 2px 8px; border-radius: 999px; background: #eef2ff; }
+.student-admin .sa-name-panel { max-width: 760px; }
+.student-admin .sa-name-panel textarea.sa-box { min-height: 260px; font-size: 18px; line-height: 1.55; }
+.student-admin .sa-advanced { margin: 16px 0; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; background: #f8fafc; }
+.student-admin .sa-advanced summary { cursor: pointer; color: #475569; font-weight: 600; }
+.student-admin .sa-advanced .sa-grid { margin-top: 12px; }
+.student-admin .sa-student-list { padding-left: 1.1em; }
+.student-admin .sa-student-list li { margin-bottom: 10px; }
+.student-admin .sa-student-name { font-weight: 700; color: #0f172a; }
+.theme--dark .student-admin .sa-meta,
+.theme--dark .student-admin .sa-muted {
+  color: #9fb0c6;
+}
+.theme--dark .student-admin .sa-meta span,
+.theme--dark .student-admin .sa-advanced {
+  background: rgba(15, 23, 42, .42);
+  border-color: rgba(148, 163, 184, .26);
+  color: #dbe7f5;
+}
+.theme--dark .student-admin .sa-advanced summary,
+.theme--dark .student-admin .sa-student-name {
+  color: #e2e8f0;
+}
+.theme--dark .student-admin .sa-pill {
+  background: rgba(99, 102, 241, .24);
+  color: #c7d2fe;
+}
+.theme--dark .student-admin .sa-ok { color: #4ade80; }
+.theme--dark .student-admin .sa-error { color: #f87171; }
+@media screen and (max-width: 800px) {
+  .student-admin .sa-grid { grid-template-columns: 1fr; }
+}
+</style>
+<div class="row student-admin">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <div class="sa-head">
+          <h1 class="section__title">{{ _('学生账号管理') }}</h1>
+          <div class="sa-meta">
+            <span>{{ domainName }} ({{ domainId }})</span>
+          </div>
+        </div>
+      </div>
+      <div class="section__body">
+        {% if messages and messages.length %}
+        <blockquote class="note">
+          {% for message in messages %}
+          <p>{{ message }}</p>
+          {% endfor %}
+        </blockquote>
+        {% endif %}
+
+        <form method="post">
+          <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+          <input type="hidden" name="action" value="preview">
+          <input type="hidden" name="mode" value="quick">
+          <input type="hidden" name="prefix" value="{{ form.prefix }}">
+          <input type="hidden" name="startStudentId" value="{{ form.startStudentId }}">
+          <input type="hidden" name="idWidth" value="{{ form.idWidth }}">
+          <input type="hidden" name="tableText" value="">
+
+          <div class="sa-name-panel">
+            <label>
+              {{ _('姓名名单') }}
+              <textarea name="quickNames" class="textbox sa-box" placeholder="张三&#10;李四&#10;王五">{{ form.quickNames|default('') }}</textarea>
+            </label>
+            <p class="help-text">{{ _('一行一个姓名即可；UID 由 Hydro 自动生成，账号前缀和学号不需要填写。') }}</p>
+          </div>
+
+          <details class="sa-advanced">
+            <summary>{{ _('高级选项') }}</summary>
+            <div class="sa-grid">
+              <label>
+                {{ _('默认角色') }}
+                <select name="defaultRole" class="select">
+                  {% for role in roles %}
+                  <option value="{{ role._id }}" {% if role._id == form.defaultRole %}selected{% endif %}>{{ role._id }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label>
+                {{ _('默认小组') }}
+                <select name="defaultGroup" class="select">
+                  <option value="" {% if not form.defaultGroup %}selected{% endif %}>{{ _('无小组') }}</option>
+                  {% for group in groups %}
+                  <option value="{{ group.name }}" {% if group.name == form.defaultGroup %}selected{% endif %}>{{ group.name }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label>
+                {{ _('密码策略') }}
+                <select name="passwordMode" class="select">
+                  <option value="fixed" {% if form.passwordMode == 'fixed' %}selected{% endif %}>{{ _('统一密码') }}</option>
+                  <option value="random" {% if form.passwordMode == 'random' %}selected{% endif %}>{{ _('随机密码') }}</option>
+                </select>
+              </label>
+            </div>
+            <label>
+              {{ _('统一密码') }}
+              <input name="fixedPassword" value="{{ form.fixedPassword }}" class="textbox">
+            </label>
+          </details>
+
+          <div class="sa-actions">
+            <button type="submit" class="button rounded" onclick="this.form.elements['action'].value='preview'">
+              <span class="icon icon-check"></span> {{ _('预览') }}
+            </button>
+            <a href="{{ url('domain_user') }}" class="button rounded">{{ _('域用户') }}</a>
+            <a href="{{ url('domain_group') }}" class="button rounded">{{ _('小组管理') }}</a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    {% if candidates and candidates.length %}
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('导入预览') }}</h1>
+      </div>
+      <div class="section__body sa-table-wrap table-layout-guard">
+        {% if previewPayload %}
+        <form method="post" class="sa-actions" style="margin-bottom: 14px;">
+          <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+          <input type="hidden" name="action" value="import">
+          <input type="hidden" name="previewPayload" value="{{ previewPayload }}">
+          <button type="submit" class="button rounded primary">
+            <span class="icon icon-play"></span> {{ _('确认导入当前预览') }}
+          </button>
+        </form>
+        {% endif %}
+        <table class="data-table sa-table">
+          <thead>
+            <tr>
+              <th>{{ _('行') }}</th>
+              <th>{{ _('姓名') }}</th>
+              <th>{{ _('账号') }}</th>
+              <th>{{ _('UID') }}</th>
+              <th>{{ _('角色') }}</th>
+              <th>{{ _('小组') }}</th>
+              <th>{{ _('密码') }}</th>
+              <th>{{ _('状态') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for candidate in candidates %}
+            <tr>
+              <td>{{ candidate.lineNum }}</td>
+              <td>{{ candidate.name }}</td>
+              <td><code>{{ candidate.username }}</code></td>
+              <td>{% if candidate.uid %}<code>{{ candidate.uid }}</code>{% else %}<span class="sa-muted">{{ _('导入后生成') }}</span>{% endif %}</td>
+              <td>{{ candidate.role }}</td>
+              <td>
+                {% if candidate.groups and candidate.groups.length %}
+                {% for group in candidate.groups %}<span class="sa-pill">{{ group }}</span>{% endfor %}
+                {% else %}
+                <span class="sa-muted">{{ _('无小组') }}</span>
+                {% endif %}
+              </td>
+              <td><code>{{ candidate.password }}</code></td>
+              <td>
+                {% if candidate.errors and candidate.errors.length %}
+                <span class="sa-error">{% for error in candidate.errors %}{{ error }}{% if not loop.last %}<br>{% endif %}{% endfor %}</span>
+                {% elif candidate.created %}
+                <span class="sa-ok">{{ _('已创建并加入子域') }} UID {{ candidate.uid }}</span>
+                {% elif candidate.imported %}
+                <span class="sa-ok">{{ _('已加入/修复子域') }} UID {{ candidate.uid }}</span>
+                {% elif candidate.existing %}
+                <span class="sa-ok">{{ _('可加入/修复') }} UID {{ candidate.uid }}</span>
+                {% else %}
+                <span class="sa-ok">{{ _('可导入') }}</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="medium-3 columns">
+    <div class="section side">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('重置托管学生密码') }}</h1>
+      </div>
+      <div class="section__body">
+        <form method="post">
+          <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+          <input type="hidden" name="action" value="reset_password">
+          <label>
+            {{ _('学生') }}
+            <select name="targetUid" class="select">
+              <option value="">{{ _('请选择') }}</option>
+              {% for student in students %}
+              <option value="{{ student.uid }}">{{ student.name }}{% if student.uid %} / UID {{ student.uid }}{% endif %}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>
+            {{ _('新密码') }}
+            <input name="newPassword" class="textbox">
+          </label>
+          <button type="submit" class="button rounded primary">{{ _('重置密码') }}</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="section side">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('托管学生') }}</h1>
+      </div>
+      <div class="section__body typo">
+        {% if not students.length %}
+        <p class="sa-muted">{{ _('暂无托管学生') }}</p>
+        {% else %}
+        <ul class="sa-student-list">
+          {% for student in students %}
+          <li>
+            <span class="sa-student-name">{{ student.name }}</span>
+            <br><span class="sa-muted">{{ _('账号') }} {{ student.uname }} / UID {{ student.uid }}{% if student.groupText %} / {{ student.groupText }}{% endif %}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="section side">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('规则') }}</h1>
+      </div>
+      <div class="section__body typo">
+        <ul>
+          <li>{{ _('只需要粘贴姓名，一行一个；UID 由 Hydro 自动生成。') }}</li>
+          <li>{{ _('默认小组为空；需要分组时可在高级选项中选择。') }}</li>
+          <li>{{ _('这里只能重置本插件创建并托管的学生密码。') }}</li>
+          <li>{{ _('导入后可在预览结果中看到生成的 UID。') }}</li>
+          <li>{{ _('默认角色学生可能不出现在 Hydro 原生域用户角色列表，请以本页托管学生为准。') }}</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,515 @@
+{% set page_name = "user_background" %}
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.user-bg-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 18px;
+  align-items: start;
+  accent-color: #4f8bd6;
+}
+.user-bg-panel {
+  border: 1px solid rgba(226, 234, 242, .72);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .72);
+  box-shadow: 0 16px 36px rgba(15, 23, 42, .10);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  overflow: hidden;
+}
+.user-bg-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(237, 242, 247, .72);
+  background: rgba(255, 255, 255, .36);
+}
+.user-bg-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: #24364b;
+  font-size: 20px;
+  font-weight: 700;
+}
+.user-bg-title .icon {
+  color: #4f8bd6;
+}
+.user-bg-panel__body {
+  padding: 16px;
+}
+.user-bg-field {
+  margin-bottom: 18px;
+}
+.user-bg-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  color: #334155;
+  font-weight: 700;
+}
+.user-bg-help {
+  color: #718096;
+  font-size: 12px;
+  font-weight: 400;
+}
+.user-bg-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.user-bg-actions .button {
+  margin: 0;
+}
+.user-bg-range {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 56px;
+  gap: 12px;
+  align-items: center;
+}
+.user-bg-library {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+.user-bg-card {
+  display: grid !important;
+  grid-template-rows: 86px minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid rgba(223, 232, 243, .78);
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(248, 250, 252, .76);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  cursor: pointer;
+  transition: border-color .16s ease, box-shadow .16s ease;
+}
+.user-bg-card:hover,
+.user-bg-card.is-selected {
+  border-color: #4f8bd6;
+  box-shadow: 0 8px 20px rgba(79, 139, 214, .16);
+}
+.user-bg-card input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.user-bg-card__thumb {
+  display: block;
+  position: relative;
+  min-height: 86px;
+  overflow: hidden;
+  background:
+    linear-gradient(45deg, rgba(79, 139, 214, .16) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(79, 139, 214, .16) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(79, 139, 214, .16) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(79, 139, 214, .16) 75%);
+  background-color: #f8fafc;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+  background-repeat: repeat;
+  background-size: 20px 20px;
+}
+.user-bg-card__thumb.is-image {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+.user-bg-card__thumb.is-image::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  pointer-events: none;
+}
+.user-bg-card__body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  padding: 10px;
+}
+.user-bg-card__name {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  color: #24364b;
+  font-weight: 700;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.user-bg-card__meta {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  margin-top: 3px;
+  color: #718096;
+  font-size: 12px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.user-bg-preview {
+  position: relative;
+  min-height: 240px;
+  border: 1px solid #dfe8f3;
+  border-radius: 8px;
+  overflow: hidden;
+  background:
+    linear-gradient(45deg, rgba(79, 139, 214, .16) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(79, 139, 214, .16) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(79, 139, 214, .16) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(79, 139, 214, .16) 75%);
+  background-color: #f8fafc;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+  background-size: 20px 20px;
+}
+.user-bg-preview__image {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+.user-bg-preview__mock {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 12px;
+  box-sizing: border-box;
+  min-height: 240px;
+  padding: 18px;
+}
+.user-bg-preview__nav,
+.user-bg-preview__panel {
+  border: 1px solid rgba(226, 232, 240, .70);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .68);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, .10);
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+}
+.user-bg-preview__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 34px;
+  padding: 0 12px;
+}
+.user-bg-preview__dot {
+  width: 58px;
+  height: 9px;
+  border-radius: 999px;
+  background: rgba(79, 139, 214, .36);
+}
+.user-bg-preview__links {
+  display: flex;
+  gap: 7px;
+}
+.user-bg-preview__links span {
+  width: 22px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(71, 85, 105, .24);
+}
+.user-bg-preview__panel {
+  align-self: stretch;
+  padding: 14px;
+}
+.user-bg-preview__title {
+  width: 42%;
+  height: 14px;
+  margin-bottom: 12px;
+  border-radius: 999px;
+  background: rgba(36, 54, 75, .58);
+}
+.user-bg-preview__line {
+  height: 9px;
+  margin-bottom: 8px;
+  border-radius: 999px;
+  background: rgba(71, 85, 105, .20);
+}
+.user-bg-preview__line:nth-child(3) {
+  width: 72%;
+}
+.user-bg-preview__table {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+}
+.user-bg-preview__row {
+  height: 22px;
+  border-radius: 6px;
+  background: rgba(248, 250, 252, .78);
+  border: 1px solid rgba(226, 232, 240, .58);
+}
+.user-bg-preview__content {
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  margin-top: 12px;
+  border: 1px solid rgba(226, 232, 240, .72);
+  border-radius: 8px;
+  padding: 16px;
+  background: rgba(255, 255, 255, .68);
+  color: #24364b;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, .12);
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+}
+.user-bg-preview__content strong {
+  display: block;
+  margin-bottom: 6px;
+}
+.user-bg-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  color: #718096;
+  text-align: center;
+}
+:is(.theme--dark, .theme-dark, .theme_dark, [data-theme="dark"], body.dark) .user-bg-page {
+  color-scheme: dark;
+  accent-color: #7aa7e4;
+}
+:is(.theme--dark, .theme-dark, .theme_dark, [data-theme="dark"], body.dark) .user-bg-panel,
+:is(.theme--dark, .theme-dark, .theme_dark, [data-theme="dark"], body.dark) .user-bg-preview__content,
+:is(.theme--dark, .theme-dark, .theme_dark, [data-theme="dark"], body.dark) .user-bg-preview__nav,
+:is(.theme--dark, .theme-dark, .theme_dark, [data-theme="dark"], body.dark) .user-bg-preview__panel,
+:is(.theme--dark, .theme-dark, .theme_dark, [data-theme="dark"], body.dark) .user-bg-card {
+  border-color: rgba(58, 70, 86, .72);
+  background: rgba(31, 36, 44, .68);
+  color: #e2e8f0;
+}
+:is(.theme--dark, .theme-dark, .theme_dark, [data-theme="dark"], body.dark) .user-bg-preview__title {
+  background: rgba(226, 232, 240, .58);
+}
+:is(.theme--dark, .theme-dark, .theme_dark, [data-theme="dark"], body.dark) .user-bg-preview__line,
+:is(.theme--dark, .theme-dark, .theme_dark, [data-theme="dark"], body.dark) .user-bg-preview__links span {
+  background: rgba(203, 213, 225, .24);
+}
+:is(.theme--dark, .theme-dark, .theme_dark, [data-theme="dark"], body.dark) .user-bg-preview__row {
+  border-color: rgba(58, 70, 86, .62);
+  background: rgba(15, 23, 42, .52);
+}
+:is(.theme--dark, .theme-dark, .theme_dark, [data-theme="dark"], body.dark) .user-bg-panel__head {
+  border-color: rgba(48, 58, 72, .72);
+  background: rgba(36, 43, 53, .48);
+}
+:is(.theme--dark, .theme-dark, .theme_dark, [data-theme="dark"], body.dark) .user-bg-title,
+:is(.theme--dark, .theme-dark, .theme_dark, [data-theme="dark"], body.dark) .user-bg-label,
+:is(.theme--dark, .theme-dark, .theme_dark, [data-theme="dark"], body.dark) .user-bg-card__name,
+:is(.theme--dark, .theme-dark, .theme_dark, [data-theme="dark"], body.dark) .user-bg-panel label.checkbox {
+  color: #e2e8f0;
+}
+:is(.theme--dark, .theme-dark, .theme_dark, [data-theme="dark"], body.dark) .user-bg-help,
+:is(.theme--dark, .theme-dark, .theme_dark, [data-theme="dark"], body.dark) .user-bg-card__meta,
+:is(.theme--dark, .theme-dark, .theme_dark, [data-theme="dark"], body.dark) .user-bg-empty {
+  color: #94a3b8;
+}
+:is(.theme--dark, .theme-dark, .theme_dark, [data-theme="dark"], body.dark) .user-bg-card__thumb:not(.is-image),
+:is(.theme--dark, .theme-dark, .theme_dark, [data-theme="dark"], body.dark) .user-bg-preview {
+  border-color: rgba(58, 70, 86, .72);
+  background:
+    linear-gradient(45deg, rgba(122, 167, 228, .14) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(122, 167, 228, .14) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(122, 167, 228, .14) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(122, 167, 228, .14) 75%);
+  background-color: #111827;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+  background-repeat: repeat;
+  background-size: 20px 20px;
+}
+:is(.theme--dark, .theme-dark, .theme_dark, [data-theme="dark"], body.dark) .user-bg-range .textbox {
+  border-color: rgba(58, 70, 86, .72);
+  background: rgba(15, 23, 42, .58);
+  color: #e2e8f0;
+}
+:is(.theme--dark, .theme-dark, .theme_dark, [data-theme="dark"], body.dark) .user-bg-card:hover,
+:is(.theme--dark, .theme-dark, .theme_dark, [data-theme="dark"], body.dark) .user-bg-card.is-selected {
+  border-color: #7aa7e4;
+  box-shadow: 0 8px 20px rgba(122, 167, 228, .18);
+}
+:is(.theme--dark, .theme-dark, .theme_dark, [data-theme="dark"], body.dark) .user-bg-card__thumb.is-image::after {
+  background: linear-gradient(180deg, rgba(15, 23, 42, .12), rgba(15, 23, 42, .30));
+}
+@media (prefers-color-scheme: dark) {
+  .user-bg-page {
+    color-scheme: dark;
+    accent-color: #7aa7e4;
+  }
+  .user-bg-panel,
+  .user-bg-preview__content,
+  .user-bg-card {
+    border-color: rgba(58, 70, 86, .72);
+    background: rgba(31, 36, 44, .68);
+    color: #e2e8f0;
+  }
+  .user-bg-panel__head {
+    border-color: rgba(48, 58, 72, .72);
+    background: rgba(36, 43, 53, .48);
+  }
+  .user-bg-title,
+  .user-bg-label,
+  .user-bg-card__name,
+  .user-bg-panel label.checkbox {
+    color: #e2e8f0;
+  }
+  .user-bg-help,
+  .user-bg-card__meta,
+  .user-bg-empty {
+    color: #94a3b8;
+  }
+  .user-bg-card__thumb:not(.is-image),
+  .user-bg-preview {
+    border-color: rgba(58, 70, 86, .72);
+    background:
+      linear-gradient(45deg, rgba(122, 167, 228, .14) 25%, transparent 25%),
+      linear-gradient(-45deg, rgba(122, 167, 228, .14) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, rgba(122, 167, 228, .14) 75%),
+      linear-gradient(-45deg, transparent 75%, rgba(122, 167, 228, .14) 75%);
+    background-color: #111827;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+    background-repeat: repeat;
+    background-size: 20px 20px;
+  }
+  .user-bg-range .textbox {
+    border-color: rgba(58, 70, 86, .72);
+    background: rgba(15, 23, 42, .58);
+    color: #e2e8f0;
+  }
+  .user-bg-card:hover,
+  .user-bg-card.is-selected {
+    border-color: #7aa7e4;
+    box-shadow: 0 8px 20px rgba(122, 167, 228, .18);
+  }
+  .user-bg-card__thumb.is-image::after {
+    background: linear-gradient(180deg, rgba(15, 23, 42, .12), rgba(15, 23, 42, .30));
+  }
+}
+@media (max-width: 900px) {
+  .user-bg-page {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+
+<div class="row">
+  <div class="columns">
+    <div class="user-bg-page" data-user-bg-settings>
+      <div class="user-bg-panel">
+        <div class="user-bg-panel__head">
+          <h1 class="user-bg-title"><span class="icon icon-insert--image"></span>背景设置</h1>
+          {% if handler.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM) %}
+          <a class="rounded button" href="{{ url('user_background_manage') }}">
+            <span class="icon icon-settings"></span> 管理图库
+          </a>
+          {% endif %}
+        </div>
+        <div class="user-bg-panel__body">
+          <form method="post">
+            <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+            <div class="user-bg-field">
+              <label class="checkbox">
+                <input type="checkbox" name="enabled" value="on"{% if config.enabled %} checked{% endif %} data-user-bg-enabled>
+                启用背景图片
+              </label>
+            </div>
+
+            <div class="user-bg-field">
+              <label class="user-bg-label">
+                <span>选择背景</span>
+                <span class="user-bg-help">由管理员上传维护</span>
+              </label>
+              {% if images|length %}
+              <div class="user-bg-library">
+                <label class="user-bg-card{% if not config.imageId %} is-selected{% endif %}">
+                  <input type="radio" name="imageId" value="" data-user-bg-option data-url=""{% if not config.imageId %} checked{% endif %}>
+                  <span class="user-bg-card__thumb"></span>
+                  <span class="user-bg-card__body">
+                    <span class="user-bg-card__name">不使用图片</span>
+                    <span class="user-bg-card__meta">保留透明界面关闭状态</span>
+                  </span>
+                </label>
+                {% for image in images %}
+                <label class="user-bg-card{% if config.imageId == image.id %} is-selected{% endif %}">
+                  <input type="radio" name="imageId" value="{{ image.id }}" data-user-bg-option data-url="{{ image.url }}"{% if config.imageId == image.id %} checked{% endif %}>
+                  <span class="user-bg-card__thumb is-image" data-user-bg-lazy="{{ image.url }}"></span>
+                  <span class="user-bg-card__body">
+                    <span class="user-bg-card__name" title="{{ image.name }}">{{ image.name }}</span>
+                    <span class="user-bg-card__meta">{{ image.metaText }}</span>
+                  </span>
+                </label>
+                {% endfor %}
+              </div>
+              {% else %}
+              <input type="hidden" name="imageId" value="">
+              <div class="user-bg-empty">背景图库暂时为空</div>
+              {% endif %}
+            </div>
+
+            <div class="user-bg-field">
+              <label class="user-bg-label">
+                <span>背景透明度</span>
+                <span class="user-bg-help"><span data-user-bg-opacity-text>{{ (config.opacity * 100)|round }}</span>%</span>
+              </label>
+              <div class="user-bg-range">
+                <input type="range" name="opacity" min="0" max="1" step="0.01" value="{{ config.opacity }}" data-user-bg-opacity>
+                <input class="textbox" value="{{ (config.opacity * 100)|round }}%" readonly data-user-bg-opacity-box>
+              </div>
+            </div>
+
+            <div class="user-bg-actions">
+              <button type="submit" class="rounded primary button">
+                <span class="icon icon-save"></span> 保存设置
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="user-bg-panel">
+        <div class="user-bg-panel__head">
+          <div class="user-bg-title"><span class="icon icon-preview"></span>预览</div>
+        </div>
+        <div class="user-bg-panel__body">
+          <div class="user-bg-preview">
+            <div class="user-bg-preview__image" data-user-bg-preview style="opacity:{{ config.opacity }}"></div>
+            <div class="user-bg-preview__mock" aria-hidden="true">
+              <div class="user-bg-preview__nav">
+                <span class="user-bg-preview__dot"></span>
+                <span class="user-bg-preview__links"><span></span><span></span><span></span></span>
+              </div>
+              <div class="user-bg-preview__panel">
+                <div class="user-bg-preview__title"></div>
+                <div class="user-bg-preview__line"></div>
+                <div class="user-bg-preview__line"></div>
+                <div class="user-bg-preview__table">
+                  <div class="user-bg-preview__row"></div>
+                  <div class="user-bg-preview__row"></div>
+                  <div class="user-bg-preview__row"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="user-bg-preview__content">
+            <span>{% if imageUrl %}透明度只作用在背景层，不会影响题面、按钮和表格。{% else %}选择图库图片后可以先看预览，再保存设置。{% endif %}考虑日常使用清晰度，建议透明度不高于30%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

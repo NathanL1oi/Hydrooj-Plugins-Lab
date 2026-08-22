@@ -1,0 +1,13 @@
+{% set tdocs = payload[0] %}
+{% set tsdict = payload[1] %}
+{% if tdocs.length %}
+  <div class="section page--training_main">
+    <div class="section__header">
+      <h1 class="section__title">{{ _('Training') }}</h1>
+    </div>
+    {% include "partials/training_list.html" %}
+    <ul class="pager pager-bottom"><li>
+      <a class="pager__item next link" href="{{ url('training_main') }}">{{ _('More') }} ></a>
+    </li></ul>
+  </div>
+{% endif %}

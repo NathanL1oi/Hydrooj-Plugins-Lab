@@ -1,0 +1,9 @@
+{
+  "name": "disable_sol",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "license": "MIT",
+  "devDependencies": {
+    "hydrooj": "^5.0.0-beta.6"
+  }
+}

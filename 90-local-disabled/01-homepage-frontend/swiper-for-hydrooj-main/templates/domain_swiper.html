@@ -1,0 +1,589 @@
+{% extends "domain_base.html" %}
+{% block domain_content %}
+<style>
+.swiper-workbench { color: #1f2d3d; }
+.swiper-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  border: 1px solid #e3eaf2;
+  border-radius: 8px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  background: #fff;
+}
+.swiper-hero-title { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 700; }
+.swiper-hero-title .icon { color: #4f8bd6; font-size: 22px; }
+.swiper-hero-sub { margin-top: 6px; color: #718096; font-size: 13px; }
+.swiper-stat-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.swiper-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  border: 1px solid #dbe7f4;
+  border-radius: 999px;
+  padding: 0 12px;
+  background: #f7fbff;
+  color: #35516d;
+  font-size: 13px;
+}
+.swiper-stat.is-green { border-color: #cfeadb; background: #f4fbf6; color: #28794f; }
+.swiper-stat.is-amber { border-color: #f4dfb8; background: #fffaf0; color: #936617; }
+.swiper-layout { display: grid; grid-template-columns: minmax(0, 1fr) 390px; gap: 18px; align-items: start; }
+.swiper-panel {
+  border: 1px solid #e5edf5;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+.swiper-panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #eef2f7;
+}
+.swiper-panel-title { display: flex; align-items: center; gap: 8px; font-weight: 700; color: #24364b; }
+.swiper-panel-title .icon { color: #4f8bd6; }
+.swiper-panel-body { padding: 16px; }
+.swiper-control-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.swiper-setting {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 50px;
+  border: 1px solid #e3eaf2;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fbfdff;
+}
+.swiper-setting .icon { color: #4f8bd6; }
+.swiper-setting input[type="checkbox"] { margin: 0; }
+.swiper-setting input.textbox { width: 110px; margin: 0; }
+.swiper-slide-editor {
+  position: relative;
+  border: 1px solid #e3eaf2;
+  border-left: 4px solid #4f8bd6;
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 12px;
+  background: #fff;
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.swiper-slide-editor:hover,
+.swiper-slide-editor.is-active {
+  border-color: #bdd4ee;
+  box-shadow: 0 8px 24px rgba(31, 45, 61, .08);
+  transform: translateY(-1px);
+}
+.swiper-slide-editor.is-active { border-left-color: #2fb875; }
+.swiper-slide-editor__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.swiper-slide-editor__title { display: flex; align-items: center; gap: 8px; font-weight: 700; color: #24364b; }
+.swiper-slide-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: #eef6ff;
+  color: #2f6fac;
+}
+.swiper-row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.swiper-row-actions .button { margin: 0; padding-left: 10px; padding-right: 10px; }
+.swiper-slide-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.swiper-slide-grid label:last-child { grid-column: 1 / -1; }
+.swiper-slide-grid label { color: #556577; font-size: 13px; }
+.swiper-slide-grid .textbox { margin-top: 6px; }
+.swiper-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.swiper-raw { display: none; margin-top: 14px; }
+.swiper-raw.is-open { display: block; }
+.swiper-preview-panel { position: sticky; top: 76px; }
+.swiper-preview-frame {
+  border: 1px solid #dfe8f3;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f8fafc;
+}
+.swiper-browser-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  border-bottom: 1px solid #e5edf5;
+  background: #fff;
+}
+.swiper-browser-dot { width: 8px; height: 8px; border-radius: 999px; background: #d8e0ea; }
+.swiper-browser-dot:nth-child(1) { background: #f36f73; }
+.swiper-browser-dot:nth-child(2) { background: #f2c14e; }
+.swiper-browser-dot:nth-child(3) { background: #36c182; }
+.swiper-preview-stage {
+  position: relative;
+  aspect-ratio: 16 / 7;
+  background: #eef4fb;
+}
+.swiper-preview-stage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.swiper-preview-caption {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  max-width: calc(100% - 32px);
+  border-radius: 8px;
+  padding: 9px 12px;
+  background: rgba(20, 31, 45, .72);
+  color: #fff;
+}
+.swiper-preview-caption strong { display: block; font-size: 15px; }
+.swiper-preview-caption span { display: block; margin-top: 2px; color: rgba(255, 255, 255, .78); font-size: 12px; }
+.swiper-preview-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 210px;
+  color: #7b8a9d;
+  text-align: center;
+}
+.swiper-preview-dots { display: flex; gap: 6px; justify-content: center; padding: 12px; background: #fff; }
+.swiper-preview-dot {
+  width: 9px;
+  height: 9px;
+  border: 0;
+  border-radius: 999px;
+  background: #cbd5e1;
+  cursor: pointer;
+}
+.swiper-preview-dot.active { width: 24px; background: #4f8bd6; }
+.swiper-assets { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 12px; }
+.swiper-upload-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px 110px;
+  gap: 10px;
+  align-items: center;
+  border: 1px dashed #bfd2e8;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+  background: #f8fbff;
+}
+.swiper-asset {
+  border: 1px solid #e3eaf2;
+  border-radius: 8px;
+  padding: 8px;
+  background: #fff;
+}
+.swiper-asset img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 6px;
+  background: #f1f5f9;
+}
+.swiper-asset-name { margin-top: 7px; color: #526274; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.swiper-asset-actions { display: flex; gap: 6px; margin-top: 8px; align-items: center; justify-content: space-between; }
+.swiper-asset-actions .button { margin: 0; }
+.swiper-savebar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid #eef2f7;
+  margin-top: 14px;
+}
+.theme--dark .swiper-workbench {
+  color: #cbd5e1;
+}
+.theme--dark .swiper-hero,
+.theme--dark .swiper-panel,
+.theme--dark .swiper-slide-editor,
+.theme--dark .swiper-asset {
+  border-color: #3a4656;
+  background: #1f242c;
+}
+.theme--dark .swiper-hero-sub,
+.theme--dark .swiper-slide-grid label,
+.theme--dark .swiper-asset-name,
+.theme--dark .swiper-preview-empty {
+  color: #94a3b8;
+}
+.theme--dark .swiper-stat,
+.theme--dark .swiper-setting,
+.theme--dark .swiper-upload-line {
+  border-color: #3a4656;
+  background: #242b35;
+  color: #cbd5e1;
+}
+.theme--dark .swiper-stat.is-green {
+  border-color: #166534;
+  background: #12351f;
+  color: #86efac;
+}
+.theme--dark .swiper-stat.is-amber {
+  border-color: #92400e;
+  background: #2b2116;
+  color: #fbbf24;
+}
+.theme--dark .swiper-panel-head,
+.theme--dark .swiper-browser-bar,
+.theme--dark .swiper-savebar {
+  border-color: #303a48;
+  background: #242b35;
+}
+.theme--dark .swiper-panel-title,
+.theme--dark .swiper-slide-editor__title {
+  color: #e2e8f0;
+}
+.theme--dark .swiper-slide-number {
+  background: #10233e;
+  color: #93c5fd;
+}
+.theme--dark .swiper-preview-frame,
+.theme--dark .swiper-preview-stage,
+.theme--dark .swiper-preview-dots,
+.theme--dark .swiper-asset img {
+  border-color: #3a4656;
+  background: #1a1f27;
+}
+.theme--dark .swiper-slide-editor:hover,
+.theme--dark .swiper-slide-editor.is-active {
+  border-color: #526174;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .28);
+}
+@media (max-width: 1000px) {
+  .swiper-layout { grid-template-columns: 1fr; }
+  .swiper-preview-panel { position: static; }
+}
+@media (max-width: 760px) {
+  .swiper-hero { align-items: flex-start; flex-direction: column; }
+  .swiper-stat-row { justify-content: flex-start; }
+  .swiper-control-strip,
+  .swiper-slide-grid,
+  .swiper-upload-line { grid-template-columns: 1fr; }
+}
+</style>
+
+<div class="swiper-workbench">
+  <div class="swiper-hero">
+    <div>
+      <div class="swiper-hero-title">
+        <span class="icon icon-image"></span>
+        <span>轮播图工作台</span>
+      </div>
+      <div class="swiper-hero-sub">当前域：<code>{{ domainId }}</code></div>
+    </div>
+    <div class="swiper-stat-row">
+      <span class="swiper-stat"><span class="icon icon-list"></span>{{ sdocs.length }} 个轮播项</span>
+      <span class="swiper-stat is-green"><span class="icon icon-image"></span>{{ files.length }} 张素材</span>
+      <span class="swiper-stat is-amber"><span class="icon icon-play"></span>{{ ssdict.interval|default(5000) }} ms</span>
+    </div>
+  </div>
+
+  <div class="swiper-layout">
+    <div>
+      <div class="swiper-panel">
+        <div class="swiper-panel-head">
+          <div class="swiper-panel-title"><span class="icon icon-edit"></span> 轮播内容</div>
+          <button type="button" class="rounded button" id="swiper-add-slide">
+            <span class="icon icon-add"></span> 添加
+          </button>
+        </div>
+        <div class="swiper-panel-body">
+          <form method="post" id="swiper-config-form">
+            <div class="swiper-control-strip">
+              <label class="swiper-setting">
+                <input type="checkbox" name="loop" value="on"{% if ssdict.loop %} checked{% endif %}>
+                <span class="icon icon-refresh"></span>
+                <span>{{ _('swiper_loop') }}</span>
+              </label>
+              <label class="swiper-setting">
+                <input type="checkbox" name="autoplay" value="on"{% if ssdict.autoplay %} checked{% endif %}>
+                <span class="icon icon-play"></span>
+                <span>{{ _('swiper_autoplay') }}</span>
+              </label>
+              <label class="swiper-setting">
+                <span class="icon icon-clock"></span>
+                <span>{{ _('swiper_interval') }}</span>
+                <input name="interval" value="{{ ssdict.interval|default(5000) }}" class="compact textbox">
+              </label>
+            </div>
+
+            <div id="swiper-slide-list">
+              {% for doc in sdocs %}
+              <div class="swiper-slide-editor" data-swiper-row>
+                <div class="swiper-slide-editor__head">
+                  <div class="swiper-slide-editor__title">
+                    <span class="swiper-slide-number" data-row-index>{{ loop.index }}</span>
+                    <span>轮播项</span>
+                  </div>
+                  <div class="swiper-row-actions">
+                    <button type="button" class="rounded button" data-row-up>上移</button>
+                    <button type="button" class="rounded button" data-row-down>下移</button>
+                    <button type="button" class="rounded button" data-row-remove>删除</button>
+                  </div>
+                </div>
+                <div class="swiper-slide-grid">
+                  <label>标题
+                    <input class="textbox" data-slide-title value="{{ doc.title }}">
+                  </label>
+                  <label>跳转链接
+                    <input class="textbox" data-slide-url value="{{ doc.url }}" placeholder="/d/{{ domainId }}/">
+                  </label>
+                  <label>图片地址
+                    <input class="textbox" data-slide-img value="{{ doc.img }}" placeholder="从图片素材中选择，或粘贴图片地址">
+                  </label>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+
+            <div class="swiper-actions">
+              <button type="button" class="rounded button" id="swiper-toggle-raw">
+                <span class="icon icon-code"></span> JSON
+              </button>
+            </div>
+
+            <div class="swiper-raw" id="swiper-raw-box">
+              <label>{{ _('swiper_config') }}
+                <textarea id="config" name="value" class="textbox" rows="10">{% if value %}{{ value }}{% else %}{% include 'swiper_default.json' %}{% endif %}</textarea>
+              </label>
+            </div>
+
+            <div class="swiper-savebar">
+              <button id="submit" value="update" class="rounded primary button" type="submit">
+                <span class="icon icon-check"></span>
+                {% if initialize %}{{ _('initialize') }}{% else %}{{ _('Save All Changes') }}{% endif %}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="swiper-panel" style="margin-top:16px">
+        <div class="swiper-panel-head">
+          <div class="swiper-panel-title"><span class="icon icon-upload"></span> 图片素材</div>
+        </div>
+        <div class="swiper-panel-body">
+          <form method="post" enctype="multipart/form-data" class="swiper-upload-line">
+            <input type="hidden" name="operation" value="upload_image">
+            <input type="file" name="file" accept="image/*" class="textbox">
+            <input name="filename" class="textbox" placeholder="可选文件名">
+            <button class="rounded primary button" type="submit">
+              <span class="icon icon-upload"></span> 上传
+            </button>
+          </form>
+
+          {% if files.length %}
+          <form method="post">
+            <input type="hidden" name="operation" value="delete_images">
+            <div class="swiper-assets">
+              {% for file in files %}
+              <div class="swiper-asset">
+                <img src="{{ file.url }}" alt="{{ file.name }}" loading="lazy">
+                <div class="swiper-asset-name" title="{{ file.name }}">{{ file.name }}</div>
+                <div class="swiper-asset-actions">
+                  <label class="checkbox"><input type="checkbox" name="files" value="{{ file.name }}"> 删除</label>
+                  <button type="button" class="rounded button" data-use-image="{{ file.url }}">加入</button>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            <button type="submit" class="rounded button" style="margin-top:12px">删除选中图片</button>
+          </form>
+          {% else %}
+          <p class="supplementary">还没有上传图片。</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="swiper-preview-panel">
+      <div class="swiper-panel">
+        <div class="swiper-panel-head">
+          <div class="swiper-panel-title"><span class="icon icon-eye"></span> 实时预览</div>
+        </div>
+        <div class="swiper-panel-body">
+          <div class="swiper-preview-frame" id="swiper-preview"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<template id="swiper-row-template">
+  <div class="swiper-slide-editor" data-swiper-row>
+    <div class="swiper-slide-editor__head">
+      <div class="swiper-slide-editor__title">
+        <span class="swiper-slide-number" data-row-index></span>
+        <span>轮播项</span>
+      </div>
+      <div class="swiper-row-actions">
+        <button type="button" class="rounded button" data-row-up>上移</button>
+        <button type="button" class="rounded button" data-row-down>下移</button>
+        <button type="button" class="rounded button" data-row-remove>删除</button>
+      </div>
+    </div>
+    <div class="swiper-slide-grid">
+      <label>标题
+        <input class="textbox" data-slide-title value="">
+      </label>
+      <label>跳转链接
+        <input class="textbox" data-slide-url value="">
+      </label>
+      <label>图片地址
+        <input class="textbox" data-slide-img value="">
+      </label>
+    </div>
+  </div>
+</template>
+
+<script>
+(function () {
+  var list = document.getElementById('swiper-slide-list');
+  var template = document.getElementById('swiper-row-template');
+  var config = document.getElementById('config');
+  var preview = document.getElementById('swiper-preview');
+  var form = document.getElementById('swiper-config-form');
+  var rawBox = document.getElementById('swiper-raw-box');
+  var activeIndex = 0;
+
+  function rows() {
+    return Array.prototype.slice.call(list.querySelectorAll('[data-swiper-row]'));
+  }
+
+  function collect() {
+    return rows().map(function (row) {
+      return {
+        title: row.querySelector('[data-slide-title]').value.trim(),
+        img: row.querySelector('[data-slide-img]').value.trim(),
+        url: row.querySelector('[data-slide-url]').value.trim()
+      };
+    }).filter(function (item) { return item.img; });
+  }
+
+  function syncIndexes() {
+    var currentRows = rows();
+    if (activeIndex >= currentRows.length) activeIndex = Math.max(0, currentRows.length - 1);
+    currentRows.forEach(function (row, index) {
+      row.querySelector('[data-row-index]').textContent = String(index + 1);
+      row.classList.toggle('is-active', index === activeIndex);
+    });
+  }
+
+  function buildPreview(data) {
+    preview.replaceChildren();
+    if (!data.length) {
+      var empty = document.createElement('div');
+      empty.className = 'swiper-preview-empty';
+      empty.textContent = '暂无轮播项';
+      preview.appendChild(empty);
+      return;
+    }
+    if (activeIndex >= data.length) activeIndex = 0;
+    var current = data[activeIndex];
+    var bar = document.createElement('div');
+    bar.className = 'swiper-browser-bar';
+    for (var i = 0; i < 3; i += 1) {
+      var browserDot = document.createElement('span');
+      browserDot.className = 'swiper-browser-dot';
+      bar.appendChild(browserDot);
+    }
+    var stage = document.createElement('div');
+    stage.className = 'swiper-preview-stage';
+    var img = document.createElement('img');
+    img.src = current.img;
+    img.alt = current.title || '';
+    var caption = document.createElement('div');
+    caption.className = 'swiper-preview-caption';
+    var title = document.createElement('strong');
+    title.textContent = current.title || '未填写标题';
+    var url = document.createElement('span');
+    url.textContent = current.url || '未设置跳转链接';
+    caption.append(title, url);
+    stage.append(img, caption);
+    var dots = document.createElement('div');
+    dots.className = 'swiper-preview-dots';
+    data.forEach(function (_, index) {
+      var dot = document.createElement('button');
+      dot.type = 'button';
+      dot.className = 'swiper-preview-dot' + (index === activeIndex ? ' active' : '');
+      dot.addEventListener('click', function () {
+        activeIndex = index;
+        syncIndexes();
+        buildPreview(collect());
+      });
+      dots.appendChild(dot);
+    });
+    preview.append(bar, stage, dots);
+  }
+
+  function renderPreview() {
+    var data = collect();
+    config.value = JSON.stringify(data, null, 2);
+    syncIndexes();
+    buildPreview(data);
+  }
+
+  function addRow(data) {
+    var row = template.content.firstElementChild.cloneNode(true);
+    row.querySelector('[data-slide-title]').value = data && data.title || '';
+    row.querySelector('[data-slide-img]').value = data && data.img || '';
+    row.querySelector('[data-slide-url]').value = data && data.url || '';
+    list.appendChild(row);
+    activeIndex = rows().length - 1;
+    renderPreview();
+  }
+
+  document.getElementById('swiper-add-slide').addEventListener('click', function () {
+    addRow({ title: 'main', img: '', url: '/d/{{ domainId }}/' });
+  });
+  document.getElementById('swiper-toggle-raw').addEventListener('click', function () {
+    rawBox.classList.toggle('is-open');
+  });
+  list.addEventListener('input', renderPreview);
+  list.addEventListener('click', function (event) {
+    var row = event.target.closest('[data-swiper-row]');
+    if (!row) return;
+    var currentRows = rows();
+    activeIndex = currentRows.indexOf(row);
+    if (event.target.closest('[data-row-remove]')) row.remove();
+    if (event.target.closest('[data-row-up]') && row.previousElementSibling) {
+      list.insertBefore(row, row.previousElementSibling);
+      activeIndex = Math.max(0, activeIndex - 1);
+    }
+    if (event.target.closest('[data-row-down]') && row.nextElementSibling) {
+      list.insertBefore(row.nextElementSibling, row);
+      activeIndex = Math.min(rows().length - 1, activeIndex + 1);
+    }
+    renderPreview();
+  });
+  document.addEventListener('click', function (event) {
+    var button = event.target.closest('[data-use-image]');
+    if (!button) return;
+    addRow({ title: 'main', img: button.getAttribute('data-use-image'), url: '/d/{{ domainId }}/' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  form.addEventListener('submit', renderPreview);
+  if (!rows().length) addRow({ title: 'main', img: '', url: '/d/{{ domainId }}/' });
+  renderPreview();
+})();
+</script>
+{% endblock %}

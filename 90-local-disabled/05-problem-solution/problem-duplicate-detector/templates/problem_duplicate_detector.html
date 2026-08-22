@@ -1,0 +1,198 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.pdd-page .pdd-grid { display: grid; grid-template-columns: repeat(3, minmax(160px, 1fr)); gap: 14px; max-width: 780px; align-items: end; }
+.pdd-page .pdd-card { border: 1px solid #dbe3ef; border-radius: 8px; padding: 14px; background: #fff; }
+.pdd-page .pdd-muted { color: #64748b; font-size: 13px; line-height: 1.6; }
+.pdd-page .pdd-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pdd-page .pdd-table { table-layout: fixed; width: 100%; }
+.pdd-page .pdd-table th, .pdd-page .pdd-table td { word-break: break-word; vertical-align: top; }
+.pdd-page .pdd-score { display: inline-block; min-width: 54px; padding: 2px 8px; border-radius: 999px; text-align: center; color: #fff; background: #2563eb; font-weight: 700; }
+.pdd-page .pdd-score.high { background: #dc2626; }
+.pdd-page .pdd-score.mid { background: #ea580c; }
+.pdd-page .pdd-score.low { background: #2563eb; }
+.pdd-page .pdd-evidence { margin: 0; padding-left: 18px; }
+.pdd-page .pdd-inline { display: inline-block; margin: 0 4px 4px 0; padding: 1px 7px; border-radius: 999px; background: #eef2ff; color: #3730a3; font-size: 12px; }
+.pdd-page .pdd-ignore { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.pdd-page .pdd-ignore input { min-width: 180px; }
+.theme--dark .pdd-page .pdd-card {
+  background: rgba(15, 23, 42, .42);
+  border-color: rgba(148, 163, 184, .26);
+  color: #dbe7f5;
+}
+.theme--dark .pdd-page .pdd-muted {
+  color: #9fb0c6;
+}
+.theme--dark .pdd-page .pdd-inline {
+  background: rgba(99, 102, 241, .24);
+  color: #c7d2fe;
+}
+html.hydro-user-background-enabled .pdd-page .pdd-card {
+  background: var(--hub-surface) !important;
+  border-color: var(--hub-border) !important;
+  color: var(--hub-text) !important;
+  box-shadow: var(--hub-shadow) !important;
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+}
+html.hydro-user-background-enabled .pdd-page .pdd-muted {
+  color: var(--hub-muted) !important;
+}
+@media screen and (max-width: 760px) {
+  .pdd-page .pdd-grid { grid-template-columns: 1fr; }
+}
+</style>
+
+<div class="row pdd-page">
+  <div class="columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('重复题检测') }}</h1>
+      </div>
+      <div class="section__body">
+        {% for msg in messages %}
+          <blockquote class="note">{{ msg }}</blockquote>
+        {% endfor %}
+        <div class="pdd-card">
+          <form method="post">
+            <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+            <div class="pdd-grid">
+              <label>
+                {{ _('扫描题目数') }}
+                <input class="textbox" type="number" name="limit" min="20" max="1500" value="{{ limit|default(500) }}">
+              </label>
+              <label>
+                {{ _('相似度阈值') }} <span id="pdd-threshold-label">{{ threshold|default(82) }}%</span>
+                <input type="range" name="threshold" min="50" max="99" value="{{ threshold|default(82) }}">
+              </label>
+              <label style="padding-bottom:8px">
+                <input type="checkbox" name="includeIgnored" {% if includeIgnored %}checked{% endif %}>
+                {{ _('显示已忽略项') }}
+              </label>
+            </div>
+            <p class="pdd-muted">
+              {{ _('综合比较标题、题面、样例、标签和来源引用。阈值越高误报越少，阈值越低越容易发现改写题。') }}
+            </p>
+            <div class="pdd-actions">
+              <button class="button rounded primary" name="operation" value="scan" type="submit">
+                <span class="icon icon-search"></span> {{ _('开始扫描') }}
+              </button>
+              <a class="button rounded" href="{{ url('problem_main') }}">{{ _('返回题库') }}</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    {% if stats %}
+    <div class="section">
+      <div class="section__header"><h1 class="section__title">{{ _('扫描结果') }}</h1></div>
+      <div class="section__body">
+        <span class="pdd-inline">{{ _('题目') }} {{ stats.scanned }}</span>
+        <span class="pdd-inline">{{ _('候选比较') }} {{ stats.checkedPairs }}</span>
+        <span class="pdd-inline">{{ _('命中') }} {{ stats.totalMatched }}</span>
+        <span class="pdd-inline">{{ _('展示') }} {{ stats.shown }}</span>
+        <span class="pdd-inline">{{ _('已忽略') }} {{ stats.ignoredPairs }}</span>
+        {% if scanned and not (results|length) %}
+          <blockquote class="note" style="margin-top:1em">{{ _('当前阈值下没有发现疑似重复题。') }}</blockquote>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if results and (results|length) %}
+    <div class="section">
+      <div class="section__body no-padding">
+        <table class="data-table pdd-table">
+          <thead>
+            <tr>
+              <th style="width:90px">{{ _('相似度') }}</th>
+              <th>{{ _('题目 A') }}</th>
+              <th>{{ _('题目 B') }}</th>
+              <th style="width:210px">{{ _('依据') }}</th>
+              <th style="width:240px">{{ _('处理') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in results %}
+            <tr>
+              <td>
+                <span class="pdd-score {% if item.score >= 0.95 %}high{% elif item.score >= 0.85 %}mid{% else %}low{% endif %}">{{ item.scoreText }}</span>
+                <div class="pdd-muted">{{ item.level }}</div>
+                {% if item.ignored %}<div class="pdd-muted">{{ _('已忽略') }}</div>{% endif %}
+              </td>
+              <td>
+                <a href="{{ url('problem_detail', pid=item.a.urlPid) }}"><b>{{ item.a.pid }}</b></a>
+                <div>{{ item.a.title }}</div>
+                <div class="pdd-muted">docId={{ item.a.docId }}</div>
+              </td>
+              <td>
+                <a href="{{ url('problem_detail', pid=item.b.urlPid) }}"><b>{{ item.b.pid }}</b></a>
+                <div>{{ item.b.title }}</div>
+                <div class="pdd-muted">docId={{ item.b.docId }}</div>
+              </td>
+              <td>
+                <ul class="pdd-evidence">
+                  {% for ev in item.evidence %}
+                    <li>{{ ev }}</li>
+                  {% endfor %}
+                </ul>
+                <div class="pdd-muted">
+                  {{ _('标题') }} {{ item.titleScore }}% /
+                  {{ _('题面') }} {{ item.bodyScore }}% /
+                  {{ _('样例') }} {{ item.sampleScore }}% /
+                  {{ _('标签') }} {{ item.tagScore }}%
+                </div>
+              </td>
+              <td>
+                {% if item.ignored %}
+                <form method="post">
+                  <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+                  <input type="hidden" name="pairKey" value="{{ item.pairKey }}">
+                  <button class="button rounded" name="operation" value="unignore" type="submit">{{ _('恢复提示') }}</button>
+                </form>
+                {% else %}
+                <form method="post" class="pdd-ignore">
+                  <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+                  <input type="hidden" name="pairKey" value="{{ item.pairKey }}">
+                  <input class="textbox" name="reason" placeholder="{{ _('忽略原因') }}">
+                  <button class="button rounded" name="operation" value="ignore" type="submit">{{ _('忽略误报') }}</button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if ignores and (ignores|length) %}
+    <div class="section">
+      <div class="section__header"><h1 class="section__title">{{ _('已忽略题目对') }}</h1></div>
+      <div class="section__body no-padding">
+        <table class="data-table">
+          <thead><tr><th>{{ _('题目对') }}</th><th>{{ _('原因') }}</th><th>{{ _('操作') }}</th></tr></thead>
+          <tbody>
+            {% for item in ignores %}
+            <tr>
+              <td><code>{{ item.pairKey }}</code></td>
+              <td>{{ item.reason|default('') }}</td>
+              <td>
+                <form method="post">
+                  <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+                  <input type="hidden" name="pairKey" value="{{ item.pairKey }}">
+                  <button class="button rounded" name="operation" value="unignore" type="submit">{{ _('恢复') }}</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

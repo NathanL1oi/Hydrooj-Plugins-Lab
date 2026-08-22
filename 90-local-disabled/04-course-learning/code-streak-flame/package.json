@@ -1,0 +1,11 @@
+{
+  "name": "hydrooj-code-streak-flame",
+  "version": "0.1.0",
+  "description": "Submission streak flame cards and leaderboard for Hydro",
+  "main": "index.ts",
+  "license": "AGPL-3.0",
+  "devDependencies": {
+    "hydrooj": "^5.0.0-beta.6",
+    "typescript": "^5.8.3"
+  }
+}

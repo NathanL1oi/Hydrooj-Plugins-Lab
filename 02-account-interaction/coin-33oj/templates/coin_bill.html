@@ -1,0 +1,59 @@
+{% import "components/paginator.html" as paginator with context %}
+{% import "components/nothing.html" as nothing with context %}
+{% extends "coin_base.html" %}
+{% block coin_content %}
+<div class="section">
+    <div class="section__header">
+        <h1 class="section__title">{% if udoc._id %}{{user.render_inline(udoc,badge=false) }}{% else %}{{ _('所有人') }}{% endif %}{{ _('的发放记录') }}</h1>
+        <div class="section__tools">
+            {% if udoc._id %}
+            当前硬币数量: {{ udoc['coin_now']|default('0') }} （累计获取硬币数量：{{ udoc['coin_all']|default('0') }}）
+            {% endif %}
+        </div>
+    </div>
+    <div class="section__body no-padding">
+        {% if not bills.length %}
+        {{ nothing.render('没有过硬币！') }}
+        {% else %}
+        <table class="data-table">
+            <colgroup>
+                <col class="col--time" style="width:6rem">
+                <col class="col--uid" style="width:12rem">
+                <col class="col--uid" style="width:12rem">
+                <col class="col--amount" style="width:4rem">
+                <col class="col--text">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>{{ _('Time') }}</th>
+                    <th>{{ _('发放者') }}</th>
+                    <th>{{ _('接收者') }}</th>
+                    <th>{{ _('数额') }}</th>
+                    <th>{{ _('原因') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {%- for bill in bills -%}
+                <tr>
+                    <td>{{ datetimeSpan(bill._id)|safe }}</td>
+                    <td>
+                        <a href="{{ url('coin_bill',query={uid:bill.rootId}) }}">
+                            {{ user.render_inline(udict[bill.rootId],avatar=false,badge=false,inline=false) }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="{{ url('coin_bill',query={uid:bill.userId}) }}">
+                            {{ user.render_inline(udict[bill.userId],avatar=false,badge=false,inline=false) }}
+                        </a>
+                    </td>
+                    <td>{{ bill.amount }}</td>
+                    <td>{{ bill.text }}</td>
+                </tr>
+                {%- endfor -%}
+            </tbody>
+        </table>
+        {{ paginator.render(page, upcount,add_qs=('uid=' + udoc._id)) }}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

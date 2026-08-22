@@ -1,0 +1,16 @@
+{
+  "name": "hydrooj-contest-vp-mode",
+  "version": "0.1.1",
+  "description": "Codeforces-style virtual participation for ended Hydro contests",
+  "main": "index.js",
+  "license": "MIT",
+  "hydrooj": {
+    "frontend": {
+      "contest_vp.page.js": "frontend/contest_vp.page.js"
+    }
+  },
+  "devDependencies": {
+    "hydrooj": "latest",
+    "@hydrooj/ui-default": "latest"
+  }
+}

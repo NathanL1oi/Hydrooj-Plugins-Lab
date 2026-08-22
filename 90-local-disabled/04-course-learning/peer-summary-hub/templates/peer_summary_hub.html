@@ -1,0 +1,51 @@
+{% import "components/user.html" as user with context %}
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.psh .psh-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.psh .psh-list { display: grid; gap: 12px; }
+.psh .psh-card { border-radius: 8px; background: #f8fafc; padding: 14px; border: 1px solid #e2e8f0; }
+.psh .psh-title { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; justify-content: space-between; }
+.psh .psh-muted { color: #64748b; }
+.psh .psh-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.theme--dark .psh .psh-card {
+  border-color: rgba(148, 163, 184, .28);
+  background: rgba(31, 41, 55, .72);
+  color: #e2e8f0;
+}
+.theme--dark .psh .psh-muted { color: #94a3b8; }
+</style>
+<div class="row psh">
+  <div class="medium-10 columns">
+    <div class="section">
+      <div class="section__header">
+        <div class="psh-head">
+          <h1 class="section__title">{{ _('优秀总结互评') }}</h1>
+          <span class="psh-muted">{{ submits.length }} {{ _('篇') }}</span>
+        </div>
+      </div>
+      <div class="section__body">
+        <div class="psh-list">
+          {% for submit in submits %}
+          {% set task = taskDict[submit.taskId.toString()] %}
+          <div class="psh-card typo">
+            <div class="psh-title">
+              <h2>{% if task %}{{ task.title }}{% else %}{{ _('课程总结') }}{% endif %}</h2>
+              <span class="psh-muted">{% if udict[submit.uid] %}{{ user.render_inline(udict[submit.uid], badge=false) }}{% else %}UID {{ submit.uid }}{% endif %}</span>
+            </div>
+            <p>{{ submit.content|striptags|truncate(240) }}</p>
+            <div class="psh-actions">
+              <a class="button rounded primary small" href="{{ url('peer_summary_detail', sid=submit._id) }}">{{ _('阅读与互动') }}</a>
+              <span class="psh-muted">{{ _('点赞') }} {{ voteDict[submit._id.toString()] or 0 }}</span>
+              <span class="psh-muted">{{ datetimeSpan(submit.updatedAt)|safe }}</span>
+            </div>
+          </div>
+          {% else %}
+          <p class="psh-muted">{{ _('暂无优秀总结。老师在课程总结插件中评优后，会出现在这里。') }}</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

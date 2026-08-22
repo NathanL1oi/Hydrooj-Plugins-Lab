@@ -1,0 +1,273 @@
+{% extends "layout/basic.html" %}
+{% import "components/nothing.html" as nothing with context %}
+{% import "components/paginator.html" as paginator with context %}
+
+{% block content %}
+<style>
+.section__title {
+    color: #262626;
+    font-weight: 600;
+}
+
+.question-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.question-item {
+    padding: 14px 12px;
+}
+
+.question-item:not(:last-child) {
+    border-bottom: 1px solid #e8e8e8;
+}
+
+.question-item .row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+}
+
+.question-item .space-between {
+    justify-content: space-between;
+}
+
+.question-item .info {
+    margin-top: 10px;
+}
+
+.question-item .left {
+    min-width: 0;
+    flex: 1;
+}
+
+.question-item .right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    min-width: 220px;
+    flex-shrink: 0;
+}
+
+.question-item .time{
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.question-item .info .right{
+  justify-content: flex-start;
+}
+
+.question-item .info .right .time{
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.question-item .question-info{
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.question-item .info .right{
+  gap: 16px; 
+}
+
+.question-title {
+    font-size: 16px;
+    color: #404040;
+    text-decoration: none;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.25;
+}
+
+.question-item .title-row {
+  gap: 6px;
+}
+
+.question-info {
+    font-size: 14px;
+    color: gray;
+    white-space: nowrap;
+}
+
+.category-row {
+    font-size: 14px;
+    font-weight: bold;
+    color: #57606a;
+    white-space: nowrap;
+}
+
+.user-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    line-height: 1;
+}
+
+.user-row a {
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.time-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #8c8c8c;
+    white-space: nowrap;
+}
+
+.time-row .icon {
+    font-size: 12px;
+    opacity: .85;
+}
+
+.theme--dark .section__title,
+.theme--dark .question-title {
+    color: #e2e8f0;
+}
+
+.theme--dark .question-item:not(:last-child) {
+    border-bottom-color: #303a48;
+}
+
+.theme--dark .question-info,
+.theme--dark .category-row,
+.theme--dark .time-row {
+    color: #94a3b8;
+}
+
+@media (max-width: 640px) {
+    .question-item .space-between {
+        align-items: flex-start;
+    }
+
+    .question-item .right {
+        min-width: 0;
+        flex-shrink: 1;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+    }
+}
+</style>
+
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('Question List') }}</h1>
+      </div>
+      <div class="section__body">
+        <form method="get" action="{{ url('question_main') }}" class="search-form" style="margin: 0;">
+          <div class="search-input-group">
+            <input type="text" name="q" class="textbox" placeholder="{{ _('question title') }}" value="{{ q }}">
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section__body">
+        <div class="question-list">
+          {% for qdoc in qdocs %}
+          <div class="question-item">
+            <div class="row space-between">
+              <div class="left row">
+                <a href="{{ url('question_detail', { qid: qdoc._id }) }}" style="text-decoration: none;" class="question-title">{{ qdoc.title }}</a>
+              </div>
+              <div class="right row">
+                <span class="question-info">
+                  {% if qdoc.assignee %}
+                    <img class="small user-profile-avatar v-center" loading="lazy" src="{{ avatarUrl(udict[qdoc.assignee].avatar) }}" width="20" height="20">
+                  {% endif %}
+                  #{{ qdoc._id }}
+                </span>
+              </div>
+            </div>
+            <div class="row space-between info">
+              <div class="left row">
+                <span class="category-row">
+                  {% set pdoc = pdict[qdoc.problemId] %}
+                  <a href="{{ url('problem_detail', { domainId: qdoc.domainId, pid: pdoc.docId }) }}" style="font-weight: bold; color: #5f9fd6;" >
+                    {{ pdoc.pid|default('') }} {{ pdoc.title|truncate(20, true) }}
+                  </a>
+                </span>
+                {% if qdoc.status == 5 %}
+                  <div class="contest-type-tag" style="background: #6bb67a;"><span class="icon icon-check"></span>已完成</div>
+                {% endif %}
+              </div>
+              <div class="right row">
+                <div class="user-row">{{ user.render_inline(udict[qdoc.owner]) }}</div>
+                <span class="time row title-row question-info">
+                  <span class="icon icon-schedule"></span>
+                  {{ _("Updated At") }}
+                  <span class="time">{{ datetimeSpan(qdoc['updateAt'])|safe }}</span>
+                  /
+                  {{ _("Created At") }}
+                  <span class="time">{{ datetimeSpan(qdoc['_id'])|safe }}</span>
+                </span>
+              </div>
+            </div>
+          </div>
+          {% else %}
+            {{ nothing.render('no question found') }}
+          {% endfor %}
+        </div>
+        
+        {{ paginator.render(page, qpcount, qs) }}
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    <form method="get">
+      <div class="section">
+        <div class="section__header">
+          <h1 class="section__title">{{ _('Filter Question') }}</h1>
+        </div>
+        <div class="section__body">
+          <label class="filter-title">
+            {{ _('By Title') }}
+            <input type="text" name="q" class="textbox" value="{{ q }}">
+          </label>
+          <label class="filter-user">
+            {{ _('By Username / UID') }}
+            <input name="uidOrName" type="text" class="textbox" value="{{ filterUidOrName }}" autocomplete="off"
+              data-autofocus>
+          </label>
+          <label class="filter-problem">
+            {{ _('By Problem') }}
+            <input name="problemId" type="text" class="textbox" value="{{ filterProblemId }}">
+          </label>
+          <label class="filter-status">
+            {{ _('By Status') }}
+            <select class="compact select" name="status">
+              <option value="-1" {% if typeof(filterStatus) !='number' %}selected{% else %}{% endif %}>
+                所有
+              </option>
+              {% for option in statusOptions %}
+                <option value="{{ option.value }}" {% if typeof(filterStatus)=='number' and filterStatus==option.value %}selected{% endif %}>
+                  {{ _(option.key) }}
+                </option>
+              {% endfor %}
+            </select>
+          </label>
+          <br>
+          <button type="submit" class="primary button"><span class="icon icon-filter"></span> {{ _('Filter') }}</button>
+          <a href="{{ url('question_main') }}" class="button">{{ _('Reset') }}</a>
+        </div>
+    </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

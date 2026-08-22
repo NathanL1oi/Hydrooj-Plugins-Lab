@@ -1,0 +1,16 @@
+{
+  "name": "hydrooj-contest-flexible-start",
+  "version": "0.1.0",
+  "description": "Explicit start confirmation for Hydro flexible-time contests",
+  "main": "index.js",
+  "license": "MIT",
+  "hydrooj": {
+    "frontend": {
+      "contest_flexible_start.page.js": "frontend/contest_flexible_start.page.js"
+    }
+  },
+  "devDependencies": {
+    "hydrooj": "latest",
+    "@hydrooj/ui-default": "latest"
+  }
+}

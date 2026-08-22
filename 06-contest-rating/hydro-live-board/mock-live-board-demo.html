@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Live Board Burst Demo</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0d1117;
+      --line: #30363d;
+      --line-soft: rgba(255, 255, 255, .08);
+      --text: #f0f6fc;
+      --muted: #8b949e;
+      --accent: #58a6ff;
+      --focus: #1f6feb;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); }
+    body { font-family: Inter, "Segoe UI", "Microsoft YaHei", system-ui, sans-serif; overflow: hidden; }
+
+    .board {
+      height: 100vh;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      background: linear-gradient(180deg, rgba(88, 166, 255, .10), transparent 28%), var(--bg);
+    }
+
+    .topbar, .controls, .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(13, 17, 23, .90);
+    }
+
+    .footer {
+      border-top: 1px solid var(--line);
+      border-bottom: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    h1 { margin: 0; font-size: 24px; line-height: 1.2; }
+    .sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+    .legend, .buttons, .metrics {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      color: var(--text);
+      background: #161b22;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+    }
+
+    button:hover { border-color: var(--accent); }
+
+    label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .swatch {
+      width: 18px;
+      height: 12px;
+      border-radius: 3px;
+      display: inline-block;
+    }
+
+    .viewport {
+      overflow: auto;
+      scrollbar-width: none;
+      padding: 0 18px 12px;
+    }
+
+    .viewport::-webkit-scrollbar { width: 0; height: 0; }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      table-layout: fixed;
+      font-size: 14px;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: rgba(13, 17, 23, .96);
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      height: 42px;
+    }
+
+    th, td {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding: 8px 7px;
+      border-bottom: 1px solid var(--line-soft);
+      text-align: center;
+    }
+
+    .rank { width: 60px; color: var(--muted); font-weight: 800; }
+    .team { width: 220px; text-align: left; font-weight: 800; }
+    .total { width: 88px; color: var(--accent); font-weight: 900; }
+    .problem { min-width: 70px; }
+
+    tbody tr {
+      background: rgba(22, 27, 34, .42);
+      transition: transform .75s cubic-bezier(.2, .8, .2, 1), background-color .35s ease;
+      will-change: transform;
+    }
+
+    tbody tr:nth-child(2n) { background: rgba(31, 41, 55, .34); }
+    tbody tr.focus { background: rgba(31, 111, 235, .38); box-shadow: inset 4px 0 0 var(--focus); }
+
+    td.cell { font-variant-numeric: tabular-nums; color: #dbe7f3; }
+    .score-full { color: #07130b; background: linear-gradient(180deg, rgba(86, 211, 100, .95), rgba(46, 160, 67, .95)); font-weight: 900; }
+    .score-high { color: #0c1b0f; background: rgba(141, 219, 140, .82); font-weight: 850; }
+    .score-mid { color: #1f1600; background: rgba(242, 204, 96, .78); font-weight: 800; }
+    .score-low { color: #231104; background: rgba(240, 136, 62, .72); font-weight: 800; }
+
+    td.changed { outline: 2px solid rgba(88, 166, 255, .72); outline-offset: -2px; }
+  </style>
+</head>
+<body>
+  <div class="board">
+    <header class="topbar">
+      <div>
+        <h1>Live Board Burst Demo</h1>
+        <div class="sub">Mock 240 teams, 10 problems, queued updates every 1.5s</div>
+      </div>
+      <div class="metrics">
+        <span id="queue">Queue 0</span>
+        <span id="applied">Applied 0</span>
+        <span id="skipped">Skipped 0</span>
+      </div>
+    </header>
+
+    <section class="controls">
+      <div class="buttons">
+        <button id="single">Single Update</button>
+        <button id="burst">Burst 35 Updates</button>
+        <button id="storm">Storm 120 Updates</button>
+        <label><input id="follow" type="checkbox" checked> Follow row</label>
+      </div>
+      <div class="legend">
+        <span class="pill"><span class="swatch score-full"></span>100</span>
+        <span class="pill"><span class="swatch score-high"></span>80-99</span>
+        <span class="pill"><span class="swatch score-mid"></span>50-79</span>
+        <span class="pill"><span class="swatch score-low"></span>1-49</span>
+        <span class="pill"><span class="swatch"></span>0</span>
+      </div>
+    </section>
+
+    <main class="viewport" id="viewport">
+      <table>
+        <thead id="thead"></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </main>
+
+    <footer class="footer">
+      <div id="event-line">Ready</div>
+      <div>Intermediate states are skipped when the queue grows too large.</div>
+    </footer>
+  </div>
+
+  <script>
+    const tbody = document.getElementById('tbody');
+    const thead = document.getElementById('thead');
+    const viewport = document.getElementById('viewport');
+    const eventLine = document.getElementById('event-line');
+    const followInput = document.getElementById('follow');
+    const queueEl = document.getElementById('queue');
+    const appliedEl = document.getElementById('applied');
+    const skippedEl = document.getElementById('skipped');
+
+    const problemCount = 10;
+    const teams = Array.from({ length: 240 }, (_, i) => ({
+      uid: i + 1,
+      name: `Team ${String(i + 1).padStart(3, '0')}`,
+      scores: Array.from({ length: problemCount }, () => 0),
+    }));
+
+    let state = buildState();
+    let pendingState = null;
+    let drainTimer = null;
+    let draining = false;
+    let lastAppliedAt = 0;
+    let applied = 0;
+    let skipped = 0;
+    const moveAnimationMs = 1100;
+    const focusNudgeMs = 220;
+    const maxAnimatedRankDelta = 20;
+
+    function total(team) {
+      return team.scores.reduce((a, b) => a + b, 0);
+    }
+
+    function buildState(event = null) {
+      const rows = [...teams]
+        .sort((a, b) => total(b) - total(a) || a.uid - b.uid)
+        .map((team, index) => ({
+          uid: team.uid,
+          rank: index + 1,
+          name: team.name,
+          total: total(team),
+          cells: team.scores.map((score, pid) => ({ pid: pid + 1, score, value: score })),
+        }));
+      return { rows, event };
+    }
+
+    function scoreClass(score) {
+      if (score >= 100) return 'score-full';
+      if (score >= 80) return 'score-high';
+      if (score >= 50) return 'score-mid';
+      if (score > 0) return 'score-low';
+      return '';
+    }
+
+    function sleep(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    function rowMap() {
+      const map = new Map();
+      for (const tr of tbody.querySelectorAll('tr[data-uid]')) {
+        map.set(tr.dataset.uid, tr.getBoundingClientRect().top);
+      }
+      return map;
+    }
+
+    function rowIndexByUid(rows, uid) {
+      return rows.findIndex((row) => String(row.uid) === String(uid));
+    }
+
+    function renderHeader() {
+      thead.innerHTML = `<tr>
+        <th class="rank">#</th>
+        <th class="team">Team</th>
+        <th class="total">Score</th>
+        ${Array.from({ length: problemCount }, (_, i) => `<th class="problem">P${i + 1}</th>`).join('')}
+      </tr>`;
+    }
+
+    function renderRows(next, animate = true) {
+      const before = animate ? rowMap() : new Map();
+      const focusUid = next.event?.uid ? String(next.event.uid) : '';
+      tbody.innerHTML = next.rows.map((row) => {
+        const cells = row.cells.map((cell) => {
+          const classes = ['cell', scoreClass(cell.score)];
+          if (focusUid === String(row.uid) && cell.pid === next.event.pid) classes.push('changed');
+          return `<td class="${classes.join(' ')}">${cell.value}</td>`;
+        }).join('');
+        return `<tr data-uid="${row.uid}" class="${focusUid === String(row.uid) ? 'focus' : ''}">
+          <td class="rank">${row.rank}</td>
+          <td class="team">${row.name}</td>
+          <td class="total">${row.total}</td>
+          ${cells}
+        </tr>`;
+      }).join('');
+
+      if (!animate) return;
+      for (const tr of tbody.querySelectorAll('tr[data-uid]')) {
+        const prev = before.get(tr.dataset.uid);
+        if (prev === undefined) continue;
+        const now = tr.getBoundingClientRect().top;
+        const dy = prev - now;
+        if (!dy) continue;
+        tr.style.transform = `translateY(${dy}px)`;
+        tr.style.transition = 'none';
+        requestAnimationFrame(() => {
+          tr.style.transition = '';
+          tr.style.transform = '';
+        });
+      }
+    }
+
+    function updateMetrics() {
+      queueEl.textContent = `Queue ${pendingState ? 1 : 0}`;
+      appliedEl.textContent = `Applied ${applied}`;
+      skippedEl.textContent = `Skipped ${skipped}`;
+    }
+
+    async function applyState(next, animate = true) {
+      const focusUid = next.event?.uid ? String(next.event.uid) : '';
+      const shouldFollow = animate && followInput.checked && focusUid;
+      const oldFocus = shouldFollow ? tbody.querySelector(`tr[data-uid="${focusUid}"]`) : null;
+      let oldFocusTop = null;
+      let clampedRankDelta = 0;
+      if (oldFocus) {
+        oldFocus.scrollIntoView({ block: 'center', behavior: 'auto' });
+        await sleep(focusNudgeMs);
+        const oldIndex = rowIndexByUid(state.rows || [], focusUid);
+        const newIndex = rowIndexByUid(next.rows || [], focusUid);
+        const rankDelta = oldIndex >= 0 && newIndex >= 0 ? newIndex - oldIndex : 0;
+        const rowHeight = oldFocus.getBoundingClientRect().height || 34;
+        clampedRankDelta = Math.abs(rankDelta) > maxAnimatedRankDelta
+          ? Math.sign(rankDelta) * maxAnimatedRankDelta
+          : rankDelta;
+        oldFocusTop = oldFocus.getBoundingClientRect().top;
+      }
+
+      state = next;
+      applied++;
+      const row = next.rows.find((item) => item.uid === next.event?.uid);
+      eventLine.textContent = next.event
+        ? `${row?.name || next.event.uid} changed P${next.event.pid} to ${next.event.score}`
+        : 'Ready';
+      renderRows(next, animate && !shouldFollow);
+      const newFocus = shouldFollow ? tbody.querySelector(`tr[data-uid="${focusUid}"]`) : null;
+      if (newFocus) {
+        newFocus.scrollIntoView({ block: 'center', behavior: 'auto' });
+        const targetTop = newFocus.getBoundingClientRect().top;
+        const rowHeight = newFocus.getBoundingClientRect().height || 34;
+        const visibleStartTop = oldFocusTop === null ? targetTop : targetTop - clampedRankDelta * rowHeight;
+        const dy = visibleStartTop - targetTop;
+        if (dy) {
+          newFocus.style.transform = `translateY(${dy}px)`;
+          newFocus.style.transition = 'none';
+          requestAnimationFrame(() => {
+            newFocus.style.transition = `transform ${moveAnimationMs}ms cubic-bezier(.2, .8, .2, 1), background-color .35s ease`;
+            newFocus.style.transform = '';
+          });
+        }
+      }
+      updateMetrics();
+    }
+
+    function enqueueState(next) {
+      if (pendingState) {
+        skipped++;
+        eventLine.textContent = 'Many updates received; skipping ahead';
+      }
+      pendingState = next;
+      updateMetrics();
+      scheduleDrain();
+    }
+
+    function scheduleDrain() {
+      if (drainTimer || draining || !pendingState) return;
+      const wait = Math.max(0, 1500 - (Date.now() - lastAppliedAt));
+      drainTimer = setTimeout(() => {
+        drainTimer = null;
+        const next = pendingState;
+        pendingState = null;
+        if (next) {
+          draining = true;
+          applyState(next).then(() => {
+            lastAppliedAt = Date.now();
+            draining = false;
+            scheduleDrain();
+          }).catch(() => {
+            draining = false;
+            scheduleDrain();
+          });
+          return;
+        }
+        scheduleDrain();
+      }, wait);
+    }
+
+    function randomUpdate() {
+      const team = teams[Math.floor(Math.random() * teams.length)];
+      const pid = Math.floor(Math.random() * problemCount);
+      const choices = [0, 10, 20, 30, 50, 60, 70, 80, 90, 100];
+      const current = team.scores[pid];
+      const better = choices.filter((score) => score > current);
+      team.scores[pid] = better.length ? better[Math.floor(Math.random() * better.length)] : current;
+      enqueueState(buildState({ uid: team.uid, pid: pid + 1, score: team.scores[pid] }));
+    }
+
+    document.getElementById('single').onclick = () => randomUpdate();
+    document.getElementById('burst').onclick = () => {
+      for (let i = 0; i < 35; i++) setTimeout(randomUpdate, i * 35);
+    };
+    document.getElementById('storm').onclick = () => {
+      for (let i = 0; i < 120; i++) setTimeout(randomUpdate, i * 12);
+    };
+
+    renderHeader();
+    applyState(state, false);
+    lastAppliedAt = Date.now();
+  </script>
+</body>
+</html>

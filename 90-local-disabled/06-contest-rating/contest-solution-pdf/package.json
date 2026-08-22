@@ -1,0 +1,10 @@
+{
+  "name": "hydrooj-plugin-contest-solution-pdf",
+  "version": "0.1.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "@hydrooj/ui-default": "latest",
+    "hydrooj": "latest"
+  }
+}

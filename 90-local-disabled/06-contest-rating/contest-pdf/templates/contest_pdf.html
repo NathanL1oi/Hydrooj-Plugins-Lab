@@ -1,0 +1,355 @@
+{% set layout_name = "basic" %}
+{% extends "layout/html5.html" %}
+{% block body %}
+<style>
+html,
+body {
+  background: #fff !important;
+  background-image: none !important;
+  color: #1f2937 !important;
+}
+
+body::before,
+body::after {
+  display: none !important;
+  content: none !important;
+  background: none !important;
+}
+
+body > :not(.main):not(script):not(style),
+.main ~ :not(script):not(style) {
+  display: none !important;
+}
+
+.main,
+.section__body,
+.typo,
+.richmedia {
+  background: #fff !important;
+  color: #1f2937 !important;
+}
+
+.main *,
+.main *::before,
+.main *::after {
+  opacity: 1 !important;
+  filter: none !important;
+  text-shadow: none !important;
+}
+
+.section__header h1,
+.typo h1,
+.typo h2,
+.typo h3,
+.typo h4,
+.richmedia h1,
+.richmedia h2,
+.richmedia h3,
+.richmedia h4,
+.richmedia p,
+.richmedia li,
+.richmedia td,
+.richmedia th,
+.richmedia span,
+.richmedia div,
+.data-table,
+.data-table th,
+.data-table td {
+  color: #1f2937 !important;
+}
+
+.problem--acm {
+  page-break-after:always;
+}
+.contest-pdf-cover-block {
+  margin: 20px 0;
+}
+.contest-pdf-note-list {
+  margin-top: 10px;
+}
+.contest-pdf-note-list li {
+  margin: 5px 0;
+}
+.contest-pdf-objective {
+  margin: 0.5rem 0 1rem;
+  break-inside: avoid;
+}
+.contest-pdf-objective__option {
+  position: relative;
+  display: flex;
+  gap: 0.45rem;
+  align-items: flex-start;
+  margin: 0.35rem 0;
+  padding-left: 1.45rem;
+  line-height: 1.65;
+  break-inside: avoid;
+}
+.contest-pdf-objective__mark {
+  position: absolute;
+  left: 0;
+  top: 0.35em;
+  width: 0.92rem;
+  height: 0.92rem;
+  border: 1.5px solid #222;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+.contest-pdf-objective--multiselect .contest-pdf-objective__mark {
+  border-radius: 3px;
+}
+.contest-pdf-objective__label {
+  min-width: 1.7rem;
+  font-weight: 600;
+}
+.contest-pdf-objective-blank {
+  display: inline-block;
+  min-width: 10rem;
+  border-bottom: 1px solid #222;
+  transform: translateY(-0.08em);
+}
+.contest-pdf-objective-blank--textarea {
+  display: block;
+  min-height: 4rem;
+  margin: 0.45rem 0;
+  border: 1px solid #444;
+}
+.contest-pdf-objective-dropdown {
+  display: inline-block;
+  padding: 0 0.35rem;
+  border-bottom: 1px solid #222;
+}
+@media print {
+  .print-hide {
+    display: none;
+  }
+}
+</style>
+<div class="main"><div class="row"><div class="medium-12 columns">
+  <div class="section__header" style="display:flex;justify-content:center" class="print-hide">
+    <h1 class="print-hide">Use Ctrl-P to print to PDF / 使用 Ctrl-P 打印成 PDF</h1>
+  </div>
+  <div class="section__header" style="display:flex;justify-content:center">
+    <h1>{{ tdoc.title }}</h1>
+  </div>
+  {% if model.system.get('contestpdf.showUrl') %}
+  <div class="section__header" style="display:flex;justify-content:center">
+    <sub><a href="{{ model.system.get('server.url') }}{% if tdoc.domainId !== 'system' %}d/{{ tdoc.domainId }}/{% endif %}contest/{{ tdoc.docId }}">
+      {{ model.system.get('server.url') }}{% if tdoc.domainId !== 'system' %}d/{{ tdoc.domainId }}/{% endif %}contest/{{ tdoc.docId }}
+    </a></sub>
+  </div>
+  {% endif %}
+  <div class="section__body typo">
+    <div style="page-break-after:always">
+      {% set lines = Math.ceil(tdoc.pids.length/4) %}
+      {% macro col(pids) %} 
+      <div style="margin:20px 0">
+      <table class="data-table">
+        <colgroup>
+          <col class="col--index">
+          {% for pid in pids %}
+            <col class="col--problem">
+          {% endfor %}
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="col--index">
+              题目
+            </th>
+            {% for pid in pids %}
+              {% set pdoc = pdict[pid] %}
+              <th class="col--problem" style="word-wrap:break-word;word-break:break-all;overflow: hidden;">
+                {{ pdoc.contestPdf.label }}. {{ pdoc.title }}
+              </th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col--index">{{ _('Time limit') }}</td>
+            {% for pid in pids %}
+              {% set pdoc = pdict[pid] %}
+              <td class="col--problem">{{ pdoc.config.timeMax if pdoc.config.timeMax == pdoc.config.timeMin else pdoc.config.timeMin+'~'+pdoc.config.timeMax }}ms</td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="col--index">{{ _('Memory limit') }}</td>
+            {% for pid in pids %}
+              {% set pdoc = pdict[pid] %}
+              <td class="col--problem">{{ pdoc.config.memoryMax if pdoc.config.memoryMax == pdoc.config.memoryMin else pdoc.config.memoryMin+'~'+pdoc.config.memoryMax }}MiB</td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="col--index">目录</td>
+            {% for pid in pids %}
+              {% set pdoc = pdict[pid] %}
+              <td class="col--problem">{{ pdoc.contestPdf.directory }}</td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="col--index">源文件名</td>
+            {% for pid in pids %}
+              {% set pdoc = pdict[pid] %}
+              <td class="col--problem">{{ pdoc.contestPdf.sourceFile }}</td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="col--index">评测方式</td>
+            {% for pid in pids %}
+              {% set pdoc = pdict[pid] %}
+              <td class="col--problem">
+                {{ _('problem_type.' + pdoc.config.type).format(pdoc.config.subType) }}
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="col--index">文件 IO</td>
+            {% for pid in pids %}
+              {% set pdoc = pdict[pid] %}
+              <td class="col--problem">{{ pdoc.contestPdf.fileIoDisplay }}</td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="col--index">输入文件名</td>
+            {% for pid in pids %}
+              {% set pdoc = pdict[pid] %}
+              <td class="col--problem">{{ pdoc.contestPdf.inputFile }}</td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="col--index">输出文件名</td>
+            {% for pid in pids %}
+              {% set pdoc = pdict[pid] %}
+              <td class="col--problem">{{ pdoc.contestPdf.outputFile }}</td>
+            {% endfor %}
+          </tr>
+        </tbody>
+      </table>
+      </div>
+      {% endmacro %}
+      {% for i in range(0, lines) %}
+        {{ col(tdoc.pids.slice(4*i, 4*(i+1))) }}
+      {% endfor %}
+      <div class="contest-pdf-cover-block">
+        <h2>编译选项</h2>
+        <table class="data-table">
+          <tbody>
+            <tr>
+              <th>对于 C++ 语言</th>
+              <td><code>-O2 -std=c++14 -static</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="contest-pdf-cover-block">
+        <h2>注意事项</h2>
+        <ol class="contest-pdf-note-list">
+          <li><strong>请一定要严格按照题目要求使用文件输入输出，否则会被判 0 分</strong>。</li>
+          <li>文件名（程序名和输入输出文件名）必须使用英文小写。</li>
+          <li>C++ 中函数 main() 的返回值类型必须是 int，程序正常结束时的返回值必须是 0。</li>
+          <li>若无特殊说明，结果的比较方式为全文比较（过滤行末空格及文末回车）。</li>
+          <li>提交的程序代码文件的放置位置请按照测试具体要求。</li>
+          <li>选手提交的程序源文件必须不大于 100KB。</li>
+          <li>程序可使用的栈空间内存限制与题目的内存限制一致。</li>
+          <li>禁止在源代码中改变编译器参数（如使用 #pragma 命令），禁止使用系统结构相关指令（如内联汇编）或其他可能造成不公平的方法。</li>
+          <li>因违反上述规定而出现的问题，申诉时一律不予受理。</li>
+          <li>代码提交方式：新建一个文件夹，文件夹名称为学生考号。随后在该文件夹下新建 5 个文件夹，依次命名为每道题目的英文名（即上表中的“目录”，在下文中统称目录）。将解题代码放置在对应目录下，并命名为题目的英文名.cpp。在相关目录下，禁止放置其他任何文件与文件夹。</li>
+        </ol>
+      </div>
+    </div>
+    {% for pid in tdoc.pids %}
+      <div class="problem--{{ tdoc.rule }}">
+        {% set pdoc = pdict[pid] %}
+        <div width="100%" style="display:flex;justify-content:center">
+          <h1>{{ pdoc.contestPdf.label }}. {{ pdoc.title }}</h1>
+        </div>
+        <div width="100%" style="display:flex;justify-content:center"><div>
+          <span class="bp5-tag bp5-large bp5-minimal problem__tag-item icon icon-book">{{ _('problem_type.' + pdoc.config.type).format(pdoc.config.subType) }}</span>
+          {% if pdoc.config.type != 'objective' and pdoc.config.type != 'submit_answer' %}
+            <span class="bp5-tag bp5-large bp5-minimal problem__tag-item icon icon-stopwatch">{{ pdoc.config.timeMax if pdoc.config.timeMax == pdoc.config.timeMin else pdoc.config.timeMin+'~'+pdoc.config.timeMax }}ms</span>
+            <span class="bp5-tag bp5-large bp5-minimal problem__tag-item icon icon-comparison">{{ pdoc.config.memoryMax if pdoc.config.memoryMax == pdoc.config.memoryMin else pdoc.config.memoryMin+'~'+pdoc.config.memoryMax }}MiB</span>
+          {% endif %}
+        </div></div>
+        <div class="typo richmedia contest-pdf-problem-content" width="100%" data-problem-type="{{ pdoc.config.type }}">
+          {{ pdoc.content|content(handler.request.query.lang or handler.user.viewLang or handler.session.viewLang, pdoc.html)|safe }}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div></div></div>
+<script>
+(function () {
+  function escapeHtml(value) {
+    var span = document.createElement('span');
+    span.textContent = value == null ? '' : String(value);
+    return span.innerHTML;
+  }
+
+  function renderChoiceList(markerNode, token, type, id) {
+    var list = markerNode.nextElementSibling;
+    if (!list || list.tagName !== 'UL') return false;
+
+    markerNode.innerHTML = markerNode.innerHTML.replace(token, '');
+    if (!markerNode.textContent.trim() && !markerNode.querySelector('img, table, pre, code')) {
+      markerNode.style.display = 'none';
+    }
+
+    var optionHtml = Array.prototype.map.call(list.children, function (item, index) {
+      var label = String.fromCharCode(65 + index);
+      return '<div class="contest-pdf-objective__option">'
+        + '<span class="contest-pdf-objective__mark" aria-hidden="true"></span>'
+        + '<span class="contest-pdf-objective__label">' + label + '.</span>'
+        + '<span class="contest-pdf-objective__text">' + item.innerHTML + '</span>'
+        + '</div>';
+    }).join('');
+
+    var wrapper = document.createElement('div');
+    wrapper.className = 'contest-pdf-objective contest-pdf-objective--' + type;
+    wrapper.id = 'objective-' + id;
+    wrapper.innerHTML = optionHtml;
+    list.parentNode.replaceChild(wrapper, list);
+    return true;
+  }
+
+  function replacementFor(type, id, optionsText) {
+    if (type === 'textarea') return '<span class="contest-pdf-objective-blank contest-pdf-objective-blank--textarea" id="objective-' + id + '"></span>';
+    if (type === 'dropdown') {
+      var options = (optionsText || '').split(',').map(function (item) {
+        return item.trim();
+      }).filter(Boolean);
+      return '<span class="contest-pdf-objective-dropdown" id="objective-' + id + '">'
+        + (options.length ? 'Options: ' + escapeHtml(options.join(' / ')) : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;')
+        + '</span>';
+    }
+    return '<span class="contest-pdf-objective-blank" id="objective-' + id + '"></span>';
+  }
+
+  function renderObjectiveMarkers(root) {
+    var reg = /\{\{\s*(input|select|multiselect|textarea|dropdown)\((\d+(?:-\d+)?)\)(?:\[([^\]]*)\])?\s*\}\}/g;
+    Array.prototype.slice.call(root.children).forEach(function (node) {
+      if (node.tagName === 'PRE' || node.tagName === 'CODE') return;
+
+      var matches = [];
+      var match;
+      reg.lastIndex = 0;
+      while ((match = reg.exec(node.textContent || ''))) matches.push(match);
+
+      matches.forEach(function (item) {
+        var token = item[0];
+        var type = item[1];
+        var id = item[2];
+        var optionsText = item[3];
+        if ((type === 'select' || type === 'multiselect') && renderChoiceList(node, token, type, id)) return;
+        node.innerHTML = node.innerHTML.replace(token, replacementFor(type, id, optionsText));
+      });
+    });
+  }
+
+  function initContestPdfObjective() {
+    document.querySelectorAll('.contest-pdf-problem-content[data-problem-type="objective"]').forEach(renderObjectiveMarkers);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initContestPdfObjective);
+  else initContestPdfObjective();
+}());
+</script>
+{% endblock %}

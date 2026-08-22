@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, "Microsoft YaHei", sans-serif;
+      background: #f7fafc;
+      color: #111827;
+    }
+    .quiz {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    .question {
+      background: #fff;
+      border: 1px solid #d7dde8;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    label {
+      display: block;
+      margin: 8px 0;
+    }
+    input[type="text"] {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 8px 10px;
+    }
+  </style>
+</head>
+<body>
+  <main class="quiz">
+    <h1>H5 小测示例</h1>
+    <section class="question">
+      <strong>1. 二分查找的时间复杂度是？</strong>
+      <label><input type="radio" name="q1" value="A"> A. O(n)</label>
+      <label><input type="radio" name="q1" value="B"> B. O(log n)</label>
+      <label><input type="radio" name="q1" value="C"> C. O(n log n)</label>
+    </section>
+    <section class="question">
+      <strong>2. C++ 输出换行常用的流控制符是？</strong>
+      <input type="text" name="q2" placeholder="例如 endl">
+    </section>
+  </main>
+  <script>
+    function exportAnswers() {
+      const answers = {
+        q1: document.querySelector('[name=q1]:checked')?.value || '',
+        q2: document.querySelector('[name=q2]').value || ''
+      };
+      window.parent.postMessage({ type: 'rich-objective:answers', answers }, '*');
+    }
+    document.addEventListener('input', exportAnswers);
+    document.addEventListener('change', exportAnswers);
+    window.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'rich-objective:collect') exportAnswers();
+    });
+  </script>
+</body>
+</html>

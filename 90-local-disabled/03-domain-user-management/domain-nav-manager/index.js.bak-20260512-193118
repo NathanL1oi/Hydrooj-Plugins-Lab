@@ -1,0 +1,286 @@
+'use strict';
+
+const {
+  Handler, PERM, db,
+} = require('hydrooj');
+
+const PLUGIN_ID = 'domain-nav-manager';
+const collConfig = db.collection('domain.navManager');
+
+const AREAS = new Set(['main', 'more', 'hidden']);
+const DEFAULT_MAIN = [
+  'homepage',
+  'problem_main',
+  'training_main',
+  'contest_main',
+  'homework_main',
+  'discussion_main',
+  'record_main',
+  'ranking',
+  'article_main',
+];
+const DEFAULT_MORE = [
+  'course_package_main',
+  'course_main',
+  'domain_learning_point_table',
+  'domain_learning_center',
+  'domain_dashboard',
+  'manage_dashboard',
+];
+const AREA_RANK = {
+  main: 0,
+  more: 1,
+  hidden: 2,
+};
+
+function domainIdOf(handler) {
+  return handler.args?.domainId || handler.domain?._id || 'system';
+}
+
+function normalizeArea(value) {
+  return AREAS.has(value) ? value : 'main';
+}
+
+function defaultArea(name) {
+  if (DEFAULT_MORE.includes(name)) return 'more';
+  return 'main';
+}
+
+function defaultOrder(name, index = 0) {
+  const mainIndex = DEFAULT_MAIN.indexOf(name);
+  if (mainIndex >= 0) return (mainIndex + 1) * 10;
+  const moreIndex = DEFAULT_MORE.indexOf(name);
+  if (moreIndex >= 0) return (moreIndex + 1) * 10;
+  return 1000 + index * 10;
+}
+
+function sanitizeTitle(value) {
+  const title = String(value || '').trim();
+  return title.slice(0, 32);
+}
+
+function normalizeConfig(domainId, raw) {
+  const items = {};
+  for (const [name, item] of Object.entries(raw?.items || {})) {
+    if (!name) continue;
+    items[name] = {
+      area: normalizeArea(item.area),
+      order: Number.isFinite(Number(item.order)) ? Number(item.order) : 1000,
+      title: sanitizeTitle(item.title),
+    };
+  }
+  return {
+    _id: domainId,
+    domainId,
+    items,
+    updatedAt: raw?.updatedAt,
+    updatedBy: raw?.updatedBy,
+  };
+}
+
+async function getConfig(domainId) {
+  const raw = await collConfig.findOne({ _id: domainId });
+  return normalizeConfig(domainId, raw);
+}
+
+function visibleNodes(nodes, handler) {
+  return (nodes || []).filter((item) => {
+    try {
+      return item?.checker?.(handler);
+    } catch (e) {
+      return false;
+    }
+  });
+}
+
+function nodeMeta(item, config, index) {
+  const itemConfig = config?.items?.[item.name] || {};
+  return {
+    area: normalizeArea(itemConfig.area || defaultArea(item.name)),
+    order: Number.isFinite(Number(itemConfig.order)) ? Number(itemConfig.order) : defaultOrder(item.name, index),
+    title: sanitizeTitle(itemConfig.title),
+  };
+}
+
+function decorateNode(item, meta) {
+  if (!meta.title) return item;
+  return {
+    ...item,
+    displayName: meta.title,
+  };
+}
+
+function getNavConfig(handler) {
+  return handler?.UiContext?.domainNavManager || normalizeConfig(domainIdOf(handler), null);
+}
+
+function splitNodes(nodes, handler, targetArea) {
+  const config = getNavConfig(handler);
+  return visibleNodes(nodes, handler)
+    .map((item, index) => {
+      const meta = nodeMeta(item, config, index);
+      return { item: decorateNode(item, meta), meta, index };
+    })
+    .filter(({ meta }) => meta.area === targetArea)
+    .sort((a, b) => a.meta.order - b.meta.order || a.index - b.index)
+    .map(({ item }) => item);
+}
+
+function activePrefix(item) {
+  const args = item?.args || {};
+  return args.prefix || item.name;
+}
+
+function hasActive(nodes, pageName) {
+  const page = String(pageName || '');
+  return (nodes || []).some((item) => page.startsWith(activePrefix(item)));
+}
+
+function allNavRows(config) {
+  const nodes = global.Hydro?.ui?.getNodes?.('Nav') || [];
+  return nodes.map((item, index) => {
+    const meta = nodeMeta(item, config, index);
+    return {
+      name: item.name,
+      displayName: item.displayName || item.name,
+      area: meta.area,
+      order: meta.order,
+      title: meta.title,
+      defaultArea: defaultArea(item.name),
+      defaultOrder: defaultOrder(item.name, index),
+      sourceIndex: index,
+    };
+  }).sort((a, b) => (
+    AREA_RANK[a.area] - AREA_RANK[b.area]
+    || a.order - b.order
+    || a.sourceIndex - b.sourceIndex
+  ));
+}
+
+function parseRowsFromBody(body) {
+  const count = Math.max(0, Math.min(500, Number(body.count) || 0));
+  const rows = [];
+  for (let i = 0; i < count; i++) {
+    const name = String(body[`name_${i}`] || '').trim();
+    if (!name) continue;
+    rows.push({
+      name,
+      area: normalizeArea(body[`area_${i}`]),
+      title: sanitizeTitle(body[`title_${i}`]),
+    });
+  }
+  return rows;
+}
+
+function swapWithinArea(rows, index, direction) {
+  const current = rows[index];
+  if (!current) return rows;
+  const next = [...rows];
+  for (let i = index + direction; i >= 0 && i < rows.length; i += direction) {
+    if (rows[i]?.area !== current.area) continue;
+    [next[index], next[i]] = [next[i], next[index]];
+    return next;
+  }
+  return rows;
+}
+
+function rowsToItems(rows) {
+  const counters = { main: 0, more: 0, hidden: 0 };
+  const items = {};
+  for (const row of rows) {
+    counters[row.area] += 1;
+    items[row.name] = {
+      area: row.area,
+      order: counters[row.area] * 10,
+      title: row.title,
+    };
+  }
+  return items;
+}
+
+class DomainNavManagerHandler extends Handler {
+  async prepare() {
+    this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+  }
+
+  async get() {
+    const domainId = domainIdOf(this);
+    const config = await getConfig(domainId);
+    this.response.template = 'domain_nav_manager.html';
+    this.response.body = {
+      page_name: 'domain_nav_manager',
+      domainId,
+      rows: allNavRows(config),
+      saved: this.request.query?.saved,
+    };
+  }
+
+  async post() {
+    const domainId = domainIdOf(this);
+    const body = this.request.body || {};
+    const action = String(body.navAction || 'save');
+    if (action === 'reset') {
+      await collConfig.deleteOne({ _id: domainId });
+      this.response.redirect = `${this.url('domain_nav_manager')}?saved=reset`;
+      return;
+    }
+
+    let rows = parseRowsFromBody(body);
+    if (action.startsWith('move_up:')) {
+      rows = swapWithinArea(rows, Number(action.slice('move_up:'.length)), -1);
+    } else if (action.startsWith('move_down:')) {
+      rows = swapWithinArea(rows, Number(action.slice('move_down:'.length)), 1);
+    }
+    const items = rowsToItems(rows);
+
+    await collConfig.updateOne(
+      { _id: domainId },
+      {
+        $set: {
+          _id: domainId,
+          domainId,
+          items,
+          updatedAt: new Date(),
+          updatedBy: this.user?._id,
+        },
+        $setOnInsert: { createdAt: new Date() },
+      },
+      { upsert: true },
+    );
+    this.response.redirect = `${this.url('domain_nav_manager')}?saved=1`;
+  }
+}
+
+async function apply(ctx) {
+  await db.ensureIndexes(
+    collConfig,
+    { key: { domainId: 1 }, name: 'domain_nav_manager_domain', unique: true },
+  );
+
+  ctx.Route('domain_nav_manager', '/domain/nav-manager', DomainNavManagerHandler, PERM.PERM_EDIT_DOMAIN);
+  ctx.injectUI('DomainManage', 'domain_nav_manager', { family: 'Properties', icon: 'menu' }, PERM.PERM_EDIT_DOMAIN);
+
+  ctx.on('handler/create/http', async (handler) => {
+    const domainId = domainIdOf(handler);
+    handler.UiContext ||= {};
+    handler.UiContext.domainNavManager = await getConfig(domainId);
+  });
+
+  global.Hydro ||= {};
+  global.Hydro.model ||= {};
+  global.Hydro.model.domainNavManager = {
+    PLUGIN_ID,
+    splitNodes,
+    hasActive,
+    getConfig: getNavConfig,
+  };
+
+  ctx.i18n.load('zh', {
+    domain_nav_manager: '导航管理',
+  });
+  ctx.i18n.load('en', {
+    domain_nav_manager: 'Navigation Manager',
+  });
+}
+
+module.exports = { apply };

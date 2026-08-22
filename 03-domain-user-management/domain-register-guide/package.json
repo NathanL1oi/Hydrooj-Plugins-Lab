@@ -1,0 +1,18 @@
+{
+  "name": "hydrooj-domain-register-guide",
+  "version": "0.1.0",
+  "description": "Show a domain-scoped registration guide for guest users",
+  "main": "index.ts",
+  "license": "MIT",
+  "hydrooj": {
+    "frontend": {
+      "register_guide.page.ts": "frontend/register_guide.page.ts"
+    }
+  },
+  "peerDependencies": {
+    "hydrooj": "*"
+  },
+  "devDependencies": {
+    "@hydrooj/ui-default": "^4.58.0-beta.6"
+  }
+}

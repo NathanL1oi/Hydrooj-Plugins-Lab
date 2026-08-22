@@ -1,0 +1,10 @@
+{
+  "name": "hydro-discussion-search",
+  "version": "0.1.0",
+  "license": "AGPL-3.0-or-later",
+  "main": "index.ts",
+  "repository": "local",
+  "peerDependencies": {
+    "hydrooj": "*"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "ac-celebration",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "author": "BlackPanda",
+  "license": "AGPL-3.0",
+  "dependencies": {
+    "sweetalert2": "^11.26.3"
+  },
+  "devDependencies": {
+    "@hydrooj/ui-default": "^4.58.0-beta.10"
+  }
+}

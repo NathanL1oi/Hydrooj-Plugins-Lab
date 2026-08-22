@@ -1,0 +1,54 @@
+{% extends "manage_base.html" %}
+{% block manage_content %}
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title" data-heading>{{ _('Profile Lock') }}</h1>
+  </div>
+  <div class="section__body typo">
+    {% if saved %}
+      <blockquote class="note">{{ _('Saved') }}</blockquote>
+    {% endif %}
+    {% if reset %}
+      <blockquote class="note">{{ _('Reset done. matched={0} modified={1}').format(matched or '-', modified or '-') }}</blockquote>
+    {% endif %}
+    {% if bgInvalid %}
+      <blockquote class="warn">{{ _('Invalid background image path.') }}</blockquote>
+    {% endif %}
+
+    <h2>{{ _('Block User Profile Updates') }}</h2>
+    <form method="post">
+      <input type="hidden" name="operation" value="save">
+      <p>
+        <label class="checkbox">
+          <input type="checkbox" name="enabled" {% if enabled %}checked{% endif %}>
+          {{ _('Enable Block') }}
+        </label>
+      </p>
+      <p>
+        <label class="checkbox">
+          <input type="checkbox" name="log" {% if log %}checked{% endif %}>
+          {{ _('Enable Log') }}
+        </label>
+      </p>
+      <p>
+        <strong>{{ _('Locked Fields') }}:</strong>
+        <code>{{ fields|join(', ') }}</code>
+      </p>
+      <p><button type="submit" class="primary rounded button">{{ _('Save') }}</button></p>
+    </form>
+
+    <h2>{{ _('Reset User Profiles') }}</h2>
+    <form method="post" onsubmit="return confirm('This will reset ALL users profile fields. Continue?');">
+      <input type="hidden" name="operation" value="reset">
+      <p>
+        <label>
+          {{ _('Background Image') }}
+          <input type="text" class="textbox" name="backgroundImage" value="{{ backgroundImage }}">
+        </label>
+      </p>
+      <p><button type="submit" class="rounded button">{{ _('Reset All Users Profiles') }}</button></p>
+    </form>
+  </div>
+</div>
+{% endblock %}
+

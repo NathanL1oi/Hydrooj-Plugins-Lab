@@ -1,0 +1,8 @@
+{
+  "name": "frontend-bpjudge",
+  "version": "0.0.2",
+  "description": "frontend",
+  "main": "index.ts",
+  "author": "BlackPanda",
+  "license": "AGPL-3.0"
+}

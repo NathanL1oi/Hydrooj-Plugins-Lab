@@ -1,0 +1,2199 @@
+import {
+    Context,
+    ContestModel,
+    DocumentModel,
+    DocumentNotFoundError,
+    DomainModel,
+    Filter,
+    Handler,
+    NotFoundError,
+    ObjectId,
+    param,
+    PERM,
+    PERMS,
+    PERMS_BY_FAMILY,
+    ProblemNotAllowCopyError,
+    ProblemModel,
+    ProblemNotFoundError,
+    Permission,
+    PermissionError,
+    SettingModel,
+    SolutionModel,
+    StorageModel,
+    Types,
+    UserModel,
+    ValidationError,
+    Zip,
+    yaml,
+} from 'hydrooj';
+import { createReadStream } from 'fs';
+import { Readable } from 'stream';
+
+export const TYPE_COURSE_PACKAGE = 10880 as const;
+export const TYPE_COURSE_PACKAGE_VERSION = 10881 as const;
+export const PERM_VIEW_COURSE_PACKAGE = 1n << 80n;
+export const PERM_COPY_COURSE_PACKAGE = 1n << 81n;
+const LECTURE_MARKER_RE = /<!--\s*hydro-course-lecture-problem\s+({[\s\S]*?})\s*-->\s*/g;
+
+export interface CoursePackageLesson {
+    id: string;
+    title: string;
+    content: string;
+    pids: number[];
+    tags: string[];
+    hidden?: boolean;
+}
+
+export interface CoursePackageChapter {
+    id: string;
+    title: string;
+    content: string;
+    lessons: CoursePackageLesson[];
+    hidden?: boolean;
+}
+
+export interface CoursePackageDoc {
+    _id: ObjectId;
+    docType: 10880;
+    docId: ObjectId;
+    domainId: string;
+    owner: number;
+    title: string;
+    content: string;
+    pin?: number;
+    hidden?: boolean;
+    tags?: string[];
+    nVersion?: number;
+    sortOrder?: number;
+    updateAt?: Date;
+}
+
+export interface CoursePackageVersionDoc {
+    _id: ObjectId;
+    docType: 10881;
+    docId: ObjectId;
+    parentType: 10880;
+    parentId: ObjectId;
+    domainId: string;
+    owner: number;
+    title: string;
+    content: string;
+    version: string;
+    treeText: string;
+    chapters: CoursePackageChapter[];
+    stages?: any[];
+    pin?: number;
+    hidden?: boolean;
+    sortOrder?: number;
+    updateAt?: Date;
+}
+
+interface CoursePackageExportPayload {
+    format: 'hydrooj-course-package';
+    formatVersion: 1;
+    exportedAt: string;
+    package: {
+        title: string;
+        content: string;
+        pin: number;
+        tags: string[];
+        hidden?: boolean;
+    };
+    version: {
+        title: string;
+        version: string;
+        content: string;
+        treeText: string;
+        chapters: CoursePackageChapter[];
+        hidden?: boolean;
+    };
+    problems?: {
+        sourceDomainId: string;
+        items: {
+            sourcePid: number;
+            folder: string;
+            title: string;
+            pid?: string;
+        }[];
+    };
+}
+
+type CopyMode = 'package' | 'chapter' | 'lesson';
+type CopyTargetPosition = 'root' | 'section' | 'new_section';
+
+interface CopyTarget {
+    position: CopyTargetPosition;
+    sectionId?: ObjectId;
+    newSectionTitle?: string;
+}
+
+interface CopyResult {
+    count: number;
+    sectionId?: ObjectId;
+    subSectionId?: ObjectId;
+    lessonCopies?: {
+        chapterId: string;
+        lessonId: string;
+        sectionId: ObjectId;
+        subSectionId: ObjectId;
+    }[];
+}
+
+declare module 'hydrooj' {
+    interface Model {
+        coursePackage: typeof CoursePackageModel;
+    }
+    interface DocType {
+        [TYPE_COURSE_PACKAGE]: CoursePackageDoc;
+        [TYPE_COURSE_PACKAGE_VERSION]: CoursePackageVersionDoc;
+    }
+}
+
+function uid() {
+    return new ObjectId().toHexString();
+}
+
+function asText(value: any, fallback = '') {
+    if (typeof value === 'string') return value;
+    if (value === undefined || value === null) return fallback;
+    return String(value);
+}
+
+function asArray(value: any) {
+    if (!value) return [];
+    return Array.isArray(value) ? value : [value];
+}
+
+function normalizeIds(value: any): number[] {
+    if (typeof value === 'string') {
+        value = value.split(/[,，\s]+/).filter(Boolean);
+    }
+    return Array.from(new Set(asArray(value)
+        .map((item) => Number(asText(item).trim().replace(/^P/i, '')))
+        .filter((item) => Number.isInteger(item) && item > 0)));
+}
+
+function normalizeIndexes(value: any): number[] {
+    if (typeof value === 'string') {
+        value = value.split(/[,，\s]+/).filter(Boolean);
+    }
+    return Array.from(new Set(asArray(value)
+        .map((item) => Number(asText(item).trim()))
+        .filter((item) => Number.isInteger(item) && item >= 0)));
+}
+
+function normalizeTags(value: any): string[] {
+    if (typeof value === 'string') {
+        value = value.split(/[,，\s]+/).filter(Boolean);
+    }
+    return Array.from(new Set(asArray(value).map((item) => asText(item).trim()).filter(Boolean)));
+}
+
+function normalizeHidden(value: any) {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'number') return value !== 0;
+    if (typeof value === 'string') return ['1', 'true', 'yes', 'on', '隐藏'].includes(value.trim().toLowerCase());
+    return false;
+}
+
+function escapeRegExp(value: string) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function normalizeProblemSearchText(value: any) {
+    return asText(value).trim().replace(/^#/, '');
+}
+
+function problemSearchRegex(value: string) {
+    return { $regex: escapeRegExp(value), $options: 'i' };
+}
+
+function isDefaultProblemPid(value: string) {
+    return /^P\d+$/i.test(value.trim());
+}
+
+function extractCustomProblemPidText(value: any) {
+    const text = normalizeProblemSearchText(value);
+    if (!text) return '';
+    if (!isDefaultProblemPid(text)) {
+        const direct = text.match(/^([A-Za-z][A-Za-z0-9_-]*\d+)\b/);
+        if (direct) return direct[1];
+    }
+    const marker = text.match(/#\s*([A-Za-z][A-Za-z0-9_-]*\d+)\b/);
+    if (marker && !isDefaultProblemPid(marker[1])) return marker[1];
+    return '';
+}
+
+function getProblemDisplayPid(pdoc: any) {
+    const pid = normalizeProblemSearchText(pdoc?.pid);
+    if (pid && !isDefaultProblemPid(pid)) return pid;
+    const tagList = Array.isArray(pdoc?.tag) ? pdoc.tag : [];
+    for (const tag of tagList) {
+        const tagPid = extractCustomProblemPidText(tag);
+        if (tagPid) return tagPid;
+    }
+    const titlePid = extractCustomProblemPidText(pdoc?.title);
+    if (titlePid) return titlePid;
+    return String(pdoc?.docId || '');
+}
+
+function compareProblemPid(a: any, b: any) {
+    const apid = getProblemDisplayPid(a);
+    const bpid = getProblemDisplayPid(b);
+    const byPid = apid.localeCompare(bpid, 'zh-Hans-CN', { numeric: true, sensitivity: 'base' });
+    if (byPid) return byPid;
+    return Number(a?.docId || 0) - Number(b?.docId || 0);
+}
+
+function appendAndQuery(query: any, condition: any) {
+    query.$and ||= [];
+    query.$and.push(condition);
+}
+
+function normalizeLesson(lesson: any, chapterIndex: number, lessonIndex: number): CoursePackageLesson {
+    const title = asText(lesson?.title).trim();
+    if (!title) throw new ValidationError('treeText', null, `第 ${chapterIndex + 1} 章第 ${lessonIndex + 1} 节缺少 title。`);
+    return {
+        id: asText(lesson?.id, uid()),
+        title,
+        content: asText(lesson?.content),
+        pids: normalizeIds(lesson?.pids ?? lesson?.pid),
+        tags: normalizeTags(lesson?.tags),
+        hidden: normalizeHidden(lesson?.hidden),
+    };
+}
+
+function normalizeChapter(chapter: any, chapterIndex: number): CoursePackageChapter {
+    const title = asText(chapter?.title).trim();
+    if (!title) throw new ValidationError('treeText', null, `第 ${chapterIndex + 1} 章缺少 title。`);
+    const lessons = asArray(chapter?.lessons).map((lesson, lessonIndex) => normalizeLesson(lesson, chapterIndex, lessonIndex));
+    return {
+        id: asText(chapter?.id, uid()),
+        title,
+        content: asText(chapter?.content),
+        lessons,
+        hidden: normalizeHidden(chapter?.hidden),
+    };
+}
+
+function flattenLegacyStages(stages: any[]): CoursePackageChapter[] {
+    const chapters: CoursePackageChapter[] = [];
+    stages.forEach((stage, stageIndex) => {
+        const title = asText(stage?.title).trim();
+        if (!title) throw new ValidationError('treeText', null, `第 ${stageIndex + 1} 章缺少 title。`);
+        const legacyChapters = asArray(stage?.chapters);
+        if (legacyChapters.length) {
+            legacyChapters.forEach((legacyChapter, chapterIndex) => {
+                chapters.push(normalizeChapter({
+                    id: legacyChapter?.id,
+                    title: asText(legacyChapter?.title, title),
+                    content: asText(legacyChapter?.content, asText(stage?.content)),
+                    lessons: legacyChapter?.lessons || [],
+                    hidden: legacyChapter?.hidden ?? stage?.hidden,
+                }, chapters.length + chapterIndex));
+            });
+            return;
+        }
+        const lessons: CoursePackageLesson[] = [];
+        for (const lesson of asArray(stage?.lessons)) {
+            lessons.push(normalizeLesson(lesson, stageIndex, lessons.length));
+        }
+        chapters.push({
+            id: asText(stage?.id, uid()),
+            title,
+            content: asText(stage?.content),
+            lessons,
+            hidden: normalizeHidden(stage?.hidden),
+        });
+    });
+    return chapters;
+}
+
+function parseTree(treeText: string): CoursePackageChapter[] {
+    let raw: any;
+    try {
+        raw = yaml.load(treeText || 'chapters: []');
+    } catch (e) {
+        throw new ValidationError('treeText', null, `课程包结构解析失败：${e.message}`);
+    }
+    const chapters = Array.isArray(raw) ? raw : raw?.chapters;
+    if (Array.isArray(chapters)) return chapters.map((chapter, chapterIndex) => normalizeChapter(chapter, chapterIndex));
+    if (Array.isArray(raw?.stages)) return flattenLegacyStages(raw.stages);
+    throw new ValidationError('treeText', null, '课程包结构必须包含 chapters 数组。');
+}
+
+function sampleTree() {
+    return [
+        'chapters:',
+        '  - title: 输入输出与表达式',
+        '    content: 章说明，可写 Markdown。',
+        '    lessons:',
+        '      - title: A+B Problem',
+        '        content: 节说明，可写 Markdown。',
+        '        pids: [1000]',
+        '      - title: 多组输入',
+        '        pids: [1001, 1002]',
+        '',
+    ].join('\n');
+}
+
+function safeFilename(text: string) {
+    return (text || 'course-package').replace(/[\\/:*?"<>|\s]+/g, '-').replace(/-+/g, '-').slice(0, 80);
+}
+
+function docIdText(doc: any) {
+    return asText(doc?.docId || doc?._id || doc);
+}
+
+function parseObjectIdOrder(text: string) {
+    return Array.from(new Set(asText(text)
+        .split(/[\s,;]+/)
+        .map((item) => item.trim())
+        .filter((item) => /^[a-f0-9]{24}$/i.test(item))));
+}
+
+function sortOrderValue(doc: any) {
+    const value = Number(doc?.sortOrder);
+    return Number.isFinite(value) ? value : Number.MAX_SAFE_INTEGER;
+}
+
+function compareOrderedDocs(a: any, b: any) {
+    const byOrder = sortOrderValue(a) - sortOrderValue(b);
+    if (byOrder) return byOrder;
+    const byPin = Number(b?.pin || 0) - Number(a?.pin || 0);
+    if (byPin) return byPin;
+    return docIdText(b).localeCompare(docIdText(a));
+}
+
+function applyIdOrder<T>(items: T[], ids: string[], getId: (item: T) => string) {
+    const map = new Map(items.map((item) => [getId(item), item]));
+    const ordered = ids.map((id) => map.get(id)).filter(Boolean) as T[];
+    const used = new Set(ids);
+    const rest = items.filter((item) => !used.has(getId(item)));
+    return [...ordered, ...rest];
+}
+
+function parseStructureOrder(text: string): { chapterId: string; lessonIds: string[] }[] {
+    let payload: any;
+    try {
+        payload = JSON.parse(text || '[]');
+    } catch (e) {
+        throw new ValidationError('order', null, '排序数据格式错误。');
+    }
+    if (!Array.isArray(payload)) throw new ValidationError('order', null, '排序数据格式错误。');
+    return payload.map((chapter) => ({
+        chapterId: asText(chapter?.chapterId).trim(),
+        lessonIds: Array.isArray(chapter?.lessonIds)
+            ? chapter.lessonIds.map((id) => asText(id).trim()).filter(Boolean)
+            : [],
+    })).filter((chapter) => chapter.chapterId);
+}
+
+function reorderChapters(chapters: CoursePackageChapter[], orderText: string) {
+    const order = parseStructureOrder(orderText);
+    const chapterIds = order.map((item) => item.chapterId);
+    const orderMap = new Map(order.map((item) => [item.chapterId, item.lessonIds]));
+    const chapterSet = new Set(chapters.map((chapter) => chapter.id));
+    for (const chapterId of chapterIds) {
+        if (!chapterSet.has(chapterId)) throw new ValidationError('order', null, '排序数据包含不存在的章。');
+    }
+    return applyIdOrder(chapters, chapterIds, (chapter) => chapter.id).map((chapter) => {
+        const lessonIds = orderMap.get(chapter.id) || [];
+        const lessonSet = new Set((chapter.lessons || []).map((lesson) => lesson.id));
+        for (const lessonId of lessonIds) {
+            if (!lessonSet.has(lessonId)) throw new ValidationError('order', null, '排序数据包含不存在的节。');
+        }
+        return {
+            ...chapter,
+            lessons: applyIdOrder(chapter.lessons || [], lessonIds, (lesson) => lesson.id),
+        };
+    });
+}
+
+function serializeTree(chapters: CoursePackageChapter[]) {
+    return JSON.stringify({ chapters }, null, 2);
+}
+
+function getVersionChapters(ver?: Partial<CoursePackageVersionDoc> | null): CoursePackageChapter[] {
+    if (!ver) return [];
+    if (Array.isArray(ver.chapters)) return ver.chapters;
+    if (Array.isArray(ver.stages)) return flattenLegacyStages(ver.stages);
+    if (ver.treeText) return parseTree(ver.treeText);
+    return [];
+}
+
+function buildExport(pkg: CoursePackageDoc, ver: CoursePackageVersionDoc): CoursePackageExportPayload {
+    const chapters = getVersionChapters(ver);
+    return {
+        format: 'hydrooj-course-package',
+        formatVersion: 1,
+        exportedAt: new Date().toISOString(),
+        package: {
+            title: pkg.title,
+            content: pkg.content || '',
+            pin: pkg.pin || 0,
+            tags: pkg.tags || [],
+            hidden: !!pkg.hidden,
+        },
+        version: {
+            title: ver.title,
+            version: ver.version,
+            content: ver.content || '',
+            treeText: serializeTree(chapters),
+            chapters,
+            hidden: !!ver.hidden,
+        },
+    };
+}
+
+function getCourseModel() {
+    return (global.Hydro.model as any).course;
+}
+
+function getCourseVideoVodModel() {
+    return ((global as any).Hydro?.model as any)?.courseVideoVod;
+}
+
+async function recordCourseVideoLessonCopies(
+    sourceDomainId: string,
+    targetDomainId: string,
+    packageId: ObjectId,
+    versionId: ObjectId,
+    courseId: ObjectId,
+    lessonCopies: NonNullable<CopyResult['lessonCopies']> = [],
+) {
+    const videoModel = getCourseVideoVodModel();
+    if (!videoModel?.recordPackageLessonCopies || !lessonCopies.length) return null;
+    return await videoModel.recordPackageLessonCopies(
+        sourceDomainId,
+        targetDomainId,
+        packageId,
+        versionId,
+        lessonCopies.map((item) => ({
+            chapterId: item.chapterId,
+            lessonId: item.lessonId,
+            courseId,
+            sectionId: item.sectionId,
+            subSectionId: item.subSectionId,
+        })),
+    );
+}
+
+function registerCoursePackagePermissions() {
+    (PERM as any).PERM_VIEW_COURSE_PACKAGE = PERM_VIEW_COURSE_PACKAGE;
+    (PERM as any).PERM_COPY_COURSE_PACKAGE = PERM_COPY_COURSE_PACKAGE;
+    const defs = [
+        Permission('perm_course_package', PERM_VIEW_COURSE_PACKAGE, 'View course packages'),
+        Permission('perm_course_package', PERM_COPY_COURSE_PACKAGE, 'Copy course packages'),
+    ];
+    for (const perm of defs) {
+        if (!PERMS.some((item) => item.key === perm.key)) PERMS.push(perm);
+        (PERMS_BY_FAMILY as any)[perm.family] ||= [];
+        if (!(PERMS_BY_FAMILY as any)[perm.family].some((item) => item.key === perm.key)) {
+            (PERMS_BY_FAMILY as any)[perm.family].push(perm);
+        }
+    }
+}
+
+function canManageCoursePackage(user: any) {
+    return user?.hasPerm?.(PERM.PERM_EDIT_DOMAIN);
+}
+
+function canViewCoursePackage(user: any) {
+    return canManageCoursePackage(user) || user?.hasPerm?.(PERM_VIEW_COURSE_PACKAGE);
+}
+
+function canCopyCoursePackage(user: any) {
+    return canManageCoursePackage(user) || user?.hasPerm?.(PERM_COPY_COURSE_PACKAGE);
+}
+
+function canCreateContestInDomain(user: any) {
+    return !!(user?.hasPerm?.(PERM.PERM_CREATE_CONTEST)
+        || user?.hasPerm?.(PERM.PERM_EDIT_CONTEST)
+        || user?.hasPerm?.(PERM.PERM_EDIT_DOMAIN));
+}
+
+function assertCanViewCoursePackage(handler: any) {
+    if (!canViewCoursePackage(handler.user)) throw new PermissionError(PERM_VIEW_COURSE_PACKAGE);
+}
+
+function assertCanCopyCoursePackage(handler: any) {
+    if (!canCopyCoursePackage(handler.user)) throw new PermissionError(PERM_COPY_COURSE_PACKAGE);
+}
+
+function canSeeHiddenCoursePackage(user: any) {
+    return canManageCoursePackage(user);
+}
+
+function ensureVisibleForUser(handler: any, doc: any, name = '课程包') {
+    if (doc?.hidden && !canSeeHiddenCoursePackage(handler.user)) throw new NotFoundError(`${name}不存在。`);
+}
+
+function visibleChaptersForUser(user: any, chapters: CoursePackageChapter[] = []) {
+    if (canSeeHiddenCoursePackage(user)) return chapters;
+    return chapters
+        .filter((chapter) => !chapter.hidden)
+        .map((chapter) => ({
+            ...chapter,
+            lessons: (chapter.lessons || []).filter((lesson) => !lesson.hidden),
+        }));
+}
+
+function summarizeChapters(chapters: CoursePackageChapter[] = []) {
+    const pids = new Set<number>();
+    let lessonCount = 0;
+    for (const chapter of chapters) {
+        lessonCount += chapter.lessons.length;
+        for (const lesson of chapter.lessons) {
+            for (const pid of lesson.pids || []) pids.add(pid);
+        }
+    }
+    return {
+        chapterCount: chapters.length,
+        lessonCount,
+        problemCount: pids.size,
+    };
+}
+
+function getSelectedLessons(chapters: CoursePackageChapter[], mode: CopyMode, nodeId = '') {
+    if (mode === 'package') return chapters.flatMap((chapter) => chapter.lessons);
+    if (mode === 'chapter') {
+        const chapter = findChapter(chapters, nodeId);
+        if (!chapter) throw new NotFoundError('章不存在。');
+        return chapter.lessons;
+    }
+    const found = findLesson(chapters, nodeId);
+    if (!found) throw new NotFoundError('节不存在。');
+    return [found.lesson];
+}
+
+function collectProblemIds(chapters: CoursePackageChapter[], mode: CopyMode = 'package', nodeId = '') {
+    return Array.from(new Set(
+        getSelectedLessons(chapters, mode, nodeId)
+            .flatMap((lesson) => lesson.pids || [])
+            .filter((pid) => Number.isInteger(pid) && pid > 0),
+    ));
+}
+
+function lectureMarkerPids(meta: any, pids: number[]) {
+    const directPids = normalizeIds(meta?.pids);
+    const singlePid = normalizeIds(meta?.pid)[0];
+    if (singlePid && !directPids.includes(singlePid)) directPids.push(singlePid);
+    return directPids;
+}
+
+function remapLectureMarkers(content: string, sourcePids: number[], pidMap: Map<number, number>) {
+    LECTURE_MARKER_RE.lastIndex = 0;
+    const result = asText(content).replace(LECTURE_MARKER_RE, (raw, json) => {
+        let meta: any;
+        try {
+            meta = JSON.parse(json);
+        } catch (e) {
+            return raw;
+        }
+        const mappedPids = normalizeIds(lectureMarkerPids(meta, sourcePids).map((pid) => pidMap.get(pid) || pid));
+        if (!mappedPids.length) return '';
+        const nextMeta = { ...meta, pids: mappedPids };
+        if (mappedPids.length === 1) nextMeta.pid = mappedPids[0];
+        else delete nextMeta.pid;
+        delete nextMeta.index;
+        delete nextMeta.indexes;
+        return `<!-- hydro-course-lecture-problem ${JSON.stringify(nextMeta)} -->\n`;
+    });
+    LECTURE_MARKER_RE.lastIndex = 0;
+    return result;
+}
+
+function remapChapters(chapters: CoursePackageChapter[], pidMap: Map<number, number>) {
+    return chapters.map((chapter) => ({
+        ...chapter,
+        lessons: chapter.lessons.map((lesson) => {
+            const sourcePids = normalizeIds(lesson.pids || []);
+            return {
+                ...lesson,
+                content: remapLectureMarkers(lesson.content || '', sourcePids, pidMap),
+                pids: sourcePids.map((pid) => pidMap.get(pid) || pid),
+            };
+        }),
+    }));
+}
+
+function parseImportPayload(text: string): CoursePackageExportPayload {
+    let payload: any;
+    try {
+        payload = JSON.parse(text);
+    } catch (e) {
+        throw new ValidationError('payload', null, `JSON 解析失败：${e.message}`);
+    }
+    if (payload?.format !== 'hydrooj-course-package') {
+        throw new ValidationError('payload', null, '不是有效的课程包导出文件。');
+    }
+    const treeText = payload.version?.treeText || JSON.stringify(
+        payload.version?.chapters
+            ? { chapters: payload.version.chapters }
+            : { stages: payload.version?.stages || [] },
+        null,
+        2,
+    );
+    const chapters = parseTree(treeText);
+    return {
+        format: 'hydrooj-course-package',
+        formatVersion: 1,
+        exportedAt: payload.exportedAt || new Date().toISOString(),
+        package: {
+            title: asText(payload.package?.title).trim(),
+            content: asText(payload.package?.content),
+            pin: Number(payload.package?.pin) || 0,
+            tags: normalizeTags(payload.package?.tags),
+            hidden: normalizeHidden(payload.package?.hidden),
+        },
+        version: {
+            title: asText(payload.version?.title, '默认版本').trim(),
+            version: asText(payload.version?.version, 'v1').trim(),
+            content: asText(payload.version?.content),
+            treeText: serializeTree(chapters),
+            chapters,
+            hidden: normalizeHidden(payload.version?.hidden),
+        },
+        problems: payload.problems,
+    };
+}
+
+function findChapter(chapters: CoursePackageChapter[], id: string) {
+    return chapters.find((chapter) => chapter.id === id);
+}
+
+function findLesson(chapters: CoursePackageChapter[], id: string) {
+    for (const chapter of chapters) {
+        const lesson = chapter.lessons.find((item) => item.id === id);
+        if (lesson) return { chapter, lesson };
+    }
+    return null;
+}
+
+function findLessonInChapter(chapter: CoursePackageChapter, lessonId: string) {
+    return chapter.lessons.find((lesson) => lesson.id === lessonId);
+}
+
+async function getProblemDocsByIds(domainId: string, pids: number[]) {
+    if (!pids.length) throw new ValidationError('pids', null, 'Please specify at least one problem');
+    return Promise.all(pids.map(async (pid) => {
+        const pdoc = await ProblemModel.get(domainId, pid);
+        if (!pdoc) throw new ProblemNotFoundError(domainId, pid);
+        return pdoc;
+    }));
+}
+
+async function sortProblemIdsByDisplayPid(domainId: string, pids: number[]) {
+    const pdocs = await getProblemDocsByIds(domainId, pids);
+    return pdocs
+        .sort(compareProblemPid)
+        .map((pdoc: any) => Number(pdoc.docId))
+        .filter((pid) => Number.isInteger(pid) && pid > 0);
+}
+
+async function getProblemOrderItems(domainId: string, pids: number[]) {
+    return Promise.all(pids.map(async (pid) => {
+        const pdoc = await ProblemModel.get(domainId, pid, ProblemModel.PROJECTION_PUBLIC, true);
+        if (!pdoc) {
+            return {
+                docId: pid,
+                displayPid: String(pid),
+                title: '',
+                difficulty: '',
+                hidden: false,
+                missing: true,
+            };
+        }
+        return {
+            docId: Number(pdoc.docId),
+            displayPid: getProblemDisplayPid(pdoc) || String(pdoc.docId),
+            title: pdoc.title || '',
+            difficulty: pdoc.difficulty || '',
+            hidden: !!pdoc.hidden,
+            missing: false,
+        };
+    }));
+}
+
+async function getProblemRaw(domainId: string, pid: number) {
+    const pdoc = await ProblemModel.get(domainId, pid, ProblemModel.PROJECTION_PUBLIC, true);
+    if (!pdoc) throw new ProblemNotFoundError(domainId, pid);
+    if (pdoc.reference) return getProblemRaw(pdoc.reference.domainId, pdoc.reference.pid);
+    return pdoc;
+}
+
+async function ensureProblemCreatePerm(domainId: string, uid: number) {
+    const udoc = await UserModel.getById(domainId, uid);
+    if (!udoc?.hasPerm?.(PERM.PERM_CREATE_PROBLEM)) {
+        throw new ValidationError('targetDomainId', null, '目标子域缺少 Hydro 复制题时，需要拥有创建题目的权限。');
+    }
+}
+
+async function resolveProblemCopySource(domainId: string, pid: number) {
+    let pdoc = await ProblemModel.get(domainId, pid, ProblemModel.PROJECTION_PUBLIC, true);
+    if (!pdoc) throw new ProblemNotFoundError(domainId, pid);
+    if (pdoc.reference) {
+        const sourcePdoc = await ProblemModel.get(pdoc.reference.domainId, pdoc.reference.pid, ProblemModel.PROJECTION_PUBLIC, true);
+        if (!sourcePdoc) throw new ProblemNotFoundError(pdoc.reference.domainId, pdoc.reference.pid);
+        pdoc = sourcePdoc;
+    }
+    return pdoc;
+}
+
+async function assertProblemCopyAllowed(sourceDomainId: string, targetDomainId: string) {
+    const sourceDomain = await DomainModel.get(sourceDomainId);
+    if (!sourceDomain) throw new NotFoundError(sourceDomainId);
+    const share = `,${sourceDomain.share || ''},`;
+    if (share !== ',*,' && !share.includes(`,${targetDomainId},`)) {
+        throw new ProblemNotAllowCopyError(sourceDomain._id, targetDomainId);
+    }
+}
+
+async function findProblemReference(targetDomainId: string, sourceDomainId: string, sourcePid: number) {
+    const [pdoc] = await ProblemModel.getMulti(targetDomainId, {
+        'reference.domainId': sourceDomainId,
+        'reference.pid': sourcePid,
+    } as any, ProblemModel.PROJECTION_PUBLIC).limit(1).toArray();
+    return pdoc || null;
+}
+
+async function copyProblemSolutions(sourceDomainId: string, sourcePid: number, targetDomainId: string, targetPid: number, operator: number) {
+    const exists = await SolutionModel.getMulti(targetDomainId, targetPid).limit(1).toArray();
+    if (exists.length) return;
+    const solutions = await SolutionModel.getMulti(sourceDomainId, sourcePid).toArray();
+    for (const psdoc of solutions) {
+        const psid = await SolutionModel.add(targetDomainId, targetPid, psdoc.owner || operator, psdoc.content || '');
+        for (const reply of psdoc.reply || []) {
+            await SolutionModel.reply(targetDomainId, psid, reply.owner || operator, reply.content || '');
+        }
+    }
+}
+
+async function syncProblemToDomain(sourceDomainId: string, sourcePid: number, targetDomainId: string, operator: number) {
+    if (sourceDomainId === targetDomainId) return sourcePid;
+    const source = await resolveProblemCopySource(sourceDomainId, sourcePid);
+    const existingRef = await findProblemReference(targetDomainId, source.domainId, source.docId);
+    if (existingRef) return existingRef.docId;
+    await assertProblemCopyAllowed(source.domainId, targetDomainId);
+    await ensureProblemCreatePerm(targetDomainId, operator);
+    const targetPid = await ProblemModel.copy(source.domainId, source.docId, targetDomainId, undefined, source.hidden);
+    await copyProblemSolutions(source.domainId, source.docId, targetDomainId, targetPid, operator);
+    return targetPid;
+}
+
+async function syncSelectedProblems(sourceDomainId: string, targetDomainId: string, chapters: CoursePackageChapter[], mode: CopyMode, nodeId: string, operator: number) {
+    const pidMap = new Map<number, number>();
+    for (const pid of collectProblemIds(chapters, mode, nodeId)) {
+        pidMap.set(pid, await syncProblemToDomain(sourceDomainId, pid, targetDomainId, operator));
+    }
+    return pidMap;
+}
+
+async function addProblemToZip(zip: any, domainId: string, pid: number) {
+    const pdoc = await getProblemRaw(domainId, pid);
+    const folder = `problem-${pid}`;
+    await zip.add(`${folder}/problem.yaml`, new Zip.TextReader(yaml.dump({
+        pid: pdoc.pid || `P${pdoc.docId}`,
+        owner: pdoc.owner,
+        title: pdoc.title,
+        tag: pdoc.tag,
+        nSubmit: pdoc.nSubmit,
+        nAccept: pdoc.nAccept,
+        difficulty: pdoc.difficulty,
+    })));
+    try {
+        const content = JSON.parse(pdoc.content);
+        for (const key of Object.keys(content)) {
+            await zip.add(
+                `${folder}/problem_${key}.md`,
+                new Zip.TextReader(typeof content[key] === 'string' ? content[key] : JSON.stringify(content[key])),
+            );
+        }
+    } catch (e) {
+        await zip.add(`${folder}/problem.md`, new Zip.TextReader(pdoc.content || ''));
+    }
+    for (const file of pdoc.data || []) {
+        const stream = await StorageModel.get(`problem/${pdoc.domainId}/${pdoc.docId}/testdata/${file.name}`);
+        await zip.add(`${folder}/testdata/${file.name}`, Readable.toWeb(stream) as any);
+    }
+    for (const file of pdoc.additional_file || []) {
+        const stream = await StorageModel.get(`problem/${pdoc.domainId}/${pdoc.docId}/additional_file/${file.name}`);
+        await zip.add(`${folder}/additional_file/${file.name}`, Readable.toWeb(stream) as any);
+    }
+    const solutions = await SolutionModel.getMulti(pdoc.domainId, pdoc.docId).toArray();
+    for (let i = 0; i < solutions.length; i++) {
+        await zip.add(`${folder}/solution/solution-${i + 1}.md`, new Zip.TextReader(solutions[i].content || ''));
+    }
+    return {
+        sourcePid: pid,
+        folder,
+        title: pdoc.title,
+        pid: pdoc.pid || `P${pdoc.docId}`,
+    };
+}
+
+async function buildCoursePackageZip(domainId: string, pkg: CoursePackageDoc, ver: CoursePackageVersionDoc) {
+    const zip = new Zip.ZipWriter(new Zip.BlobWriter('application/zip'), { bufferedWrite: true });
+    const payload = buildExport(pkg, ver);
+    const problemItems = [];
+    for (const pid of collectProblemIds(getVersionChapters(ver))) {
+        problemItems.push(await addProblemToZip(zip, domainId, pid));
+    }
+    payload.problems = { sourceDomainId: domainId, items: problemItems };
+    await zip.add('course-package.json', new Zip.TextReader(JSON.stringify(payload, null, 2)));
+    await zip.add('README.txt', new Zip.TextReader([
+        `${pkg.title} / ${ver.version}`,
+        '',
+        'This archive contains course-package.json and Hydro problem folders.',
+        'Import problem-* folders through Hydro problem import if you only need the problems.',
+        '',
+    ].join('\n')));
+    return zip.close();
+}
+
+async function readCoursePackageZip(filepath: string) {
+    const reader = new Zip.ZipReader(Readable.toWeb(createReadStream(filepath)) as any);
+    try {
+        const entries = await reader.getEntries();
+        const manifest = entries.find((entry) => entry.filename === 'course-package.json');
+        if (!manifest) throw new ValidationError('file', null, '课程包 ZIP 缺少 course-package.json。');
+        const text = await (manifest as Zip.Entry & { getData: (writer: Zip.TextWriter) => Promise<string> }).getData(new Zip.TextWriter());
+        return parseImportPayload(text);
+    } finally {
+        await reader.close();
+    }
+}
+
+async function importZipProblemsAndBuildMap(domainId: string, filepath: string, payload: CoursePackageExportPayload, operator: number) {
+    await ProblemModel.import(domainId, filepath, { operator, override: true });
+    const pidMap = new Map<number, number>();
+    for (const item of payload.problems?.items || []) {
+        if (!item.pid) continue;
+        const pdoc = await ProblemModel.get(domainId, item.pid);
+        if (pdoc) pidMap.set(item.sourcePid, pdoc.docId);
+    }
+    const missing = (payload.problems?.items || []).filter((item) => !pidMap.has(item.sourcePid));
+    if (missing.length) {
+        throw new ValidationError('file', null, `部分题目导入失败：${missing.map((item) => `P${item.sourcePid}`).join(', ')}`);
+    }
+    return pidMap;
+}
+
+function sameId(a: any, b: any) {
+    return a?.toString?.() === b?.toString?.();
+}
+
+async function getWritableDomains(uid: number, fallbackDomainId: string) {
+    const domains = await DomainModel.getMulti({}).sort({ _id: 1 }).toArray();
+    const writable: any[] = [];
+    await Promise.all(domains.map(async (ddoc) => {
+        const udoc = await UserModel.getById(ddoc._id, uid);
+        if (canCopyCoursePackage(udoc)) writable.push(ddoc);
+    }));
+    writable.sort((a, b) => String(a._id).localeCompare(String(b._id)));
+    if (!writable.some((ddoc) => ddoc._id === fallbackDomainId)) {
+        const [ddoc, udoc] = await Promise.all([
+            DomainModel.get(fallbackDomainId),
+            UserModel.getById(fallbackDomainId, uid),
+        ]);
+        if (ddoc && canCopyCoursePackage(udoc)) writable.unshift(ddoc);
+    }
+    return writable;
+}
+
+async function getContestWritableDomains(uid: number, fallbackDomainId: string) {
+    const domains = await getWritableDomains(uid, fallbackDomainId);
+    const writable: any[] = [];
+    await Promise.all(domains.map(async (ddoc) => {
+        const udoc = await UserModel.getById(ddoc._id, uid);
+        if (canCreateContestInDomain(udoc)) writable.push(ddoc);
+    }));
+    writable.sort((a, b) => String(a._id).localeCompare(String(b._id)));
+    return writable;
+}
+
+async function assertWritableDomain(domainId: string, uid: number) {
+    const ddoc = await DomainModel.get(domainId);
+    if (!ddoc) throw new NotFoundError(`目标子域不存在：${domainId}`);
+    const udoc = await UserModel.getById(ddoc._id, uid);
+    if (!canCopyCoursePackage(udoc)) {
+        throw new ValidationError('targetDomainId', null, '你在目标子域没有复制课程包的权限。');
+    }
+    return ddoc._id;
+}
+
+async function assertContestWritableDomain(domainId: string, uid: number) {
+    const targetDomainId = await assertWritableDomain(domainId, uid);
+    const udoc = await UserModel.getById(targetDomainId, uid);
+    if (!canCreateContestInDomain(udoc)) {
+        throw new ValidationError('targetDomainId', null, '你在目标子域没有创建比赛的权限。');
+    }
+    return targetDomainId;
+}
+
+function safeTimeZone(timezone = 'Asia/Shanghai') {
+    try {
+        const value = timezone || 'Asia/Shanghai';
+        new Intl.DateTimeFormat('en-US', { timeZone: value }).format(new Date(0));
+        return value;
+    } catch (e) {
+        return 'Asia/Shanghai';
+    }
+}
+
+function timeZoneParts(date: Date, timezone = 'Asia/Shanghai') {
+    const parts: Record<string, string> = {};
+    for (const part of new Intl.DateTimeFormat('en-US', {
+        timeZone: safeTimeZone(timezone),
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23',
+    }).formatToParts(date)) {
+        if (part.type !== 'literal') parts[part.type] = part.value;
+    }
+    return parts;
+}
+
+function formatDateInput(date: Date, timezone = 'Asia/Shanghai') {
+    const parts = timeZoneParts(date, timezone);
+    return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
+function formatTimeInput(date: Date, timezone = 'Asia/Shanghai') {
+    const parts = timeZoneParts(date, timezone);
+    return `${parts.hour}:${parts.minute}`;
+}
+
+function timeZoneOffsetMs(date: Date, timezone = 'Asia/Shanghai') {
+    const parts = timeZoneParts(date, timezone);
+    const asUtc = Date.UTC(
+        Number(parts.year),
+        Number(parts.month) - 1,
+        Number(parts.day),
+        Number(parts.hour),
+        Number(parts.minute),
+    );
+    return asUtc - date.getTime();
+}
+
+function parseDateTimeInTimeZone(dateText: string, timeText: string, timezone = 'Asia/Shanghai') {
+    const dateMatch = String(dateText || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const timeMatch = String(timeText || '').match(/^(\d{2}):(\d{2})$/);
+    if (!dateMatch || !timeMatch) return null;
+    const utcWall = Date.UTC(
+        Number(dateMatch[1]),
+        Number(dateMatch[2]) - 1,
+        Number(dateMatch[3]),
+        Number(timeMatch[1]),
+        Number(timeMatch[2]),
+    );
+    let result = new Date(utcWall - timeZoneOffsetMs(new Date(utcWall), timezone));
+    const refinedOffset = timeZoneOffsetMs(result, timezone);
+    result = new Date(utcWall - refinedOffset);
+    return Number.isFinite(result.getTime()) ? result : null;
+}
+
+async function ensureCourseSection(domainId: string, courseId: ObjectId, sectionId?: ObjectId) {
+    if (!sectionId) throw new ValidationError('targetSectionId', null, '请选择目标课程章。');
+    const course = getCourseModel();
+    const section = await course.getSection(domainId, sectionId);
+    if (!section || !sameId(section.parentId, courseId)) {
+        throw new NotFoundError('目标章不存在，或不属于所选课程。');
+    }
+    return section;
+}
+
+function maxPinValue(items: any[] = []) {
+    let max = 0;
+    for (const item of items || []) {
+        const value = Number(item?.pin);
+        if (Number.isFinite(value) && value > max) max = value;
+    }
+    return max;
+}
+
+function pinForDisplayOrder(total: number, index: number, base = 0) {
+    return base + Math.max(1, total - index);
+}
+
+async function getCourseSectionPinBase(domainId: string, courseId: ObjectId) {
+    const course = getCourseModel();
+    if (!course?.getMultiSection) return 0;
+    const sections = await course.getMultiSection(domainId, courseId).toArray();
+    return maxPinValue(sections);
+}
+
+async function addLessonToCourseSection(domainId: string, sectionId: ObjectId, owner: number, lesson: CoursePackageLesson, pin = 0) {
+    const course = getCourseModel();
+    const [, subSectionId] = await course.addSubSection(domainId, sectionId, owner, lesson.title, lesson.content || '', lesson.pids || [], pin);
+    return subSectionId;
+}
+
+async function copyChapterAsCourseSection(domainId: string, courseId: ObjectId, owner: number, title: string, content: string, chapter: CoursePackageChapter, pin = 0): Promise<CopyResult> {
+    const course = getCourseModel();
+    const sectionId = await course.addSection(domainId, courseId, owner, title, content || '', pin);
+    let subSectionId: ObjectId | undefined;
+    const lessonCopies: NonNullable<CopyResult['lessonCopies']> = [];
+    for (const [index, lesson] of chapter.lessons.entries()) {
+        subSectionId = await addLessonToCourseSection(
+            domainId, sectionId, owner, lesson,
+            pinForDisplayOrder(chapter.lessons.length, index),
+        );
+        lessonCopies.push({ chapterId: chapter.id, lessonId: lesson.id, sectionId, subSectionId });
+    }
+    return { count: 1, sectionId, subSectionId, lessonCopies };
+}
+
+async function copyChapterIntoCourseSection(domainId: string, courseId: ObjectId, owner: number, sectionId: ObjectId, chapter: CoursePackageChapter): Promise<CopyResult> {
+    const section = await ensureCourseSection(domainId, courseId, sectionId);
+    const pinBase = maxPinValue(section.dag || []);
+    let subSectionId: ObjectId | undefined;
+    const lessonCopies: NonNullable<CopyResult['lessonCopies']> = [];
+    for (const [index, lesson] of chapter.lessons.entries()) {
+        subSectionId = await addLessonToCourseSection(
+            domainId, sectionId, owner, lesson,
+            pinForDisplayOrder(chapter.lessons.length, index, pinBase),
+        );
+        lessonCopies.push({ chapterId: chapter.id, lessonId: lesson.id, sectionId, subSectionId });
+    }
+    return { count: chapter.lessons.length, sectionId, subSectionId, lessonCopies };
+}
+
+function getSelectionMeta(pkg: CoursePackageDoc, ver: CoursePackageVersionDoc, mode: CopyMode, nodeId = '', chaptersOverride?: CoursePackageChapter[]) {
+    const packageTitle = `${pkg.title} / ${ver.version}`;
+    const chapters = chaptersOverride || getVersionChapters(ver);
+    if (mode === 'package') {
+        return {
+            title: packageTitle,
+            defaultCourseTitle: pkg.title,
+            defaultSectionTitle: pkg.title,
+            modeLabel: '整个课程包',
+        };
+    }
+    if (mode === 'chapter') {
+        const chapter = findChapter(chapters, nodeId);
+        if (!chapter) throw new NotFoundError('章不存在。');
+        return {
+            title: chapter.title,
+            defaultCourseTitle: `${pkg.title} - ${chapter.title}`,
+            defaultSectionTitle: chapter.title,
+            modeLabel: '章',
+        };
+    }
+    const found = findLesson(chapters, nodeId);
+    if (!found) throw new NotFoundError('节不存在。');
+    return {
+        title: `${found.chapter.title} / ${found.lesson.title}`,
+        defaultCourseTitle: `${pkg.title} - ${found.lesson.title}`,
+        defaultSectionTitle: found.chapter.title,
+        modeLabel: '节',
+    };
+}
+
+async function copySelectionToCourse(
+    domainId: string, courseId: ObjectId, owner: number,
+    chapters: CoursePackageChapter[], mode: CopyMode, nodeId = '',
+    target: CopyTarget = { position: 'root' },
+): Promise<CopyResult> {
+    const course = getCourseModel();
+    if (!course?.addSection || !course?.addSubSection || !course?.getSection) {
+        throw new NotFoundError('hydrooj-course 未安装或未提供 course model，无法复制到课程。');
+    }
+    let result: CopyResult = { count: 0 };
+    if (mode === 'package') {
+        const pinBase = await getCourseSectionPinBase(domainId, courseId);
+        for (const [index, chapter] of chapters.entries()) {
+            const current = await copyChapterAsCourseSection(
+                domainId, courseId, owner,
+                chapter.title,
+                chapter.content || '',
+                chapter,
+                pinForDisplayOrder(chapters.length, index, pinBase),
+            );
+            result = {
+                ...current,
+                count: result.count + current.count,
+                lessonCopies: [...(result.lessonCopies || []), ...(current.lessonCopies || [])],
+            };
+        }
+    } else if (mode === 'chapter') {
+        const chapter = findChapter(chapters, nodeId);
+        if (!chapter) throw new NotFoundError('章不存在。');
+        if (target.position === 'section') {
+            result = await copyChapterIntoCourseSection(domainId, courseId, owner, target.sectionId!, chapter);
+        } else {
+            result = await copyChapterAsCourseSection(
+                domainId, courseId, owner,
+                (target.newSectionTitle || chapter.title).trim(),
+                chapter.content || '',
+                chapter,
+                pinForDisplayOrder(1, 0, await getCourseSectionPinBase(domainId, courseId)),
+            );
+        }
+    } else if (mode === 'lesson') {
+        const found = findLesson(chapters, nodeId);
+        if (!found) throw new NotFoundError('节不存在。');
+        let sectionId = target.sectionId;
+        let lessonPinBase = 0;
+        if (target.position === 'section') {
+            const section = await ensureCourseSection(domainId, courseId, sectionId);
+            lessonPinBase = maxPinValue(section.dag || []);
+        } else {
+            sectionId = await course.addSection(
+                domainId, courseId, owner,
+                (target.newSectionTitle || found.chapter.title).trim(),
+                found.chapter.content || '',
+                pinForDisplayOrder(1, 0, await getCourseSectionPinBase(domainId, courseId)),
+            );
+        }
+        const subSectionId = await addLessonToCourseSection(domainId, sectionId!, owner, found.lesson, pinForDisplayOrder(1, 0, lessonPinBase));
+        result = {
+            count: 1,
+            sectionId,
+            subSectionId,
+            lessonCopies: [{ chapterId: found.chapter.id, lessonId: found.lesson.id, sectionId: sectionId!, subSectionId }],
+        };
+    }
+    return result;
+}
+
+export class CoursePackageModel {
+    static async add(domainId: string, owner: number, title: string, content: string, pin = 0, tags: string[] = [], hidden = false) {
+        const sortOrder = await CoursePackageModel.nextPackageSortOrder(domainId);
+        const docId = await DocumentModel.add(
+            domainId, content, owner, TYPE_COURSE_PACKAGE,
+            null, null, null, { title, pin, tags, hidden: !!hidden, nVersion: 0, sortOrder, updateAt: new Date() },
+        );
+        return docId;
+    }
+
+    static async get(domainId: string, cpid: ObjectId): Promise<CoursePackageDoc | null> {
+        return DocumentModel.get(domainId, TYPE_COURSE_PACKAGE, cpid);
+    }
+
+    static getMulti(domainId: string, query: Filter<CoursePackageDoc> = {}): any {
+        return DocumentModel.getMulti(domainId, TYPE_COURSE_PACKAGE, query).sort({ sortOrder: 1, pin: -1, _id: -1 });
+    }
+
+    static edit(domainId: string, cpid: ObjectId, $set: Partial<CoursePackageDoc>) {
+        return DocumentModel.set(domainId, TYPE_COURSE_PACKAGE, cpid, { ...$set, updateAt: new Date() });
+    }
+
+    static async del(domainId: string, cpid: ObjectId): Promise<any> {
+        return Promise.all([
+            DocumentModel.deleteOne(domainId, TYPE_COURSE_PACKAGE, cpid),
+            DocumentModel.deleteMulti(domainId, TYPE_COURSE_PACKAGE_VERSION, { parentType: TYPE_COURSE_PACKAGE, parentId: cpid }),
+        ]);
+    }
+
+    static async addVersion(domainId: string, cpid: ObjectId, owner: number, title: string, version: string, content: string, treeText: string, pin = 0, hidden = false) {
+        const chapters = parseTree(treeText);
+        const sortOrder = await CoursePackageModel.nextVersionSortOrder(domainId, cpid);
+        const docId = await DocumentModel.add(
+            domainId, content, owner, TYPE_COURSE_PACKAGE_VERSION,
+            null, TYPE_COURSE_PACKAGE, cpid, { title, version, treeText: serializeTree(chapters), chapters, pin, hidden: !!hidden, sortOrder, updateAt: new Date() },
+        );
+        await DocumentModel.inc(domainId, TYPE_COURSE_PACKAGE, cpid, 'nVersion', 1);
+        await CoursePackageModel.edit(domainId, cpid, {});
+        return docId;
+    }
+
+    static async getVersion(domainId: string, vid: ObjectId): Promise<CoursePackageVersionDoc | null> {
+        const doc = await DocumentModel.get(domainId, TYPE_COURSE_PACKAGE_VERSION, vid);
+        if (!doc) return null;
+        doc.chapters = getVersionChapters(doc);
+        doc.treeText = serializeTree(doc.chapters);
+        return doc;
+    }
+
+    static getMultiVersion(domainId: string, cpid: ObjectId): any {
+        return DocumentModel.getMulti(
+            domainId, TYPE_COURSE_PACKAGE_VERSION,
+            { parentType: TYPE_COURSE_PACKAGE, parentId: cpid },
+        ).sort({ sortOrder: 1, pin: -1, _id: -1 });
+    }
+
+    static editVersion(domainId: string, vid: ObjectId, $set: Partial<CoursePackageVersionDoc>) {
+        if ($set.treeText !== undefined) {
+            const chapters = parseTree($set.treeText);
+            $set.chapters = chapters;
+            $set.treeText = serializeTree(chapters);
+        }
+        return DocumentModel.set(domainId, TYPE_COURSE_PACKAGE_VERSION, vid, { ...$set, updateAt: new Date() });
+    }
+
+    static setVersionChapters(domainId: string, vid: ObjectId, chapters: CoursePackageChapter[]) {
+        return CoursePackageModel.editVersion(domainId, vid, { treeText: serializeTree(chapters) });
+    }
+
+    static async nextPackageSortOrder(domainId: string) {
+        const docs = await DocumentModel.getMulti(domainId, TYPE_COURSE_PACKAGE, {}).toArray();
+        const maxOrder = docs.reduce((max: number, doc: any) => {
+            const value = Number(doc?.sortOrder);
+            return Number.isFinite(value) ? Math.max(max, value) : max;
+        }, 0);
+        return maxOrder + 1000;
+    }
+
+    static async nextVersionSortOrder(domainId: string, cpid: ObjectId) {
+        const docs = await DocumentModel.getMulti(
+            domainId,
+            TYPE_COURSE_PACKAGE_VERSION,
+            { parentType: TYPE_COURSE_PACKAGE, parentId: cpid },
+        ).toArray();
+        const maxOrder = docs.reduce((max: number, doc: any) => {
+            const value = Number(doc?.sortOrder);
+            return Number.isFinite(value) ? Math.max(max, value) : max;
+        }, 0);
+        return maxOrder + 1000;
+    }
+
+    static async delVersion(domainId: string, cpid: ObjectId, vid: ObjectId) {
+        await DocumentModel.deleteOne(domainId, TYPE_COURSE_PACKAGE_VERSION, vid);
+        await DocumentModel.inc(domainId, TYPE_COURSE_PACKAGE, cpid, 'nVersion', -1);
+        await CoursePackageModel.edit(domainId, cpid, {});
+    }
+}
+
+global.Hydro.model.coursePackage = CoursePackageModel;
+
+class CoursePackageBaseHandler extends Handler {
+    cpdoc?: CoursePackageDoc;
+    vpdoc?: CoursePackageVersionDoc;
+
+    @param('cpid', Types.ObjectId, true)
+    @param('vid', Types.ObjectId, true)
+    async _prepare({ domainId }, cpid?: ObjectId, vid?: ObjectId) {
+        if (cpid) {
+            this.cpdoc = await CoursePackageModel.get(domainId, cpid);
+            if (!this.cpdoc) throw new DocumentNotFoundError(domainId, cpid);
+        }
+        if (vid) {
+            this.vpdoc = await CoursePackageModel.getVersion(domainId, vid);
+            if (!this.vpdoc) throw new DocumentNotFoundError(domainId, vid);
+            if (cpid && this.vpdoc.parentId.toHexString() !== cpid.toHexString()) throw new DocumentNotFoundError(domainId, vid);
+        }
+    }
+}
+
+class CoursePackageProblemSearchHandler extends Handler {
+    @param('page', Types.PositiveInt, true)
+    @param('q', Types.String, true)
+    @param('tags', Types.String, true)
+    @param('difficulty', Types.String, true)
+    async get({ domainId }, page = 1, q = '', tags = '', difficulty = '') {
+        this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+        await this.limitRate('course_package_problem_search', 60, 120);
+        const query: any = {};
+        const keyword = normalizeProblemSearchText(q);
+        if (keyword) {
+            const searchText = keyword.replace(/^P/i, '');
+            const regex = problemSearchRegex(searchText);
+            const conditions: any[] = [
+                { title: regex },
+                { pid: regex },
+                { tag: regex },
+            ];
+            const numericPid = Number(searchText);
+            if (Number.isInteger(numericPid) && numericPid > 0) conditions.push({ docId: numericPid });
+            query.$or = conditions;
+        }
+        const tagList = normalizeTags(tags);
+        for (const tag of tagList) appendAndQuery(query, { tag: problemSearchRegex(normalizeProblemSearchText(tag)) });
+        const difficultyText = normalizeProblemSearchText(difficulty);
+        if (difficultyText) query.difficulty = problemSearchRegex(difficultyText);
+        const pageSize = 20;
+        const allPdocs = await ProblemModel.getMulti(
+            domainId,
+            query,
+            ProblemModel.PROJECTION_PUBLIC,
+        ).sort({ pid: 1, docId: 1 } as any).toArray();
+        allPdocs.sort(compareProblemPid);
+        const count = allPdocs.length;
+        const pcount = Math.max(1, Math.ceil(count / pageSize));
+        page = Math.min(page, pcount);
+        const pdocs = allPdocs.slice((page - 1) * pageSize, page * pageSize);
+        this.response.body = {
+            page,
+            pcount,
+            count,
+            items: pdocs.map((pdoc: any) => ({
+                docId: pdoc.docId,
+                pid: getProblemDisplayPid(pdoc),
+                title: pdoc.title || '',
+                difficulty: pdoc.difficulty || '',
+                tag: Array.isArray(pdoc.tag) ? pdoc.tag : [],
+                hidden: !!pdoc.hidden,
+                nSubmit: pdoc.nSubmit || 0,
+                nAccept: pdoc.nAccept || 0,
+            })),
+        };
+    }
+}
+
+class CoursePackageMainHandler extends Handler {
+    @param('page', Types.PositiveInt, true)
+    @param('q', Types.String, true)
+    async get({ domainId }, page = 1, q = '') {
+        assertCanViewCoursePackage(this);
+        const canManage = canManageCoursePackage(this.user);
+        const query: Filter<CoursePackageDoc> = canManage ? {} : { hidden: { $ne: true } as any };
+        if (q) query.title = { $regex: q, $options: 'i' } as any;
+        const [cpdocs, cpcount] = await this.paginate(
+            CoursePackageModel.getMulti(domainId, query), page, this.ctx.setting.get('pagination.coursePackage') || 20,
+        ) as unknown as [CoursePackageDoc[], number];
+        const udict = await UserModel.getList(domainId, cpdocs.map((doc) => doc.owner));
+        this.response.template = 'course_package_main.html';
+        this.response.body = { page_name: 'course_package_main', cpdocs, cpcount, page, q, udict, canManage };
+    }
+
+    @param('cpid', Types.ObjectId)
+    async postToggleHidden({ domainId }, cpid: ObjectId) {
+        this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+        const cpdoc = await CoursePackageModel.get(domainId, cpid);
+        if (!cpdoc) throw new DocumentNotFoundError(domainId, cpid);
+        await CoursePackageModel.edit(domainId, cpid, { hidden: !cpdoc.hidden });
+        this.back();
+    }
+}
+
+class CoursePackageOrderHandler extends Handler {
+    async get({ domainId }) {
+        this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+        const cpdocs = (await CoursePackageModel.getMulti(domainId, {}).toArray())
+            .sort(compareOrderedDocs);
+        const udict = await UserModel.getList(domainId, cpdocs.map((doc: any) => doc.owner));
+        this.response.template = 'course_package_order.html';
+        this.response.body = { page_name: 'course_package_order', cpdocs, udict };
+    }
+
+    @param('order', Types.Content, true)
+    async post({ domainId }, orderText = '') {
+        this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+        const cpdocs = (await CoursePackageModel.getMulti(domainId, {}).toArray())
+            .sort(compareOrderedDocs);
+        const ids = parseObjectIdOrder(orderText);
+        const validIds = new Set(cpdocs.map(docIdText));
+        for (const id of ids) {
+            if (!validIds.has(id)) throw new ValidationError('order', null, '排序数据包含不存在的课程包。');
+        }
+        const ordered = applyIdOrder(cpdocs, ids, docIdText);
+        await Promise.all(ordered.map((doc: any, index) => CoursePackageModel.edit(
+            domainId,
+            doc.docId,
+            { sortOrder: (index + 1) * 1000 },
+        )));
+        this.response.redirect = this.url('course_package_order');
+    }
+}
+
+class CoursePackageEditHandler extends CoursePackageBaseHandler {
+    @param('cpid', Types.ObjectId, true)
+    async get({ domainId }, cpid?: ObjectId) {
+        this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+        this.response.template = 'course_package_edit.html';
+        this.response.body = { page_name: cpid ? 'course_package_edit' : 'course_package_create', cpdoc: this.cpdoc };
+    }
+
+    @param('title', Types.Title)
+    @param('content', Types.Content)
+    @param('pin', Types.UnsignedInt, true)
+    @param('tags', Types.String, true)
+    @param('hidden', Types.Boolean, true)
+    @param('cpid', Types.ObjectId, true)
+    async post({ domainId }, title: string, content: string, pin = 0, tags = '', hidden = false, cpid?: ObjectId) {
+        if (!cpid) {
+            this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+            cpid = await CoursePackageModel.add(domainId, this.user._id, title, content, pin, normalizeTags(tags), hidden);
+        } else {
+            this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+            await CoursePackageModel.edit(domainId, cpid, { title, content, pin, tags: normalizeTags(tags), hidden });
+        }
+        this.response.redirect = this.url('course_package_detail', { cpid });
+    }
+
+    @param('cpid', Types.ObjectId)
+    async postDelete({ domainId }, cpid: ObjectId) {
+        this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+        await CoursePackageModel.del(domainId, cpid);
+        this.response.redirect = this.url('course_package_main');
+    }
+}
+
+class CoursePackageDetailHandler extends CoursePackageBaseHandler {
+    @param('cpid', Types.ObjectId)
+    async get({ domainId }, cpid: ObjectId) {
+        assertCanViewCoursePackage(this);
+        ensureVisibleForUser(this, this.cpdoc, '课程包');
+        const canManage = canManageCoursePackage(this.user);
+        const versions = (await CoursePackageModel.getMultiVersion(domainId, cpid).toArray())
+            .filter((ver) => canManage || !ver.hidden)
+            .map((ver) => ({ ...ver, summary: summarizeChapters(visibleChaptersForUser(this.user, getVersionChapters(ver))) }));
+        const udoc = await UserModel.getById(domainId, this.cpdoc!.owner);
+        this.response.template = 'course_package_detail.html';
+        this.response.body = { page_name: 'course_package_detail', cpdoc: this.cpdoc, versions, udoc, canManage };
+        this.UiContext.extraTitleContent = this.cpdoc!.title;
+    }
+
+    @param('vid', Types.ObjectId)
+    async postToggleVersionHidden({ domainId }, vid: ObjectId) {
+        this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+        const ver = await CoursePackageModel.getVersion(domainId, vid);
+        if (!ver || ver.parentId.toHexString() !== this.cpdoc!.docId.toHexString()) throw new DocumentNotFoundError(domainId, vid);
+        await CoursePackageModel.editVersion(domainId, vid, { hidden: !ver.hidden });
+        this.back();
+    }
+
+    async postToggleHidden({ domainId }) {
+        this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+        await CoursePackageModel.edit(domainId, this.cpdoc!.docId, { hidden: !this.cpdoc!.hidden });
+        this.back();
+    }
+}
+
+class CoursePackageVersionOrderHandler extends CoursePackageBaseHandler {
+    @param('cpid', Types.ObjectId)
+    async get({ domainId }, cpid: ObjectId) {
+        this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+        const versions = (await CoursePackageModel.getMultiVersion(domainId, cpid).toArray())
+            .sort(compareOrderedDocs)
+            .map((ver) => ({ ...ver, summary: summarizeChapters(getVersionChapters(ver)) }));
+        this.response.template = 'course_package_version_order.html';
+        this.response.body = { page_name: 'course_package_version_order', cpdoc: this.cpdoc, versions };
+    }
+
+    @param('cpid', Types.ObjectId)
+    @param('order', Types.Content, true)
+    async post({ domainId }, cpid: ObjectId, orderText = '') {
+        this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+        const versions = (await CoursePackageModel.getMultiVersion(domainId, cpid).toArray())
+            .sort(compareOrderedDocs);
+        const ids = parseObjectIdOrder(orderText);
+        const validIds = new Set(versions.map(docIdText));
+        for (const id of ids) {
+            if (!validIds.has(id)) throw new ValidationError('order', null, '排序数据包含不存在的版本。');
+        }
+        const ordered = applyIdOrder(versions, ids, docIdText);
+        await Promise.all(ordered.map((doc: any, index) => CoursePackageModel.editVersion(
+            domainId,
+            doc.docId,
+            { sortOrder: (index + 1) * 1000 },
+        )));
+        this.response.redirect = this.url('course_package_version_order', { cpid });
+    }
+}
+
+class CoursePackageVersionEditHandler extends CoursePackageBaseHandler {
+    @param('cpid', Types.ObjectId)
+    @param('vid', Types.ObjectId, true)
+    async get({ domainId }, cpid: ObjectId, vid?: ObjectId) {
+        this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+        this.response.template = 'course_package_version_edit.html';
+        this.response.body = {
+            page_name: vid ? 'course_package_version_edit' : 'course_package_version_create',
+            cpdoc: this.cpdoc,
+            vpdoc: this.vpdoc,
+            sampleTree: sampleTree(),
+        };
+    }
+
+    @param('cpid', Types.ObjectId)
+    @param('title', Types.Title)
+    @param('version', Types.String)
+    @param('content', Types.Content)
+    @param('treeText', Types.Content)
+    @param('pin', Types.UnsignedInt, true)
+    @param('hidden', Types.Boolean, true)
+    @param('vid', Types.ObjectId, true)
+    async post({ domainId }, cpid: ObjectId, title: string, version: string, content: string, treeText: string, pin = 0, hidden = false, vid?: ObjectId) {
+        this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+        if (!vid) {
+            vid = await CoursePackageModel.addVersion(domainId, cpid, this.user._id, title, version, content, treeText, pin, hidden);
+        } else {
+            await CoursePackageModel.editVersion(domainId, vid, { title, version, content, treeText, pin, hidden });
+        }
+        this.response.redirect = this.url('course_package_version_detail', { cpid, vid });
+    }
+
+    @param('cpid', Types.ObjectId)
+    @param('vid', Types.ObjectId)
+    async postDelete({ domainId }, cpid: ObjectId, vid: ObjectId) {
+        this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+        await CoursePackageModel.delVersion(domainId, cpid, vid);
+        this.response.redirect = this.url('course_package_detail', { cpid });
+    }
+}
+
+class CoursePackageVersionDetailHandler extends CoursePackageBaseHandler {
+    @param('cpid', Types.ObjectId)
+    @param('vid', Types.ObjectId)
+    async get({ domainId }, cpid: ObjectId, vid: ObjectId) {
+        assertCanViewCoursePackage(this);
+        ensureVisibleForUser(this, this.cpdoc, '课程包');
+        ensureVisibleForUser(this, this.vpdoc, '版本');
+        const udoc = await UserModel.getById(domainId, this.vpdoc!.owner);
+        const canManage = canManageCoursePackage(this.user);
+        const chapters = visibleChaptersForUser(this.user, getVersionChapters(this.vpdoc));
+        this.response.template = 'course_package_version_detail.html';
+        this.response.body = {
+            page_name: 'course_package_version_detail',
+            cpdoc: this.cpdoc,
+            vpdoc: this.vpdoc,
+            chapters,
+            udoc,
+            summary: summarizeChapters(chapters),
+            canManage,
+            canCopy: canCopyCoursePackage(this.user),
+            canExport: canManage,
+        };
+        this.UiContext.extraTitleContent = `${this.cpdoc!.title} - ${this.vpdoc!.version}`;
+    }
+
+    async postToggleVersionHidden({ domainId }) {
+        this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+        await CoursePackageModel.editVersion(domainId, this.vpdoc!.docId, { hidden: !this.vpdoc!.hidden });
+        this.back();
+    }
+
+    @param('chapterId', Types.String)
+    async postToggleChapterHidden({ domainId }, chapterId: string) {
+        this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+        const chapters = getVersionChapters(this.vpdoc);
+        const chapter = findChapter(chapters, chapterId);
+        if (!chapter) throw new NotFoundError('章不存在。');
+        chapter.hidden = !chapter.hidden;
+        await CoursePackageModel.setVersionChapters(domainId, this.vpdoc!.docId, chapters);
+        this.back();
+    }
+
+    @param('chapterId', Types.String)
+    @param('lessonId', Types.String)
+    async postToggleLessonHidden({ domainId }, chapterId: string, lessonId: string) {
+        this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+        const chapters = getVersionChapters(this.vpdoc);
+        const chapter = findChapter(chapters, chapterId);
+        if (!chapter) throw new NotFoundError('章不存在。');
+        const lesson = findLessonInChapter(chapter, lessonId);
+        if (!lesson) throw new NotFoundError('节不存在。');
+        lesson.hidden = !lesson.hidden;
+        await CoursePackageModel.setVersionChapters(domainId, this.vpdoc!.docId, chapters);
+        this.back();
+    }
+}
+
+class CoursePackageStructureOrderHandler extends CoursePackageBaseHandler {
+    @param('cpid', Types.ObjectId)
+    @param('vid', Types.ObjectId)
+    async get({ domainId }, cpid: ObjectId, vid: ObjectId) {
+        this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+        const chapters = getVersionChapters(this.vpdoc);
+        this.response.template = 'course_package_structure_order.html';
+        this.response.body = {
+            page_name: 'course_package_structure_order',
+            cpdoc: this.cpdoc,
+            vpdoc: this.vpdoc,
+            chapters,
+            summary: summarizeChapters(chapters),
+        };
+    }
+
+    @param('cpid', Types.ObjectId)
+    @param('vid', Types.ObjectId)
+    @param('order', Types.Content, true)
+    async post({ domainId }, cpid: ObjectId, vid: ObjectId, orderText = '') {
+        this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+        const chapters = getVersionChapters(this.vpdoc);
+        const ordered = reorderChapters(chapters, orderText);
+        await CoursePackageModel.setVersionChapters(domainId, vid, ordered);
+        this.response.redirect = this.url('course_package_version_detail', { cpid, vid });
+    }
+}
+
+class CoursePackageChapterEditHandler extends CoursePackageBaseHandler {
+    @param('cpid', Types.ObjectId)
+    @param('vid', Types.ObjectId)
+    @param('chapterId', Types.String, true)
+    async get({ domainId }, cpid: ObjectId, vid: ObjectId, chapterId = '') {
+        this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+        const chapters = getVersionChapters(this.vpdoc);
+        const chapter = chapterId ? findChapter(chapters, chapterId) : null;
+        if (chapterId && !chapter) throw new NotFoundError('章不存在。');
+        this.response.template = 'course_package_chapter_edit.html';
+        this.response.body = {
+            page_name: chapterId ? 'course_package_chapter_edit' : 'course_package_chapter_create',
+            cpdoc: this.cpdoc,
+            vpdoc: this.vpdoc,
+            chapter,
+        };
+    }
+
+    @param('cpid', Types.ObjectId)
+    @param('vid', Types.ObjectId)
+    @param('chapterId', Types.String, true)
+    @param('title', Types.Title)
+    @param('content', Types.Content, true)
+    @param('hidden', Types.Boolean, true)
+    async post({ domainId }, cpid: ObjectId, vid: ObjectId, chapterId: string, title: string, content = '', hidden = false) {
+        this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+        chapterId ||= '';
+        const chapters = getVersionChapters(this.vpdoc);
+        if (chapterId) {
+            const chapter = findChapter(chapters, chapterId);
+            if (!chapter) throw new NotFoundError('章不存在。');
+            chapter.title = title;
+            chapter.content = content || '';
+            chapter.hidden = hidden;
+        } else {
+            chapters.push({ id: uid(), title, content: content || '', lessons: [], hidden });
+        }
+        await CoursePackageModel.setVersionChapters(domainId, vid, chapters);
+        this.response.redirect = this.url('course_package_version_detail', { cpid, vid });
+    }
+
+    @param('cpid', Types.ObjectId)
+    @param('vid', Types.ObjectId)
+    @param('chapterId', Types.String)
+    async postDelete({ domainId }, cpid: ObjectId, vid: ObjectId, chapterId: string) {
+        this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+        const chapters = getVersionChapters(this.vpdoc);
+        const length = chapters.length;
+        const next = chapters.filter((chapter) => chapter.id !== chapterId);
+        if (next.length === length) throw new NotFoundError('章不存在。');
+        await CoursePackageModel.setVersionChapters(domainId, vid, next);
+        this.response.redirect = this.url('course_package_version_detail', { cpid, vid });
+    }
+}
+
+class CoursePackageLessonEditHandler extends CoursePackageBaseHandler {
+    @param('cpid', Types.ObjectId)
+    @param('vid', Types.ObjectId)
+    @param('chapterId', Types.String)
+    @param('lessonId', Types.String, true)
+    async get({ domainId }, cpid: ObjectId, vid: ObjectId, chapterId: string, lessonId = '') {
+        this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+        const chapters = getVersionChapters(this.vpdoc);
+        const chapter = findChapter(chapters, chapterId);
+        if (!chapter) throw new NotFoundError('章不存在。');
+        const lesson = lessonId ? findLessonInChapter(chapter, lessonId) : null;
+        if (lessonId && !lesson) throw new NotFoundError('节不存在。');
+        this.response.template = 'course_package_lesson_edit.html';
+        this.response.body = {
+            page_name: lessonId ? 'course_package_lesson_edit' : 'course_package_lesson_create',
+            cpdoc: this.cpdoc,
+            vpdoc: this.vpdoc,
+            chapter,
+            lesson,
+        };
+    }
+
+    @param('cpid', Types.ObjectId)
+    @param('vid', Types.ObjectId)
+    @param('chapterId', Types.String)
+    @param('lessonId', Types.String, true)
+    @param('title', Types.Title)
+    @param('content', Types.Content, true)
+    @param('pids', Types.Content)
+    @param('tags', Types.String, true)
+    @param('hidden', Types.Boolean, true)
+    async post(
+        { domainId },
+        cpid: ObjectId, vid: ObjectId, chapterId: string, lessonId: string,
+        title: string, content = '', pidsText: string, tags = '', hidden = false,
+    ) {
+        this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+        lessonId ||= '';
+        const chapters = getVersionChapters(this.vpdoc);
+        const chapter = findChapter(chapters, chapterId);
+        if (!chapter) throw new NotFoundError('章不存在。');
+        const pids = normalizeIds(pidsText);
+        if (lessonId) {
+            const lesson = findLessonInChapter(chapter, lessonId);
+            if (!lesson) throw new NotFoundError('节不存在。');
+            lesson.title = title;
+            lesson.content = content || '';
+            lesson.pids = pids;
+            lesson.tags = normalizeTags(tags);
+            lesson.hidden = hidden;
+        } else {
+            chapter.lessons.push({ id: uid(), title, content: content || '', pids, tags: normalizeTags(tags), hidden });
+        }
+        await CoursePackageModel.setVersionChapters(domainId, vid, chapters);
+        this.response.redirect = this.url('course_package_version_detail', { cpid, vid });
+    }
+
+    @param('cpid', Types.ObjectId)
+    @param('vid', Types.ObjectId)
+    @param('chapterId', Types.String)
+    @param('lessonId', Types.String)
+    async postDelete({ domainId }, cpid: ObjectId, vid: ObjectId, chapterId: string, lessonId: string) {
+        this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+        const chapters = getVersionChapters(this.vpdoc);
+        const chapter = findChapter(chapters, chapterId);
+        if (!chapter) throw new NotFoundError('章不存在。');
+        const length = chapter.lessons.length;
+        chapter.lessons = chapter.lessons.filter((lesson) => lesson.id !== lessonId);
+        if (chapter.lessons.length === length) throw new NotFoundError('节不存在。');
+        await CoursePackageModel.setVersionChapters(domainId, vid, chapters);
+        this.response.redirect = this.url('course_package_version_detail', { cpid, vid });
+    }
+}
+
+class CoursePackageLessonProblemOrderHandler extends CoursePackageBaseHandler {
+    @param('cpid', Types.ObjectId)
+    @param('vid', Types.ObjectId)
+    @param('chapterId', Types.String)
+    @param('lessonId', Types.String)
+    async get({ domainId }, cpid: ObjectId, vid: ObjectId, chapterId: string, lessonId: string) {
+        this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+        const chapters = getVersionChapters(this.vpdoc);
+        const chapter = findChapter(chapters, chapterId);
+        if (!chapter) throw new NotFoundError('章不存在。');
+        const lesson = findLessonInChapter(chapter, lessonId);
+        if (!lesson) throw new NotFoundError('节不存在。');
+        const problemItems = await getProblemOrderItems(domainId, normalizeIds(lesson.pids || []));
+        this.response.template = 'course_package_problem_order.html';
+        this.response.body = {
+            page_name: 'course_package_lesson_problem_order',
+            cpdoc: this.cpdoc,
+            vpdoc: this.vpdoc,
+            chapter,
+            lesson,
+            problemItems,
+        };
+    }
+
+    @param('cpid', Types.ObjectId)
+    @param('vid', Types.ObjectId)
+    @param('chapterId', Types.String)
+    @param('lessonId', Types.String)
+    @param('order', Types.Content, true)
+    async post({ domainId }, cpid: ObjectId, vid: ObjectId, chapterId: string, lessonId: string, orderText = '') {
+        this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+        const chapters = getVersionChapters(this.vpdoc);
+        const chapter = findChapter(chapters, chapterId);
+        if (!chapter) throw new NotFoundError('章不存在。');
+        const lesson = findLessonInChapter(chapter, lessonId);
+        if (!lesson) throw new NotFoundError('节不存在。');
+        const current = normalizeIds(lesson.pids || []);
+        const next = normalizeIds(orderText);
+        const currentSet = new Set(current);
+        if (next.length !== current.length) throw new ValidationError('order', null, '排序数据需要包含本节全部题目。');
+        for (const pid of next) {
+            if (!currentSet.has(pid)) throw new ValidationError('order', null, '排序数据包含不存在的题目。');
+        }
+        lesson.pids = next;
+        await CoursePackageModel.setVersionChapters(domainId, vid, chapters);
+        this.response.redirect = `${this.url('course_package_version_detail', { cpid, vid })}#chapter-${chapter.id}`;
+    }
+}
+
+class CoursePackageExportHandler extends CoursePackageBaseHandler {
+    @param('cpid', Types.ObjectId)
+    @param('vid', Types.ObjectId)
+    async get({ domainId }, cpid: ObjectId, vid: ObjectId) {
+        this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+        const blob = await buildCoursePackageZip(domainId, this.cpdoc!, this.vpdoc!);
+        this.binary(blob, `${safeFilename(this.cpdoc!.title)}-${safeFilename(this.vpdoc!.version)}.zip`);
+    }
+}
+
+class CoursePackageImportHandler extends Handler {
+    async get() {
+        this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+        this.response.template = 'course_package_import.html';
+        this.response.body = { page_name: 'course_package_import' };
+    }
+
+    @param('payload', Types.Content, true)
+    async post({ domainId }, payloadText = '') {
+        this.checkPerm(PERM.PERM_EDIT_DOMAIN);
+        const file = this.request.files?.file;
+        let payload: CoursePackageExportPayload;
+        let pidMap = new Map<number, number>();
+        if (file) {
+            payload = await readCoursePackageZip(file.filepath);
+            pidMap = await importZipProblemsAndBuildMap(domainId, file.filepath, payload, this.user._id);
+        } else if (payloadText.trim()) {
+            payload = parseImportPayload(payloadText);
+        } else {
+            throw new ValidationError('payload', null, '请上传课程包 ZIP 或粘贴课程包 JSON。');
+        }
+        if (!payload.package.title) throw new ValidationError('payload', null, '导入数据缺少课程包标题。');
+        const chapters = pidMap.size ? remapChapters(payload.version.chapters || [], pidMap) : payload.version.chapters;
+        const cpid = await CoursePackageModel.add(domainId, this.user._id, payload.package.title, payload.package.content, payload.package.pin, payload.package.tags, !!payload.package.hidden);
+        const treeText = serializeTree(chapters || []);
+        const vid = await CoursePackageModel.addVersion(
+            domainId, cpid, this.user._id,
+            payload.version.title || payload.version.version || '默认版本',
+            payload.version.version || 'v1',
+            payload.version.content,
+            treeText,
+            0,
+            !!payload.version.hidden,
+        );
+        this.response.redirect = this.url('course_package_version_detail', { cpid, vid });
+    }
+}
+
+class CoursePackageLessonContestHandler extends CoursePackageBaseHandler {
+    getLesson(chapterId: string, lessonId: string) {
+        const chapters = visibleChaptersForUser(this.user, getVersionChapters(this.vpdoc));
+        const chapter = findChapter(chapters, chapterId);
+        if (!chapter) throw new NotFoundError('章不存在。');
+        const lesson = findLessonInChapter(chapter, lessonId);
+        if (!lesson) throw new NotFoundError('节不存在。');
+        return { chapter, lesson };
+    }
+
+    getRules() {
+        const rules: Record<string, string> = {};
+        for (const key in ContestModel.RULES || {}) {
+            if (!ContestModel.RULES[key].hidden) rules[key] = ContestModel.RULES[key].TEXT || key;
+        }
+        return rules;
+    }
+
+    @param('cpid', Types.ObjectId)
+    @param('vid', Types.ObjectId)
+    @param('chapterId', Types.String)
+    @param('lessonId', Types.String)
+    @param('targetDomainId', Types.String, true)
+    async get({ domainId }, cpid: ObjectId, vid: ObjectId, chapterId: string, lessonId: string, targetDomainId = '') {
+        assertCanViewCoursePackage(this);
+        assertCanCopyCoursePackage(this);
+        ensureVisibleForUser(this, this.cpdoc, '课程包');
+        ensureVisibleForUser(this, this.vpdoc, '版本');
+        const { chapter, lesson } = this.getLesson(chapterId, lessonId);
+        const domains = await getContestWritableDomains(this.user._id, domainId);
+        if (!domains.length) throw new ValidationError('targetDomainId', null, '你没有可创建比赛的目标子域。');
+        if (!targetDomainId || !domains.some((ddoc) => ddoc._id === targetDomainId)) {
+            targetDomainId = domains.some((ddoc) => ddoc._id === domainId)
+                ? domainId
+                : domains[0]._id;
+        }
+        let ts = Date.now();
+        ts = ts - (ts % (15 * 60 * 1000)) + 15 * 60 * 1000;
+        const beginAt = new Date(ts);
+        const timezone = this.user.timeZone || 'Asia/Shanghai';
+        this.response.template = 'course_package_lesson_contest.html';
+        this.response.body = {
+            page_name: 'course_package_lesson_contest',
+            cpdoc: this.cpdoc,
+            vpdoc: this.vpdoc,
+            chapter,
+            lesson,
+            domains,
+            targetDomainId,
+            rules: this.getRules(),
+            defaultRule: ContestModel.RULES?.acm && !ContestModel.RULES.acm.hidden ? 'acm' : Object.keys(this.getRules())[0],
+            beginAtDate: formatDateInput(beginAt, timezone),
+            beginAtTime: formatTimeInput(beginAt, timezone),
+            defaultTitle: `${this.cpdoc!.title} - ${lesson.title}`,
+            selectedProblemCount: (lesson.pids || []).length,
+        };
+    }
+
+    @param('cpid', Types.ObjectId)
+    @param('vid', Types.ObjectId)
+    @param('chapterId', Types.String)
+    @param('lessonId', Types.String)
+    @param('targetDomainId', Types.String)
+    @param('beginAtDate', Types.Date)
+    @param('beginAtTime', Types.Time)
+    @param('durationMinutes', Types.Float)
+    @param('title', Types.Title)
+    @param('content', Types.Content, true)
+    @param('rule', Types.String)
+    @param('rated', Types.Boolean, true)
+    async post(
+        { domainId },
+        cpid: ObjectId, vid: ObjectId, chapterId: string, lessonId: string,
+        targetDomainId: string, beginAtDate: string, beginAtTime: string, durationMinutes: number,
+        title: string, content = '', rule: string, rated = false,
+    ) {
+        assertCanViewCoursePackage(this);
+        assertCanCopyCoursePackage(this);
+        ensureVisibleForUser(this, this.cpdoc, '课程包');
+        ensureVisibleForUser(this, this.vpdoc, '版本');
+        if (!Object.keys(ContestModel.RULES || {}).includes(rule) || ContestModel.RULES[rule].hidden) {
+            throw new ValidationError('rule');
+        }
+        if (!Number.isFinite(durationMinutes) || durationMinutes <= 0) throw new ValidationError('durationMinutes');
+        const duration = durationMinutes / 60;
+        const { chapter, lesson } = this.getLesson(chapterId, lessonId);
+        if (!(lesson.pids || []).length) throw new ValidationError('pids', null, '本节没有题目，无法创建比赛。');
+        targetDomainId = await assertContestWritableDomain(targetDomainId || domainId, this.user._id);
+        const beginAt = parseDateTimeInTimeZone(beginAtDate, beginAtTime, this.user.timeZone || 'Asia/Shanghai');
+        if (!beginAt) throw new ValidationError('beginAtDate', 'beginAtTime');
+        const endAt = new Date(beginAt.getTime() + durationMinutes * 60 * 1000);
+        if (beginAt >= endAt) throw new ValidationError('durationMinutes');
+        const chapters = [{ ...chapter, lessons: [lesson] }];
+        const pidMap = await syncSelectedProblems(domainId, targetDomainId, chapters, 'lesson', lessonId, this.user._id);
+        const targetPids = (lesson.pids || []).map((pid) => pidMap.get(pid) || pid);
+        await ProblemModel.getList(targetDomainId, targetPids, this.user.hasPerm(PERM.PERM_VIEW_PROBLEM_HIDDEN) || this.user._id, true);
+        const tid = await ContestModel.add(
+            targetDomainId,
+            title,
+            content || lesson.content || '',
+            this.user._id,
+            rule,
+            beginAt,
+            endAt,
+            targetPids,
+            rated,
+            {
+                duration,
+                coursePackageLessonVideo: {
+                    sourceDomainId: domainId,
+                    packageId: cpid.toString(),
+                    versionId: vid.toString(),
+                    chapterId,
+                    lessonId,
+                },
+            },
+        );
+        this.response.body = { tid };
+        this.response.redirect = this.url('contest_detail', { domainId: targetDomainId, tid });
+    }
+}
+
+class CoursePackageCopyHandler extends CoursePackageBaseHandler {
+    @param('cpid', Types.ObjectId)
+    @param('vid', Types.ObjectId)
+    @param('mode', Types.Range(['package', 'chapter', 'lesson']), true)
+    @param('nodeId', Types.String, true)
+    @param('targetDomainId', Types.String, true)
+    @param('targetCourseId', Types.ObjectId, true)
+    async get(
+        { domainId },
+        cpid: ObjectId, vid: ObjectId, mode: CopyMode = 'package', nodeId = '',
+        targetDomainId = '', targetCourseId?: ObjectId,
+    ) {
+        assertCanViewCoursePackage(this);
+        assertCanCopyCoursePackage(this);
+        ensureVisibleForUser(this, this.cpdoc, '课程包');
+        ensureVisibleForUser(this, this.vpdoc, '版本');
+        const course = getCourseModel();
+        const domains = await getWritableDomains(this.user._id, domainId);
+        if (!targetDomainId || !domains.some((ddoc) => ddoc._id === targetDomainId)) {
+            targetDomainId = domains.some((ddoc) => ddoc._id === domainId)
+                ? domainId
+                : domains[0]?._id || domainId;
+        }
+        const courses = course?.getMulti
+            ? await course.getMulti(targetDomainId, {}).toArray()
+            : [];
+        if (!targetCourseId || !courses.some((cdoc) => sameId(cdoc.docId, targetCourseId))) {
+            targetCourseId = courses[0]?.docId;
+        }
+        const sections = targetCourseId && course?.getMultiSection
+            ? await course.getMultiSection(targetDomainId, targetCourseId).toArray()
+            : [];
+        const courseOptions = courses.map((cdoc) => ({ ...cdoc, docIdText: cdoc.docId?.toString?.() || '' }));
+        const sectionOptions = sections.map((csdoc) => ({ ...csdoc, docIdText: csdoc.docId?.toString?.() || '' }));
+        const chapters = visibleChaptersForUser(this.user, getVersionChapters(this.vpdoc));
+        const meta = getSelectionMeta(this.cpdoc!, this.vpdoc!, mode, nodeId, chapters);
+        const selectedProblemCount = collectProblemIds(chapters, mode, nodeId).length;
+        this.response.template = 'course_package_copy.html';
+        this.response.body = {
+            page_name: 'course_package_copy',
+            cpdoc: this.cpdoc,
+            vpdoc: this.vpdoc,
+            mode,
+            nodeId,
+            domains,
+            targetDomainId,
+            courses: courseOptions,
+            targetCourseId,
+            targetCourseIdText: targetCourseId?.toString?.() || '',
+            sections: sectionOptions,
+            selectionTitle: meta.title,
+            defaultCourseTitle: meta.defaultCourseTitle,
+            defaultSectionTitle: meta.defaultSectionTitle,
+            modeLabel: meta.modeLabel,
+            selectedProblemCount,
+        };
+    }
+
+    @param('cpid', Types.ObjectId)
+    @param('vid', Types.ObjectId)
+    @param('mode', Types.Range(['package', 'chapter', 'lesson']))
+    @param('nodeId', Types.String, true)
+    @param('targetDomainId', Types.String, true)
+    @param('targetMode', Types.Range(['existing', 'create']), true)
+    @param('targetCourseId', Types.ObjectId, true)
+    @param('targetPosition', Types.Range(['root', 'section', 'new_section']), true)
+    @param('targetSectionId', Types.ObjectId, true)
+    @param('newCourseTitle', Types.String, true)
+    @param('newCourseContent', Types.Content, true)
+    @param('newCoursePin', Types.UnsignedInt, true)
+    @param('newSectionTitle', Types.String, true)
+    async post(
+        { domainId },
+        cpid: ObjectId, vid: ObjectId, mode: CopyMode, nodeId: string,
+        targetDomainId = '', targetMode: 'existing' | 'create' = 'existing',
+        targetCourseId: ObjectId | undefined, targetPosition: CopyTargetPosition = 'root',
+        targetSectionId: ObjectId | undefined, newCourseTitle = '', newCourseContent = '',
+        newCoursePin = 0, newSectionTitle = '',
+    ) {
+        assertCanViewCoursePackage(this);
+        assertCanCopyCoursePackage(this);
+        ensureVisibleForUser(this, this.cpdoc, '课程包');
+        ensureVisibleForUser(this, this.vpdoc, '版本');
+        targetDomainId = await assertWritableDomain(targetDomainId || domainId, this.user._id);
+        const course = getCourseModel();
+        if (!course?.add || !course?.get) {
+            throw new NotFoundError('hydrooj-course 未安装或未提供 course model，无法复制到课程。');
+        }
+        const chapters = visibleChaptersForUser(this.user, getVersionChapters(this.vpdoc));
+        const meta = getSelectionMeta(this.cpdoc!, this.vpdoc!, mode, nodeId, chapters);
+        let owner = this.user._id;
+        let title = '';
+        if (targetMode === 'create') {
+            title = (newCourseTitle || meta.defaultCourseTitle).trim();
+            if (!title) throw new ValidationError('newCourseTitle', null, '请填写新课程标题。');
+            if (targetPosition === 'section') targetPosition = mode === 'lesson' ? 'new_section' : 'root';
+        } else {
+            if (!targetCourseId) throw new ValidationError('targetCourseId', null, '请选择目标课程。');
+            const cdoc = await course.get(targetDomainId, targetCourseId);
+            if (!cdoc) throw new NotFoundError('目标课程不存在。');
+            owner = cdoc.owner || this.user._id;
+        }
+        const pidMap = await syncSelectedProblems(domainId, targetDomainId, chapters, mode, nodeId, this.user._id);
+        const mappedChapters = remapChapters(chapters, pidMap);
+        if (targetMode === 'create') {
+            targetCourseId = await course.add(targetDomainId, this.user._id, title, newCourseContent || this.cpdoc!.content || '', [], newCoursePin || 0);
+        }
+        if (mode === 'package') targetPosition = 'root';
+        if (mode === 'lesson' && targetPosition === 'root') targetPosition = targetSectionId ? 'section' : 'new_section';
+        const result = await copySelectionToCourse(
+            targetDomainId,
+            targetCourseId!,
+            owner,
+            mappedChapters,
+            mode,
+            nodeId,
+            {
+                position: targetPosition,
+                sectionId: targetSectionId,
+                newSectionTitle: (newSectionTitle || meta.defaultSectionTitle).trim(),
+            },
+        );
+        await recordCourseVideoLessonCopies(domainId, targetDomainId, cpid, vid, targetCourseId!, result.lessonCopies || []);
+        if (mode === 'lesson' && result.subSectionId) {
+            this.response.redirect = this.url('course_subsec_detail', {
+                domainId: targetDomainId,
+                cid: targetCourseId,
+                csid: result.sectionId,
+                ssid: result.subSectionId,
+            });
+        } else if (result.sectionId && mode === 'chapter') {
+            this.response.redirect = this.url('course_section_detail', {
+                domainId: targetDomainId,
+                cid: targetCourseId,
+                csid: result.sectionId,
+            });
+        } else {
+            this.response.redirect = this.url('course_detail', { domainId: targetDomainId, cid: targetCourseId });
+        }
+    }
+}
+
+export async function apply(ctx: Context) {
+    registerCoursePackagePermissions();
+    ctx.Route('course_package_main', '/course-package', CoursePackageMainHandler);
+    ctx.Route('course_package_order', '/course-package/order', CoursePackageOrderHandler, PERM.PERM_EDIT_DOMAIN);
+    ctx.Route('course_package_create', '/course-package/create', CoursePackageEditHandler, PERM.PERM_EDIT_DOMAIN);
+    ctx.Route('course_package_problem_search', '/course-package/problem-search', CoursePackageProblemSearchHandler, PERM.PERM_EDIT_DOMAIN);
+    ctx.Route('course_package_import', '/course-package/import', CoursePackageImportHandler, PERM.PERM_EDIT_DOMAIN);
+    ctx.Route('course_package_detail', '/course-package/:cpid', CoursePackageDetailHandler);
+    ctx.Route('course_package_edit', '/course-package/:cpid/edit', CoursePackageEditHandler, PERM.PERM_EDIT_DOMAIN);
+    ctx.Route('course_package_version_order', '/course-package/:cpid/version-order', CoursePackageVersionOrderHandler, PERM.PERM_EDIT_DOMAIN);
+    ctx.Route('course_package_version_create', '/course-package/:cpid/version/create', CoursePackageVersionEditHandler, PERM.PERM_EDIT_DOMAIN);
+    ctx.Route('course_package_version_detail', '/course-package/:cpid/version/:vid', CoursePackageVersionDetailHandler);
+    ctx.Route('course_package_structure_order', '/course-package/:cpid/version/:vid/order', CoursePackageStructureOrderHandler, PERM.PERM_EDIT_DOMAIN);
+    ctx.Route('course_package_version_edit', '/course-package/:cpid/version/:vid/edit', CoursePackageVersionEditHandler, PERM.PERM_EDIT_DOMAIN);
+    ctx.Route('course_package_chapter_create', '/course-package/:cpid/version/:vid/chapter/create', CoursePackageChapterEditHandler, PERM.PERM_EDIT_DOMAIN);
+    ctx.Route('course_package_chapter_edit', '/course-package/:cpid/version/:vid/chapter/:chapterId/edit', CoursePackageChapterEditHandler, PERM.PERM_EDIT_DOMAIN);
+    ctx.Route('course_package_lesson_create', '/course-package/:cpid/version/:vid/chapter/:chapterId/lesson/create', CoursePackageLessonEditHandler, PERM.PERM_EDIT_DOMAIN);
+    ctx.Route('course_package_lesson_edit', '/course-package/:cpid/version/:vid/chapter/:chapterId/lesson/:lessonId/edit', CoursePackageLessonEditHandler, PERM.PERM_EDIT_DOMAIN);
+    ctx.Route('course_package_lesson_problem_order', '/course-package/:cpid/version/:vid/chapter/:chapterId/lesson/:lessonId/problem-order', CoursePackageLessonProblemOrderHandler, PERM.PERM_EDIT_DOMAIN);
+    ctx.Route('course_package_lesson_contest', '/course-package/:cpid/version/:vid/chapter/:chapterId/lesson/:lessonId/contest', CoursePackageLessonContestHandler);
+    ctx.Route('course_package_export', '/course-package/:cpid/version/:vid/export', CoursePackageExportHandler, PERM.PERM_EDIT_DOMAIN);
+    ctx.Route('course_package_copy', '/course-package/:cpid/version/:vid/copy', CoursePackageCopyHandler);
+
+    ctx.injectUI('Nav', 'course_package_main', { prefix: 'course-package', before: 'course_main' }, (handler) => canViewCoursePackage(handler.user));
+    ctx.inject(['setting'], (c) => {
+        c.setting.SystemSetting(
+            SettingModel.Setting('setting_basic', 'pagination.coursePackage', 20, 'number', 'pagination.coursePackage', 'Course packages per page'),
+        );
+    });
+    ctx.i18n.load('zh', {
+        course_package_main: '课程包',
+        course_package_create: '创建课程包',
+        course_package_edit: '编辑课程包',
+        course_package_detail: '课程包详情',
+        course_package_order: '课程包排序',
+        course_package_version_create: '创建课程包版本',
+        course_package_version_edit: '编辑课程包版本',
+        course_package_version_detail: '课程包版本',
+        course_package_version_order: '版本排序',
+        course_package_structure_order: '结构排序',
+        course_package_chapter_create: '创建章',
+        course_package_chapter_edit: '编辑章',
+        course_package_lesson_create: '创建节',
+        course_package_lesson_edit: '编辑节',
+        course_package_lesson_problem_order: '调整题目顺序',
+        course_package_lesson_contest: '按节创建比赛',
+        course_package_problem_search: '课程包题目检索',
+        course_package_import: '导入课程包',
+        course_package_copy: '复制到课程',
+        'No results': '没有搜索结果',
+        'Search failed': '搜索失败',
+        'Loading...': '加载中...',
+        Hidden: '隐藏',
+        results: '个结果',
+        'Please select at least one problem.': '请至少选择一道题目。',
+        'Problems added.': '题目已加入。',
+        CoursePackage: '课程包',
+        perm_course_package: '课程包',
+        'View course packages': '查看课程包',
+        'Copy course packages': '复制课程包',
+    });
+    ctx.i18n.load('en', {
+        course_package_main: 'Course Package',
+        course_package_create: 'Create Course Package',
+        course_package_edit: 'Edit Course Package',
+        course_package_detail: 'Course Package Detail',
+        course_package_order: 'Course Package Order',
+        course_package_version_create: 'Create Course Package Version',
+        course_package_version_edit: 'Edit Course Package Version',
+        course_package_version_detail: 'Course Package Version',
+        course_package_version_order: 'Version Order',
+        course_package_structure_order: 'Structure Order',
+        course_package_chapter_create: 'Create Chapter',
+        course_package_chapter_edit: 'Edit Chapter',
+        course_package_lesson_create: 'Create Lesson',
+        course_package_lesson_edit: 'Edit Lesson',
+        course_package_lesson_problem_order: 'Problem Order',
+        course_package_lesson_contest: 'Create Contest from Lesson',
+        course_package_problem_search: 'Course Package Problem Search',
+        course_package_import: 'Import Course Package',
+        course_package_copy: 'Copy to Course',
+        'No results': 'No results',
+        'Search failed': 'Search failed',
+        'Loading...': 'Loading...',
+        Hidden: 'Hidden',
+        results: 'results',
+        'Please select at least one problem.': 'Please select at least one problem.',
+        'Problems added.': 'Problems added.',
+        CoursePackage: 'Course Package',
+        perm_course_package: 'Course Package',
+        'View course packages': 'View course packages',
+        'Copy course packages': 'Copy course packages',
+    });
+}

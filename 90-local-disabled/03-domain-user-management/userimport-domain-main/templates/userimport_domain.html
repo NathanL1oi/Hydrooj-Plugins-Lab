@@ -1,0 +1,44 @@
+{% extends "manage_base.html" %}
+{% block manage_content %}
+<div class="section userimport-domain">
+  <div class="section__header">
+    <h1 class="section__title" data-heading>Import User (Domain + Role)</h1>
+  </div>
+  <div class="section__body">
+    <blockquote class="note">
+      <p>Comma or tab separated. Columns:</p>
+      <ul style="margin:.3em 0 .3em 1.4em">
+        <li><code>email, username, password</code></li>
+        <li><code>email, username, password, domain</code></li>
+        <li><code>email, username, password, domain, role</code></li>
+        <li><code>email, username, password, displayName, domain, role</code></li>
+      </ul>
+      <p><b>domain</b> = ID (e.g. <code>system</code>) or display name (e.g. <code>c++</code>)<br>
+      <b>role</b> = e.g. <code>stu</code>, <code>default</code></p>
+    </blockquote>
+
+    {% if messages and messages|length %}
+    <pre data-plugin-log style="background:#f5f5f5;border:1px solid #ccc;padding:10px;margin:0 0 1em;font-size:.88em;line-height:1.6;overflow-x:auto">{% for m in messages %}{{ m }}
+{% endfor %}</pre>
+    {% endif %}
+
+    <form method="post">
+      <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+      <div class="form__item">
+        <label class="form__label--fixed">Users</label>
+        <div class="form__input">
+          <textarea name="users" class="textbox" rows="10"
+            style="font-family:monospace;width:100%"
+            placeholder="foo@example.com,user1,pass1,system,stu"></textarea>
+        </div>
+      </div>
+      <div class="form__item">
+        <div class="form__input" style="display:flex;gap:8px">
+          <button type="submit" name="draft" value="1" class="button">Preview</button>
+          <button type="submit" class="button rounded primary">Import</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

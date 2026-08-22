@@ -1,0 +1,8 @@
+{
+    "name": "hydrooj-history",
+    "version": "1.0.0",
+    "main": "index.js",
+    "dependencies": {
+        "echarts": "^5.6.0"
+    }
+}

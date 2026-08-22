@@ -1,0 +1,135 @@
+{% extends "layout/basic.html" %}
+{% import "components/user.html" as user with context %}
+{% import "components/contest.html" as contest with context %}
+
+{% block content %}
+{{ set(UiContext, 'tdoc', tdoc) }}
+{{ set(UiContext, 'tsdoc', tsdoc) }}
+{{ set(UiContext, 'contestFlexibleStart', state) }}
+
+<style>
+.contest-flexible-start .flexible-start-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+.contest-flexible-start .flexible-start-item {
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+.contest-flexible-start .flexible-start-label {
+  display: block;
+  margin-bottom: 4px;
+  color: #64748b;
+  font-size: 12px;
+}
+.contest-flexible-start .flexible-start-value {
+  color: #0f172a;
+  font-weight: 700;
+}
+.contest-flexible-start .flexible-start-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 14px;
+}
+.contest-flexible-start .button.disabled {
+  color: #64748b;
+  cursor: not-allowed;
+  opacity: .65;
+}
+@media screen and (max-width: 800px) {
+  .contest-flexible-start .flexible-start-summary {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+
+<div class="row contest-flexible-start">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">开始个人计时</h1>
+      </div>
+      <div class="section__body typo">
+        <p>
+          <a href="{{ url('contest_detail', tid=tdoc.docId) }}">{{ tdoc.title }}</a>
+          <span class="bp6-tag bp6-minimal">{{ _(model.contest.RULES[tdoc.rule].TEXT) }}</span>
+        </p>
+
+        {% if state.canStart %}
+          <blockquote class="warn">
+            确认后会立刻记录你的个人开始时间。个人计时开始后，题目列表、私有附件和提交都会按这个时间窗口计算。
+          </blockquote>
+          <div class="flexible-start-summary">
+            <div class="flexible-start-item">
+              <span class="flexible-start-label">开始时间</span>
+              <span class="flexible-start-value">{{ contest.render_time(state.plannedStartAt) }}</span>
+            </div>
+            <div class="flexible-start-item">
+              <span class="flexible-start-label">个人截止</span>
+              <span class="flexible-start-value">{{ contest.render_time(state.plannedEndAt) }}</span>
+            </div>
+            <div class="flexible-start-item">
+              <span class="flexible-start-label">个人时长</span>
+              <span class="flexible-start-value">{{ state.durationHours }} 小时</span>
+            </div>
+          </div>
+          <p>如果你未来这段时间无法完成比赛，现在可以先返回；登记状态会保留，不会消耗个人时间。</p>
+          <form method="post" class="flexible-start-actions">
+            <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+            <input type="hidden" name="operation" value="start">
+            <button class="button rounded primary" type="submit">
+              <span class="icon icon-play"></span> 确认开始个人计时
+            </button>
+            <a class="button rounded" href="{{ url('contest_detail', tid=tdoc.docId) }}">
+              返回比赛详情
+            </a>
+          </form>
+        {% elif state.beforeGlobalStart %}
+          <blockquote class="note">
+            你已经登记参加。本场比赛尚未到全局开始时间，开始后你可以自己确认个人计时。
+          </blockquote>
+          <div class="flexible-start-summary">
+            <div class="flexible-start-item">
+              <span class="flexible-start-label">全局开始</span>
+              <span class="flexible-start-value">{{ contest.render_time(tdoc.beginAt) }}</span>
+            </div>
+            <div class="flexible-start-item">
+              <span class="flexible-start-label">全局截止</span>
+              <span class="flexible-start-value">{{ contest.render_time(tdoc.endAt) }}</span>
+            </div>
+            <div class="flexible-start-item">
+              <span class="flexible-start-label">个人时长</span>
+              <span class="flexible-start-value">{{ state.durationHours }} 小时</span>
+            </div>
+          </div>
+          <div class="flexible-start-actions">
+            <span class="button rounded disabled" aria-disabled="true">
+              <span class="icon icon-schedule"></span> 尚未开放开始
+            </span>
+            <a class="button rounded" href="{{ url('contest_detail', tid=tdoc.docId) }}">返回比赛详情</a>
+          </div>
+        {% else %}
+          <blockquote class="warn">
+            当前不能开始新的个人计时。可能是比赛已经结束，或者你的个人计时状态已经发生变化。
+          </blockquote>
+          <div class="flexible-start-actions">
+            <a class="button rounded primary" href="{{ url('contest_detail', tid=tdoc.docId) }}">返回比赛详情</a>
+            {% if state.problemUrl %}
+              <a class="button rounded" href="{{ state.problemUrl }}">查看题目列表</a>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    {% include "partials/contest_sidebar.html" %}
+  </div>
+</div>
+{% endblock %}

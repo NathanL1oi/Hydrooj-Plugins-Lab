@@ -1,0 +1,83 @@
+{% import "components/user.html" as user with context %}
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.pshd .pshd-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.pshd .pshd-muted { color: #64748b; }
+.pshd .pshd-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pshd .pshd-comment { border-radius: 8px; background: #f8fafc; padding: 12px; margin-bottom: 10px; }
+.theme--dark .pshd .pshd-comment {
+  border: 1px solid rgba(148, 163, 184, .28);
+  background: rgba(31, 41, 55, .72);
+  color: #e2e8f0;
+}
+.theme--dark .pshd .pshd-muted { color: #94a3b8; }
+</style>
+{% set task = taskDict[submit.taskId.toString()] %}
+<div class="row pshd">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <div class="pshd-head">
+          <h1 class="section__title">{% if task %}{{ task.title }}{% else %}{{ _('优秀总结') }}{% endif %}</h1>
+          <a class="button rounded" href="{{ url('peer_summary_hub') }}"><span class="icon icon-back"></span> {{ _('返回') }}</a>
+        </div>
+      </div>
+      <div class="section__body typo richmedia">
+        <p class="pshd-muted">
+          {% if udict[submit.uid] %}{{ user.render_inline(udict[submit.uid], badge=false) }}{% else %}UID {{ submit.uid }}{% endif %}
+          / {{ datetimeSpan(submit.updatedAt)|safe }}
+        </p>
+        {{ submit.content|markdown|safe }}
+        {% if submit.comment %}
+        <blockquote>{{ submit.comment }}</blockquote>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section__header"><h1 class="section__title">{{ _('同伴留言') }}</h1></div>
+      <div class="section__body">
+        {% for item in comments %}
+        <div class="pshd-comment typo">
+          <p class="pshd-muted">
+            {% if udict[item.uid] %}{{ user.render_inline(udict[item.uid], badge=false) }}{% else %}UID {{ item.uid }}{% endif %}
+            / {{ datetimeSpan(item.createdAt)|safe }}
+          </p>
+          {{ item.content|markdown|safe }}
+          {% if item.uid == handler.user._id or handler.user.hasPerm(perm.PERM_EDIT_TRAINING) %}
+          <form method="post" onsubmit="return confirm('{{ _('确认删除这条留言？') }}');">
+            <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+            <input type="hidden" name="operation" value="delete_comment">
+            <input type="hidden" name="commentId" value="{{ item._id }}">
+            <button class="button rounded small" type="submit">{{ _('删除') }}</button>
+          </form>
+          {% endif %}
+        </div>
+        {% else %}
+        <p class="pshd-muted">{{ _('还没有留言。') }}</p>
+        {% endfor %}
+        <form method="post">
+          <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+          <input type="hidden" name="operation" value="comment">
+          <label>{{ _('写一句你从这篇总结里学到的东西') }}<textarea class="textbox" name="content" rows="5"></textarea></label>
+          <button class="button rounded primary" type="submit">{{ _('发布留言') }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    <div class="section side">
+      <div class="section__header"><h1 class="section__title">{{ _('互动') }}</h1></div>
+      <div class="section__body">
+        <form method="post">
+          <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+          <input type="hidden" name="operation" value="vote">
+          <button class="button rounded primary" type="submit">{% if myVote %}{{ _('取消点赞') }}{% else %}{{ _('点赞') }}{% endif %}</button>
+        </form>
+        <p class="pshd-muted">{{ _('当前点赞') }}：{{ voteCount }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

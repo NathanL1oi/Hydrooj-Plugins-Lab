@@ -1,0 +1,85 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+{% include "course_package_style.html" %}
+<div class="row course-package-form course-package-ui">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{% if vpdoc %}{{ _('编辑课程包版本') }}{% else %}{{ _('创建课程包版本') }}{% endif %}</h1>
+      </div>
+      <div class="section__body">
+        <form method="post">
+          <div class="row">
+            <div class="medium-7 columns">
+              <label>
+                {{ _('Title') }}
+                <input name="title" value="{{ vpdoc.title|default('默认版本') }}" class="textbox" autofocus>
+              </label>
+            </div>
+            <div class="medium-3 columns">
+              <label>
+                {{ _('版本号') }}
+                <input name="version" value="{{ vpdoc.version|default('v1') }}" class="textbox">
+              </label>
+            </div>
+            <div class="medium-2 columns">
+              <label>
+                {{ _('Pin') }}
+                <input name="pin" value="{{ vpdoc.pin|default(0) }}" class="textbox">
+              </label>
+            </div>
+          </div>
+          <div class="row">
+            <div class="columns">
+              <label>
+                <input type="checkbox" name="hidden" value="true" {% if vpdoc and vpdoc.hidden %}checked{% endif %}>
+                {{ _('隐藏版本') }}
+              </label>
+              <p class="help-text">{{ _('隐藏后普通用户不可见，域管理员仍可进入编辑和恢复显示。') }}</p>
+            </div>
+          </div>
+          <div class="row">
+            <div class="columns">
+              <label>
+                {{ _('版本说明') }}
+                <textarea name="content" class="textbox" data-markdown style="height: 160px">{{ vpdoc.content|default('') }}</textarea>
+              </label>
+            </div>
+          </div>
+          <div class="row">
+            <div class="columns">
+              <label>
+                {{ _('章 / 节结构') }}
+                <textarea name="treeText" class="textbox" style="height: 520px; font-family: monospace">{{ vpdoc.treeText|default(sampleTree) }}</textarea>
+              </label>
+            </div>
+          </div>
+          <div class="row">
+            <div class="columns">
+              {% if vpdoc %}
+              <button type="submit" class="rounded primary button">{{ _('Update') }}</button>
+              <button name="operation" value="delete" type="submit" class="rounded button">{{ _('Delete') }}</button>
+              {% else %}
+              <button type="submit" class="rounded primary button">{{ _('Create') }}</button>
+              {% endif %}
+              <button type="button" class="rounded button" onclick="window.history.go(-1)">{{ _('Cancel') }}</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    {% include 'components/md_hint.html' %}
+    <div class="section side">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('结构说明') }}</h1>
+      </div>
+      <div class="section__body typo">
+        <p>{{ _('版本用于保存一套课程包内容快照。建议把稳定可复用的一套章/节结构作为一个版本，例如 v1、基础班 2026 春、提高班讲义版。') }}</p>
+        <p>{{ _('结构只需要 chapters，章下有 lessons；节的 pids 可填写题目编号数组。旧的 stages 格式仍可粘贴导入，保存后会自动压平为章/节。') }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

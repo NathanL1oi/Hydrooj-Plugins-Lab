@@ -1,0 +1,76 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.cfk-list { display: grid; gap: 10px; }
+.cfk-event { border: 1px solid #e2e8f0; border-radius: 8px; padding: 11px 12px; background: #fff; }
+.cfk-event h2 { margin: 0 0 4px 0; font-size: 16px; line-height: 1.35; }
+.cfk-meta { color: #64748b; font-size: 13px; display: flex; gap: 8px; flex-wrap: wrap; }
+.cfk-note { color: #64748b; font-size: 13px; }
+.cfk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.theme--dark .cfk-event {
+  border-color: #3a4656;
+  background: #1f242c;
+  color: #e2e8f0;
+}
+.theme--dark .cfk-meta,
+.theme--dark .cfk-note {
+  color: #94a3b8;
+}
+@media (max-width: 700px) { .cfk-grid { grid-template-columns: 1fr; } }
+</style>
+<div class="row" data-sticky-parent>
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('首杀与高光时刻') }}</h1>
+      </div>
+      <div class="section__body">
+        {% if not config.highlightEnabled and not canManage %}
+          <p class="cfk-note">{{ _('本场比赛尚未开启首杀与高光时刻。') }}</p>
+        {% else %}
+          <div class="cfk-grid">
+            <div>
+              <h2>{{ _('题目首杀') }}</h2>
+              <div class="cfk-list">
+                {% for item in highlights.firstSolves %}
+                  <div class="cfk-event">
+                    <h2>{{ item.problemLabel }} {{ _('题首杀') }}</h2>
+                    <div class="cfk-meta">
+                      <span>{{ item.uname }}</span>
+                      {% if item.teamName %}<span>{{ item.teamName }}</span>{% endif %}
+                      <span>{{ _('第') }} {{ item.minute }} {{ _('分钟') }}</span>
+                    </div>
+                  </div>
+                {% else %}
+                  <p class="cfk-note">{{ _('暂无首杀记录') }}</p>
+                {% endfor %}
+              </div>
+            </div>
+            <div>
+              <h2>{{ _('高光时间线') }}</h2>
+              <div class="cfk-list">
+                {% for event in highlights.events %}
+                  <div class="cfk-event">
+                    <h2>{{ event.title }}</h2>
+                    <div class="cfk-meta">
+                      <span>{{ event.uname }}</span>
+                      {% if event.teamName %}<span>{{ event.teamName }}</span>{% endif %}
+                      <span>{{ event.problemLabel }} {{ _('题') }}</span>
+                      <span>{{ _('第') }} {{ event.minute }} {{ _('分钟') }}</span>
+                    </div>
+                  </div>
+                {% else %}
+                  <p class="cfk-note">{{ _('暂无高光记录') }}</p>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns" data-sticky="large">
+    {% include "partials/contest_sidebar.html" %}
+  </div>
+</div>
+{% endblock %}

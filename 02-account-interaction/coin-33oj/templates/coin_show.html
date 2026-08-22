@@ -1,0 +1,62 @@
+{% import "components/nothing.html" as nothing with context %}
+{% import "components/paginator.html" as paginator with context %}
+{% extends "coin_base.html" %}
+{% block coin_content %}
+<div class="section">
+    <div class="section__header">
+        <h1 class="section__title">{{ _('所有有过硬币的学员') }}</h1>
+    </div>
+    <div class="section__body no-padding">
+        <table class="data-table">
+            <colgroup>
+                <col class="col--uid" style="width:5rem">
+                <col class="col--user">
+                <col class="col--groups" style="width:8rem">
+                <col class="col--coin_all" style="width:8rem">
+                <col class="col--coin_now" style="width:8rem">
+                <col class="col--actions" style="width:8rem">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>{{ _('User ID') }}</th>
+                    <th>{{ _('Username') }}</th>
+                    <th>
+                      <form method="get" class="inline">  
+                        <select name="groupName" class="compact select" onchange="this.form.submit()">  
+                          <option value="">{{ _('所有小组') }}</option>  
+                          {% for group in groups %}  
+                            <option value="{{ group.name }}" {% if groupName == group.name %}selected{% endif %}>  
+                              {{ group.name }} ({{ group.uids.length }} {{ _('users') }})  
+                            </option>  
+                          {% endfor %}  
+                        </select>  
+                      </form> 
+                    </th>
+                    <th>{{ _('累计获取硬币') }}</th>
+                    <th>{{ _('当前剩余硬币') }}</th>
+                    <th>{{ _('Actions') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {%- for udoc in udocs -%}
+                <tr>
+                    <td>{{ udoc._id }}</td>
+                    <td>{{ user.render_inline(udoc) }}</td>
+                    <td>
+                        {%- for group in groups -%}
+                        {%- if udoc._id in group.uids -%}
+                        {{ group.name }}{{ ' ' }}
+                        {%- endif -%}
+                        {%- endfor -%}
+                    </td>
+                    <td>{{ udoc.coin_all | default(0) }}</td>
+                    <td>{{ udoc.coin_now }}</td>
+                    <td><a href="{{ url('coin_bill',query={uid:udoc._id}) }}" class="typo-a contest-tag">{{ _('查看明细') }}</a></td>
+                </tr>
+                {%- endfor -%}
+            </tbody>
+        </table>
+        {{ paginator.render(page, upcount,add_qs=('groupName=' + groupName if groupName else '')) }}
+    </div>
+</div>
+{% endblock %}

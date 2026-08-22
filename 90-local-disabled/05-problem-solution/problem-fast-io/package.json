@@ -1,0 +1,9 @@
+{
+  "name": "problem-fast-io",
+  "version": "0.1.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "hydrooj": "^5.0.0-beta.16"
+  }
+}

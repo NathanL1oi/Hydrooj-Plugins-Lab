@@ -1,0 +1,322 @@
+{% import "components/form.html" as form with context %}
+{% import "components/sidemenu.html" as sidemenu with context %}
+{% import "components/paginator.html" as paginator with context %}
+{% import "components/nothing.html" as nothing with context %}
+{% import "components/noscript_note.html" as noscript_note with context %}
+{% import "components/user.html" as user with context %}
+<!DOCTYPE html>
+<html data-page="{{ page_name }}" data-layout="{{ layout_name }}" class="layout--{{ layout_name }} page--{{ page_name }} theme--{{ (handler.user|default({})).theme|default('default') }} nojs" lang="{{ UserContext.viewLang }}" data-app="Hydro">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta http-equiv="X-UA-Compatible" content="chrome=1"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ UiContext.cdn_prefix }}apple-touch-icon-180x180.png">
+  <link rel="icon" type="image/png" href="{{ UiContext.cdn_prefix }}favicon-32x32.png" sizes="32x32">
+  <link rel="icon" type="image/png" href="{{ UiContext.cdn_prefix }}android-chrome-192x192.png" sizes="192x192">
+  <link rel="icon" type="image/png" href="{{ UiContext.cdn_prefix }}favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="{{ UiContext.cdn_prefix }}favicon-16x16.png" sizes="16x16">
+  {% if handler.context.request.url %}<link rel="canonical" href="{{ model.system.get('server.url') }}{{ handler.context.request.url.substring(1) }}">{% endif %}
+  <meta name="theme-color" content="#56758f">
+  {% block ogp %}
+  <meta property="og:site_name" content="{{ (handler.domain|default({ui:[]})).ui.name|default(model.system.get('server.name')) }}" />
+  <meta property="og:title" content="{{ handler.renderTitle(page_name) }}" />
+  <meta property="og:url" content="{{ model.system.get('server.url') }}{{ handler.request.path.slice(1) }}" />
+  <meta property="og:image" content="{{ UiContext.cdn_prefix }}favicon-96x96.png" />
+  {% endblock %}
+  <title>{{ handler.renderTitle(page_name) }}</title>
+  <style>
+    body {
+      --font-family: "{{ UserContext.fontFamily }}", "Open Sans", "Seravek", "Segoe UI", "Verdana", "PingFang SC", "Hiragino Sans GB", "Lantinghei SC", "Microsoft Yahei", "WenQuanYi Micro Hei", "sans";
+      --code-font-family: "{{ UserContext.codeFontFamily }}", "monaco", "Source Code Pro", "Consolas", "Lucida Console", "monospace";
+      --font-ligatures: {{ "normal" if UserContext.codeFontLigatures else "none" }} !important;
+    }
+    
+    .section{border-radius:10px}
+
+    .section__body.table-layout-guard,
+    .section__body.no-padding.table-layout-guard,
+    .section__body.no-padding.overflow-hidden-horizontal,
+    .table-layout-guard {
+      display: block;
+      overflow: visible !important;
+    }
+
+    .section__body.table-layout-guard > .section__table-container,
+    .section__body.no-padding.table-layout-guard > .section__table-container,
+    .section__body.no-padding.overflow-hidden-horizontal > .section__table-container,
+    .table-layout-guard .section__table-container {
+      clear: both;
+      overflow-x: auto;
+      overflow-y: visible;
+    }
+
+    .section__body.table-layout-guard > .section__table-header,
+    .section__body.no-padding.table-layout-guard > .section__table-header,
+    .section__body.no-padding.overflow-hidden-horizontal > .section__table-header,
+    .table-layout-guard .section__table-header {
+      position: static !important;
+      top: auto !important;
+      left: auto !important;
+      width: 100% !important;
+      z-index: auto !important;
+      box-shadow: none !important;
+      transform: none !important;
+    }
+
+    .section__body.table-layout-guard > .section__table-header.is_stuck,
+    .section__body.no-padding.table-layout-guard > .section__table-header.is_stuck,
+    .section__body.no-padding.overflow-hidden-horizontal > .section__table-header.is_stuck,
+    .table-layout-guard .section__table-header.is_stuck {
+      position: static !important;
+      transform: none !important;
+    }
+
+    {% if not isIE(handler.request.headers['user-agent']) and not handler.session.legacy %}
+      #panel { display: flex; flex-direction: column; }
+    {% endif %}
+  </style>
+  {% if process.env.DEV %}
+    <script src="/default.theme.js?version={{ global.Hydro.version['ui-default'] }}"></script>
+    <link rel="stylesheet" media="all" href="/theme.css?version={{ global.Hydro.version['ui-default'] }}">
+  {% else %}
+    <link rel="stylesheet" media="all" href="{{ UiContext.cdn_prefix }}theme-{{ global.Hydro.version['ui-default'] }}.css">
+  {% endif %}
+  <style>
+    .typo h1,
+    .typo h2,
+    .typo h3,
+    .typo h4,
+    .typo h5,
+    .typo h6 {
+      color: #1f2937;
+      line-height: 1.25;
+    }
+
+    .typo h2 {
+      border-bottom: 1px solid rgba(70, 116, 170, 0.18);
+      font-weight: 650;
+      padding-bottom: 0.28em;
+    }
+
+    .typo h3 {
+      font-weight: 600;
+    }
+
+    .typo h4,
+    .typo h5,
+    .typo h6 {
+      font-weight: 600;
+    }
+
+    html.theme--dark .typo h1,
+    html.theme--dark .typo h2,
+    html.theme--dark .typo h3,
+    html.theme--dark .typo h4,
+    html.theme--dark .typo h5,
+    html.theme--dark .typo h6 {
+      color: #f1f5f9;
+    }
+
+    html.theme--dark .typo h2 {
+      border-bottom-color: rgba(148, 163, 184, 0.26);
+    }
+
+    .typo blockquote:not(.note):not(.warn):not(.red):not(.yellow):not(.blue) {
+      color: inherit;
+      background: rgba(255, 255, 255, 0.48);
+      border-left: 4px solid rgba(70, 116, 170, 0.72);
+      border-radius: 6px;
+      box-shadow: inset 0 0 0 1px rgba(70, 116, 170, 0.08);
+      margin: 1em 0;
+      padding: 0.75em 1em;
+    }
+
+    .typo blockquote:not(.note):not(.warn):not(.red):not(.yellow):not(.blue) p {
+      color: inherit;
+    }
+
+    .typo blockquote:not(.note):not(.warn):not(.red):not(.yellow):not(.blue) > :first-child {
+      margin-top: 0;
+    }
+
+    .typo blockquote:not(.note):not(.warn):not(.red):not(.yellow):not(.blue) > :last-child {
+      margin-bottom: 0;
+    }
+
+    html.theme--dark .typo blockquote:not(.note):not(.warn):not(.red):not(.yellow):not(.blue) {
+      background: rgba(255, 255, 255, 0.07);
+      border-left-color: rgba(125, 170, 255, 0.8);
+      box-shadow: inset 0 0 0 1px rgba(125, 170, 255, 0.12);
+    }
+
+    html.hydro-user-background-enabled .typo blockquote:not(.note):not(.warn):not(.red):not(.yellow):not(.blue) {
+      background: rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(6px);
+    }
+
+    html.theme--dark.hydro-user-background-enabled .typo blockquote:not(.note):not(.warn):not(.red):not(.yellow):not(.blue) {
+      background: rgba(15, 23, 42, 0.36);
+    }
+
+    .typo table {
+      background: rgba(255, 255, 255, 0.54);
+      border-collapse: collapse;
+      border-radius: 6px;
+      box-shadow: inset 0 0 0 1px rgba(70, 116, 170, 0.1);
+      overflow: hidden;
+    }
+
+    .typo table th,
+    .typo table td,
+    .typo table caption {
+      border-color: rgba(70, 116, 170, 0.22);
+      color: inherit;
+    }
+
+    .typo table th,
+    .typo table thead th {
+      background: rgba(232, 241, 252, 0.76);
+      color: inherit;
+    }
+
+    .typo table tbody tr:nth-child(even) {
+      background: rgba(255, 255, 255, 0.28);
+    }
+
+    .typo pre {
+      background: rgba(247, 250, 252, 0.86);
+      border: 1px solid rgba(70, 116, 170, 0.18);
+      border-radius: 6px;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.52);
+      color: #1f2937;
+      padding: 0.85em 1em;
+    }
+
+    .typo pre > code,
+    .typo pre code[class*="language-"] {
+      background: transparent;
+      color: inherit;
+      font-size: inherit;
+    }
+
+    .typo :not(pre) > code {
+      background: rgba(232, 241, 252, 0.88);
+      border: 1px solid rgba(70, 116, 170, 0.18);
+      border-radius: 4px;
+      color: #b42318;
+      padding: 0.08em 0.32em;
+    }
+
+    html.theme--dark .typo table {
+      background: rgba(15, 23, 42, 0.5);
+      box-shadow: inset 0 0 0 1px rgba(125, 170, 255, 0.12);
+    }
+
+    html.theme--dark .typo table th,
+    html.theme--dark .typo table td,
+    html.theme--dark .typo table caption {
+      border-color: rgba(148, 163, 184, 0.32);
+      color: inherit;
+    }
+
+    html.theme--dark .typo table th,
+    html.theme--dark .typo table thead th {
+      background: rgba(30, 41, 59, 0.78);
+      color: inherit;
+    }
+
+    html.theme--dark .typo table tbody tr:nth-child(even) {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    html.theme--dark .typo pre {
+      background: rgba(15, 23, 42, 0.72);
+      border-color: rgba(148, 163, 184, 0.26);
+      box-shadow: inset 0 0 0 1px rgba(125, 170, 255, 0.08);
+      color: #e5e7eb;
+    }
+
+    html.theme--dark .typo :not(pre) > code {
+      background: rgba(30, 41, 59, 0.86);
+      border-color: rgba(148, 163, 184, 0.28);
+      color: #fca5a5;
+    }
+
+    html.hydro-user-background-enabled .typo table {
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(6px);
+    }
+
+    html.hydro-user-background-enabled .typo table th,
+    html.hydro-user-background-enabled .typo table thead th {
+      background: rgba(255, 255, 255, 0.28);
+    }
+
+    html.hydro-user-background-enabled .typo pre {
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(6px);
+    }
+
+    html.hydro-user-background-enabled .typo :not(pre) > code {
+      background: rgba(255, 255, 255, 0.24);
+    }
+
+    html.theme--dark.hydro-user-background-enabled .typo table,
+    html.theme--dark.hydro-user-background-enabled .typo pre {
+      background: rgba(15, 23, 42, 0.42);
+    }
+
+    html.theme--dark.hydro-user-background-enabled .typo table th,
+    html.theme--dark.hydro-user-background-enabled .typo table thead th {
+      background: rgba(30, 41, 59, 0.54);
+    }
+
+    html.theme--dark.hydro-user-background-enabled .typo :not(pre) > code {
+      background: rgba(15, 23, 42, 0.54);
+    }
+
+    html.theme--dark.page--contest_edit select.select[name="rule"],
+    html.theme--dark.page--contest_create select.select[name="rule"] {
+      border-color: #323232 !important;
+      background-color: #1f1f1f !important;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 1000 1000%22%3E%3Cpath fill=%22%23bdbdbd%22 d=%22m250 417 250 250 250-250-83-84-167 167-167-167-83 84z%22/%3E%3C/svg%3E") !important;
+      color: #eee !important;
+    }
+
+    html.theme--dark.page--contest_edit select.select[name="rule"] option,
+    html.theme--dark.page--contest_edit select.select[name="rule"] optgroup,
+    html.theme--dark.page--contest_create select.select[name="rule"] option,
+    html.theme--dark.page--contest_create select.select[name="rule"] optgroup {
+      background-color: #1f1f1f;
+      color: #eee;
+    }
+  </style>
+  {% if not isIE(handler.request.headers['user-agent']) and not handler.session.legacy %}
+    <script>
+      var _htmlNode = document.documentElement;
+      _htmlNode.className = _htmlNode.className.replace(' nojs', ' hasjs');
+      var UiContext = '{{ UiContext|json|jsesc|safe }}';
+      var UserContext = '{{ UserContext|json|jsesc|safe }}';
+    </script>
+  {% endif %}  
+  {% set UiContext = Object.create(UiContext) %}
+  {% set UserContext = Object.create(UserContext) %}
+</head>
+<body>
+  {% if not isIE(handler.request.headers['user-agent']) and not handler.session.legacy %}
+    <script type="text/javascript" src="/resource/{{ UiContext.constantVersion }}/entry.js"></script>
+    <script type="text/javascript" src="{{ UiContext.cdn_prefix }}resource/{{ global.Hydro.version['ui-default'] }}/lang-{{ _('__id') }}.js"></script>
+    <script type="text/javascript" src="{{ UiContext.cdn_prefix }}hydro-{{ global.Hydro.version['ui-default'] }}.js"></script>
+  {% endif %}
+  {% block body %}{% endblock %}
+  {% block script %}{% endblock %}
+  {% if not isIE(handler.request.headers['user-agent']) and not handler.session.legacy %}
+    <script>
+      var UiContextNew = '{{ UiContext|json|jsesc|safe }}';
+      var UserContextNew = '{{ UserContext|json|jsesc|safe }}';
+    </script>
+  {% endif %}
+</body>
+</html>

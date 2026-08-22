@@ -1,0 +1,85 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+{% include "course_ui_style.html" %}
+{% set subsecUrl = url('course_subsec_detail', cid=cdoc.docId, csid=csdoc.docId, ssid=ssdoc._id) %}
+{% set preferredLang = handler.request.query.lang or handler.user.viewLang or handler.session.viewLang %}
+{% set renderedContent = statementPdoc.content|content(preferredLang, statementPdoc.html) %}
+<style>
+.course-lecture-reader__title {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  align-items: baseline;
+}
+.course-lecture-reader__paper {
+  margin: 0 auto;
+  overflow: auto;
+}
+.course-lecture-reader__content {
+  padding: 1.5rem;
+}
+.course-lecture-reader__list .menu__link.active {
+  color: #165dbe;
+  font-weight: 700;
+}
+.theme--dark .course-lecture-reader__list .menu__link.active {
+  color: #7ab8ff;
+}
+@media screen and (max-width: 720px) {
+  .course-lecture-reader__content {
+    padding: 1rem;
+  }
+}
+</style>
+<div class="row course-lecture-reader" data-sticky-parent>
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title course-lecture-reader__title">
+          <span>讲义</span>
+          <span>{{ activeItem.problemTitle }}</span>
+        </h1>
+      </div>
+      <div class="section__body no-padding">
+        <div class="course-lecture-reader__paper">
+          <div class="course-lecture-reader__content typo richmedia" data-marker-enabled>
+            {{ renderedContent|safe }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns" data-sticky="large">
+    <div class="section side">
+      <div class="section__header">
+        <h1 class="section__title">课程位置</h1>
+      </div>
+      <ol class="menu">
+        <li class="menu__item"><a class="menu__link" href="{{ url('course_detail', cid=cdoc.docId) }}">
+          <span class="icon icon-award"></span> {{ cdoc.title }}
+        </a></li>
+        <li class="menu__item"><a class="menu__link" href="{{ url('course_section_detail', cid=cdoc.docId, csid=csdoc.docId) }}">
+          <span class="icon icon-award"></span> {{ csdoc.title }}
+        </a></li>
+        <li class="menu__item"><a class="menu__link" href="{{ subsecUrl }}">
+          <span class="icon icon-list"></span> {{ ssdoc.title }}
+        </a></li>
+      </ol>
+    </div>
+    <div class="section side course-lecture-reader__list">
+      <div class="section__header">
+        <h1 class="section__title">讲义列表</h1>
+      </div>
+      <ol class="menu">
+        {% for item in lectureItems %}
+          <li class="menu__item">
+            <a class="menu__link{% if item.active %} active{% endif %}" href="{{ item.lectureUrl }}">
+              {{ item.problemTitle }}
+            </a>
+          </li>
+        {% endfor %}
+      </ol>
+    </div>
+  </div>
+</div>
+{% endblock %}

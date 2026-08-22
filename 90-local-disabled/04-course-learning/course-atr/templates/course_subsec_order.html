@@ -1,0 +1,41 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+{% include "course_ui_style.html" %}
+{% include "course_order_shared.html" %}
+<div class="section course-atr-order" data-course-atr-order>
+  <div class="course-atr-order__header">
+    <h1 class="course-atr-order__title">小节排序：{{ csdoc.title }}</h1>
+    <div class="course-atr-order__tools">
+      <button class="rounded primary button" type="submit" form="course-atr-order-form">保存排序</button>
+      <button class="rounded button" type="button" onclick="window.location.reload()">撤销更改</button>
+      <a class="rounded button" href="{{ url('course_section_detail', cid=cdoc.docId, csid=csdoc.docId) }}">返回</a>
+    </div>
+  </div>
+  <div class="course-atr-order__body">
+    <form id="course-atr-order-form" method="post" data-course-atr-order-form>
+      <input type="hidden" name="order" data-course-atr-order-input>
+      <ol class="course-atr-order__list" data-course-atr-order-list>
+        {% for node in nodes %}
+        <li class="course-atr-order__row" data-course-atr-order-item data-id="{{ node._id }}">
+          <span class="course-atr-order__index" data-course-atr-order-index>{{ loop.index }}</span>
+          <div class="course-atr-order__name">
+            <a href="{{ url('course_subsec_detail', cid=cdoc.docId, csid=csdoc.docId, ssid=node._id) }}">{{ node.title }}</a>
+            <div class="course-atr-order__meta">{% if node.pids %}{{ node.pids.length }}{% else %}0{% endif %} 道题目</div>
+          </div>
+          <div class="course-atr-order__actions">
+            <button type="button" class="rounded button" data-course-atr-order-action="top">置顶</button>
+            <button type="button" class="rounded button" data-course-atr-order-action="up">上移</button>
+            <button type="button" class="rounded button" data-course-atr-order-action="down">下移</button>
+            <button type="button" class="rounded button" data-course-atr-order-action="bottom">置底</button>
+          </div>
+        </li>
+        {% endfor %}
+      </ol>
+      <div class="course-atr-order__footer">
+        <button class="rounded primary button" type="submit">保存排序</button>
+        <button class="rounded button" type="button" onclick="window.location.reload()">撤销更改</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

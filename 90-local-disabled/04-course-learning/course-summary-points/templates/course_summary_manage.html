@@ -1,0 +1,485 @@
+{% extends "layout/basic.html" %}
+{% import "components/user.html" as user with context %}
+{% block content %}
+{% set cleanTaskTitle = task.title|default('')|trim %}
+{% set cleanTaskContent = task.content|default('')|trim %}
+{% set hasTaskContent = cleanTaskContent and cleanTaskContent != '##' %}
+<style>
+.csp-manage {
+  --csp-accent: #2563eb;
+  --csp-line: #e5edf7;
+  --csp-soft: #f8fbff;
+  --csp-ink: #17324d;
+  --csp-muted: #64748b;
+  color: #24364b;
+}
+.csp-manage .csp-shell { display: grid; gap: 16px; }
+.csp-manage .csp-shell > .section { margin-bottom: 0; }
+.csp-manage .csp-panel { overflow: hidden; border-radius: 8px; }
+.csp-manage .csp-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.csp-manage .csp-title {
+  margin: 0 0 6px;
+  color: var(--csp-ink);
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+.csp-manage .csp-muted,
+.csp-manage .csp-subtitle { color: var(--csp-muted); }
+.csp-manage .csp-actions,
+.csp-manage .csp-filter,
+.csp-manage .csp-filter-form,
+.csp-manage .csp-operations,
+.csp-manage .csp-meta,
+.csp-manage .csp-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.csp-manage .csp-action-form { display: inline-flex; margin: 0; }
+.csp-manage .csp-filter {
+  justify-content: space-between;
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid var(--csp-line);
+  border-radius: 8px;
+  background: var(--csp-soft);
+}
+.csp-manage .csp-filter-form { margin: 0; }
+.csp-manage .csp-filter label {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  color: #41546c;
+  font-weight: 700;
+}
+.csp-manage .csp-filter .select { min-width: 220px; }
+.csp-manage .csp-filter-form > .button { margin-top: 20px; }
+.csp-manage .csp-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+.csp-manage .csp-stat {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid var(--csp-line);
+  border-radius: 8px;
+  background: #fff;
+}
+.csp-manage .csp-stat strong { color: var(--csp-ink); font-size: 24px; line-height: 1.1; }
+.csp-manage .csp-stat span { color: var(--csp-muted); font-size: 12px; }
+.csp-manage .csp-overview-note { margin: 12px 0 0; }
+.csp-manage .csp-context { margin: 0; }
+.csp-manage .csp-context > summary {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 18px;
+  color: var(--csp-ink);
+  cursor: pointer;
+  list-style: none;
+  font-weight: 800;
+}
+.csp-manage .csp-context > summary::-webkit-details-marker { display: none; }
+.csp-manage .csp-context > summary::after {
+  content: "展开";
+  flex: 0 0 auto;
+  color: var(--csp-accent);
+  font-size: 13px;
+  font-weight: 700;
+}
+.csp-manage .csp-context[open] > summary::after { content: "收起"; }
+.csp-manage .csp-context-hint { color: var(--csp-muted); font-size: 13px; font-weight: 400; }
+.csp-manage .csp-context-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, .55fr);
+  gap: 16px;
+  padding: 0 18px 18px;
+  border-top: 1px solid var(--csp-line);
+}
+.csp-manage .csp-context-block { min-width: 0; padding-top: 16px; }
+.csp-manage .csp-context-block + .csp-context-block {
+  padding-left: 16px;
+  border-left: 1px solid var(--csp-line);
+}
+.csp-manage .csp-context-block h2 {
+  margin: 0 0 10px;
+  color: var(--csp-ink);
+  font-size: 15px;
+  font-weight: 800;
+}
+.csp-manage .csp-task-body,
+.csp-manage .csp-pending-wrap { max-height: 260px; overflow: auto; }
+.csp-manage .csp-pending-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.csp-manage .csp-pending-list li {
+  padding: 5px 8px;
+  border: 1px solid var(--csp-line);
+  border-radius: 999px;
+  background: var(--csp-soft);
+}
+.csp-manage .csp-list-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+  align-items: center;
+}
+.csp-manage .csp-count { color: var(--csp-muted); font-size: 13px; font-weight: 400; }
+.csp-manage .csp-submit-list { display: grid; }
+.csp-manage .csp-submit-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid #edf2f8;
+  transition: background .16s ease, border-color .16s ease;
+}
+.csp-manage .csp-submit-card:hover { background: #fbfdff; }
+.csp-manage .csp-submit-card:last-child { border-bottom: 0; }
+.csp-manage .csp-submit-title {
+  margin: 0;
+  color: #1f3b57;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+.csp-manage .csp-submit-title a { color: inherit; }
+.csp-manage .csp-meta { row-gap: 5px; color: var(--csp-muted); font-size: 13px; }
+.csp-manage .csp-meta > span { display: inline-flex; align-items: center; }
+.csp-manage .csp-meta > span + span::before {
+  content: "";
+  width: 4px;
+  height: 4px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: #cbd5e1;
+}
+.csp-manage .csp-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #eef7ff;
+  color: #0b66c3;
+  font-size: 12px;
+  font-weight: 700;
+}
+.csp-manage .csp-badge--ok { background: #ecfdf5; color: #047857; }
+.csp-manage .csp-badge--warn { background: #fff7ed; color: #b45309; }
+.csp-manage .csp-badge--danger { background: #fef2f2; color: #b91c1c; }
+.csp-manage .csp-badge--excellent { background: #fff0f6; color: #c2255c; }
+.csp-manage .csp-submit-summary {
+  display: -webkit-box;
+  max-width: 920px;
+  overflow: hidden;
+  color: #334155;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+.csp-manage .csp-card-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.csp-manage .csp-empty {
+  padding: 36px 24px;
+  text-align: center;
+  color: var(--csp-muted);
+  background: linear-gradient(180deg, #fff, #f8fbff);
+}
+.csp-manage .csp-pager { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; align-items: center; }
+.csp-manage .csp-danger-button {
+  background: #b91c1c !important;
+  border-color: #991b1b !important;
+  color: #fff !important;
+}
+.csp-manage .csp-danger-button:hover { background: #991b1b !important; }
+.theme--dark .csp-manage {
+  --csp-line: #303a48;
+  --csp-soft: #1c2430;
+  --csp-ink: #e2e8f0;
+  --csp-muted: #94a3b8;
+  color: #cbd5e1;
+}
+.theme--dark .csp-manage .csp-title,
+.theme--dark .csp-manage .csp-submit-title,
+.theme--dark .csp-manage .csp-context > summary,
+.theme--dark .csp-manage .csp-context-block h2,
+.theme--dark .csp-manage .csp-stat strong { color: #e2e8f0; }
+.theme--dark .csp-manage .csp-filter,
+.theme--dark .csp-manage .csp-stat,
+.theme--dark .csp-manage .csp-pending-list li { background: #1c2430; border-color: #303a48; }
+.theme--dark .csp-manage .csp-filter label,
+.theme--dark .csp-manage .csp-submit-summary { color: #cbd5e1; }
+.theme--dark .csp-manage .csp-submit-card { border-color: #303a48; }
+.theme--dark .csp-manage .csp-submit-card:hover { background: #1b2430; }
+.theme--dark .csp-manage .csp-empty { background: #1c2430; }
+.theme--dark .csp-manage .csp-context-body,
+.theme--dark .csp-manage .csp-context-block + .csp-context-block { border-color: #303a48; }
+.theme--dark .csp-manage .csp-badge { background: rgba(59, 130, 246, .22); color: #bfdbfe; }
+.theme--dark .csp-manage .csp-badge--ok { background: rgba(22, 101, 52, .32); color: #86efac; }
+.theme--dark .csp-manage .csp-badge--warn { background: rgba(146, 64, 14, .34); color: #fcd34d; }
+.theme--dark .csp-manage .csp-badge--danger { background: rgba(153, 27, 27, .32); color: #fca5a5; }
+.theme--dark .csp-manage .csp-badge--excellent { background: rgba(157, 23, 77, .30); color: #f9a8d4; }
+html.hydro-user-background-enabled .csp-manage .csp-filter,
+html.hydro-user-background-enabled .csp-manage .csp-stat,
+html.hydro-user-background-enabled .csp-manage .csp-pending-list li,
+html.hydro-user-background-enabled .csp-manage .csp-empty {
+  background: var(--hub-surface-soft) !important;
+  border-color: var(--hub-border) !important;
+  color: var(--hub-text) !important;
+}
+html.hydro-user-background-enabled .csp-manage .csp-filter {
+  box-shadow: var(--hub-shadow) !important;
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+}
+html.hydro-user-background-enabled .csp-manage .csp-empty {
+  box-shadow: var(--hub-shadow) !important;
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+}
+html.hydro-user-background-enabled .csp-manage .csp-title,
+html.hydro-user-background-enabled .csp-manage .csp-submit-title,
+html.hydro-user-background-enabled .csp-manage .csp-context > summary,
+html.hydro-user-background-enabled .csp-manage .csp-context-block h2,
+html.hydro-user-background-enabled .csp-manage .csp-stat strong,
+html.hydro-user-background-enabled .csp-manage .csp-filter label,
+html.hydro-user-background-enabled .csp-manage .csp-submit-summary { color: var(--hub-text) !important; }
+html.hydro-user-background-enabled .csp-manage .csp-muted,
+html.hydro-user-background-enabled .csp-manage .csp-subtitle,
+html.hydro-user-background-enabled .csp-manage .csp-meta,
+html.hydro-user-background-enabled .csp-manage .csp-count,
+html.hydro-user-background-enabled .csp-manage .csp-context-hint,
+html.hydro-user-background-enabled .csp-manage .csp-stat span { color: var(--hub-muted) !important; }
+html.hydro-user-background-enabled .csp-manage .csp-submit-card:hover { background: var(--hub-nav-hover) !important; }
+@media screen and (max-width: 900px) {
+  .csp-manage .csp-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .csp-manage .csp-context-body { grid-template-columns: 1fr; }
+  .csp-manage .csp-context-block + .csp-context-block { padding-left: 0; border-left: 0; }
+}
+@media screen and (max-width: 720px) {
+  .csp-manage .csp-filter-form,
+  .csp-manage .csp-filter-form label,
+  .csp-manage .csp-filter-form .select { width: 100%; }
+  .csp-manage .csp-filter-form > .button { width: 100%; justify-content: center; }
+  .csp-manage .csp-operations { width: 100%; }
+  .csp-manage .csp-context > summary { align-items: flex-start; }
+}
+@media screen and (max-width: 520px) {
+  .csp-manage .csp-stats { grid-template-columns: 1fr; }
+  .csp-manage .csp-actions .button,
+  .csp-manage .csp-actions .csp-action-form { width: 100%; }
+  .csp-manage .csp-actions .button { justify-content: center; }
+}
+</style>
+
+<div class="row csp-manage">
+  <div class="medium-12 columns">
+    <div class="csp-shell">
+      <section class="section csp-panel">
+        <div class="section__body">
+          <div class="csp-head">
+            <div>
+              <h1 class="csp-title">小结批改</h1>
+              <div class="csp-subtitle">
+                {% if cleanTaskTitle and cleanTaskTitle != '##' %}{{ cleanTaskTitle }}{% else %}课程小结任务{% endif %}
+                · {{ targetTitle }}
+              </div>
+            </div>
+            <div class="csp-actions">
+              <a class="button rounded" href="{{ backUrl }}"><span class="icon icon-back"></span> 返回课程</a>
+              <a class="button rounded" href="{{ editUrl }}"><span class="icon icon-edit"></span> 编辑任务</a>
+              <form method="post" action="{{ editUrl }}" class="csp-action-form" onsubmit="return confirm('确认删除这个小结任务？已有提交和对应小结积分会一并移除。');">
+                <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+                <input type="hidden" name="operation" value="delete">
+                <button class="button rounded csp-danger-button" type="submit"><span class="icon icon-delete"></span> 删除任务</button>
+              </form>
+            </div>
+          </div>
+
+          {% if messages and messages.length %}
+          <blockquote class="note csp-overview-note">
+            {% for message in messages %}
+            <p>{{ message }}</p>
+            {% endfor %}
+          </blockquote>
+          {% endif %}
+
+          <div class="csp-filter">
+            <form method="get" class="csp-filter-form">
+              <label>
+                小组
+                <select name="groupName" class="select">
+                  <option value="all" {% if filterGroupName == 'all' %}selected{% endif %}>全部</option>
+                  {% for group in groups %}
+                  <option value="{{ group.name }}" {% if filterGroupName == group.name %}selected{% endif %}>{{ group.name }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <button class="button rounded" type="submit"><span class="icon icon-search"></span> 筛选</button>
+            </form>
+            <div class="csp-operations">
+              <form method="post" class="csp-action-form">
+                <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+                <input type="hidden" name="groupName" value="{{ filterGroupName }}">
+                <input type="hidden" name="page" value="{{ page }}">
+                <button class="button rounded" name="operation" value="remind" type="submit"><span class="icon icon-bell"></span> 提醒未交</button>
+              </form>
+              <form method="post" class="csp-action-form" onsubmit="return confirm('将为当前筛选下尚未创建 AI 评测的历史小结补评，确认继续？');">
+                <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+                <input type="hidden" name="groupName" value="{{ filterGroupName }}">
+                <input type="hidden" name="page" value="{{ page }}">
+                <button class="button rounded" name="operation" value="backfillEvaluation" type="submit" {% if not evaluationEnabled or not unevaluatedCount %}disabled{% endif %}>
+                  <span class="icon icon-play"></span> 补评历史小结{% if unevaluatedCount %}（{{ unevaluatedCount }}）{% endif %}
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <div class="csp-stats">
+            <div class="csp-stat"><strong>{{ submitCount }}</strong><span>已提交{% if filterGroupName != 'all' %} / 本组{% endif %}</span></div>
+            <div class="csp-stat"><strong>{{ pendingCount }}</strong><span>未提交{% if filterGroupName != 'all' %} / 本组{% endif %}</span></div>
+            <div class="csp-stat"><strong>{{ task.minWords }}</strong><span>最低字数</span></div>
+            <div class="csp-stat"><strong>{{ task.defaultPoints }}</strong><span>默认积分</span></div>
+          </div>
+          {% if not evaluationEnabled %}
+          <p class="csp-muted csp-overview-note">AI 评测服务未配置，无法补评历史小结。</p>
+          {% elif unevaluatedCount %}
+          <p class="csp-muted csp-overview-note">当前筛选下有 {{ unevaluatedCount }} 篇提交尚未创建 AI 评测。</p>
+          {% endif %}
+          {% if filterGroupName != 'all' %}
+          <p class="csp-muted csp-overview-note">全部：{{ allSubmitCount }} 已提交 / {{ allPendingCount }} 未提交</p>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="section csp-panel">
+        <details class="csp-context">
+          <summary>
+            <span>任务说明与未提交名单</span>
+            <span class="csp-context-hint">{{ pendingCount }} 人未交</span>
+          </summary>
+          <div class="csp-context-body">
+            <div class="csp-context-block">
+              <h2>任务内容</h2>
+              <div class="typo richmedia csp-task-body">
+                {% if hasTaskContent %}
+                {{ task.content|markdown|safe }}
+                {% else %}
+                <p class="csp-muted">当前任务没有补充说明。</p>
+                {% endif %}
+              </div>
+            </div>
+            <div class="csp-context-block">
+              <h2>未提交</h2>
+              <div class="csp-pending-wrap">
+                {% if pendingUids.length %}
+                <ul class="csp-pending-list">
+                  {% for uid in pendingUids %}
+                  <li>{% if udict[uid] %}{{ user.render_inline(udict[uid], badge=false) }}{% else %}UID {{ uid }}{% endif %}</li>
+                  {% endfor %}
+                </ul>
+                {% else %}
+                <p class="csp-muted">当前筛选下没有未提交学生。</p>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <section class="section csp-panel">
+        <div class="section__header">
+          <div class="csp-list-heading">
+            <h1 class="section__title">提交列表</h1>
+            <span class="csp-count">{{ submitCount }} 篇</span>
+          </div>
+        </div>
+        <div class="section__body no-padding">
+          {% if submits.length %}
+          <div class="csp-submit-list">
+            {% for submit in submits %}
+            <article class="csp-submit-card">
+              <div class="csp-head">
+                <div>
+                  <h2 class="csp-submit-title">
+                    {% if udict[submit.uid] %}
+                    {{ user.render_inline(udict[submit.uid], badge=false) }} 的小结
+                    {% else %}
+                    <a href="{{ submit.detailUrl }}">UID {{ submit.uid }} 的小结</a>
+                    {% endif %}
+                  </h2>
+                  <div class="csp-meta">
+                    <span>{{ datetimeSpan(submit.updatedAt)|safe }}</span>
+                    <span>
+                      {{ submit.displayWordCount if submit.displayWordCount != null else submit.wordCount }} 字
+                      {% if submit.storedWordCount and submit.storedWordCount != submit.displayWordCount %}（历史 {{ submit.storedWordCount }}）{% endif %}
+                    </span>
+                    {% if submit.reviewedAt %}<span>已批改 {{ datetimeSpan(submit.reviewedAt)|safe }}</span>{% endif %}
+                  </div>
+                </div>
+                <div class="csp-badges">
+                  {% if submit.excellent %}<span class="csp-badge csp-badge--excellent">优秀小结</span>{% endif %}
+                  {% if submit.status == 'late' %}<span class="csp-badge csp-badge--warn">补交</span>{% endif %}
+                  {% if submit.evaluationStatus %}
+                    {% if submit.evaluationStatus == 'succeeded' %}
+                    <span class="csp-badge csp-badge--ok">AI {{ submit.evaluationStatusText }}</span>
+                    {% elif submit.evaluationStatus == 'failed' or submit.evaluationStatus == 'failed_to_submit' %}
+                    <span class="csp-badge csp-badge--danger">AI {{ submit.evaluationStatusText }}</span>
+                    {% else %}
+                    <span class="csp-badge">AI {{ submit.evaluationStatusText }}</span>
+                    {% endif %}
+                  {% endif %}
+                  {% if submit.evaluationScore != null %}<span class="csp-badge">AI {{ submit.evaluationScore }} 分</span>{% endif %}
+                  {% if submit.suggestionCount %}<span class="csp-badge">{{ submit.suggestionCount }} 条建议</span>{% endif %}
+                  {% if not submit.reviewedAt %}<span class="csp-badge csp-badge--warn">待批改</span>{% endif %}
+                </div>
+              </div>
+              <div class="csp-submit-summary">
+                {% if submit.summaryText %}{{ submit.summaryText }}{% else %}暂无可展示的摘要，进入详情查看完整正文。{% endif %}
+              </div>
+              <div class="csp-card-actions">
+                <a class="button rounded small primary" href="{{ submit.detailUrl }}"><span class="icon icon-edit"></span> 查看并批改</a>
+              </div>
+            </article>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="csp-empty">当前筛选下暂无提交。</div>
+          {% endif %}
+        </div>
+      </section>
+
+      {% if pcount > 1 %}
+      {% set glue = '&' if queryBase else '' %}
+      <div class="csp-pager">
+        <span class="csp-count">第 {{ page }} / {{ pcount }} 页</span>
+        {% if page > 1 %}
+        <a class="button rounded" href="{{ listUrl }}?{{ queryBase }}{{ glue }}page={{ page - 1 }}">上一页</a>
+        {% endif %}
+        {% if page < pcount %}
+        <a class="button rounded" href="{{ listUrl }}?{{ queryBase }}{{ glue }}page={{ page + 1 }}">下一页</a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

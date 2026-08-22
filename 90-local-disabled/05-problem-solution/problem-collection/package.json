@@ -1,0 +1,15 @@
+{
+  "name": "problem-collection",
+  "version": "0.1.0",
+  "description": "Personal problem collection lists for HydroOJ students",
+  "main": "index.js",
+  "hydrooj": {
+    "frontend": {
+      "problem_collection.page.js": "frontend/problem_collection.page.js"
+    }
+  },
+  "devDependencies": {
+    "@hydrooj/ui-default": "^4.58.0-beta.10",
+    "hydrooj": "^5.0.0-beta.11"
+  }
+}

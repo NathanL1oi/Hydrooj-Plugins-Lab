@@ -1,0 +1,16 @@
+{
+  "name": "hydrooj-course-atr-exam-mode",
+  "version": "0.2.4",
+  "main": "index.js",
+  "license": "AGPL-3.0",
+  "dependencies": {},
+  "hydrooj": {
+    "frontend": {
+      "course_exam_entry.page.js": "frontend/course_exam_entry.page.js"
+    }
+  },
+  "devDependencies": {
+    "@hydrooj/ui-default": "^4.58.0-beta.10",
+    "hydrooj": "^5.0.0-beta.11"
+  }
+}

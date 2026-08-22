@@ -1,0 +1,83 @@
+{% import "partials/disable_sol_controls.html" as solctl with context %}
+{% import "partials/course_visibility_toggle.html" as vis with context %}
+{% extends "layout/basic.html" %}
+{% block content %}
+{% include "course_ui_style.html" %}
+{{ solctl.style() }}
+{{ vis.style() }}
+{{ set(UiContext, 'cid', cdoc.docId) }}
+<div class="row" data-sticky-parent>
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+          <h1 class="section__title"><a href="{{ url('course_detail', cid=cdoc.docId) }}">{{ _('Course') }}: {{ cdoc['title'] }}</a>{{ vis.badge(cdoc) }}</h1>
+      </div>
+      <!-- <div class="section__body">
+          {{ cdoc['title'] }}
+      </div> -->
+    </div>
+    <div class="section">
+      <div class="section__body typo richmedia">
+        {{ cdoc.content|default('')|markdown|safe }}
+      </div>
+    </div>
+    <div class="section course-bulk-section">
+      <div class="section__header course-bulk-toolbar">
+        <h2 class="section__title">章节列表</h2>
+        <div class="course-bulk-actions">
+          <button class="button rounded" type="button" data-course-bulk-action="expand">
+            <span class="icon icon-expand_more"></span> 展开全部章节
+          </button>
+          <button class="button rounded" type="button" data-course-bulk-action="collapse">
+            <span class="icon icon-expand_less"></span> 收起全部章节
+          </button>
+          {% if handler.user.hasPerm(perm.PERM_EDIT_DOMAIN) or handler.user.hasPerm(perm.PERM_EDIT_TRAINING) %}
+            {{ solctl.button('course', cdoc, solstats.course, '打开全部题解', '关闭全部题解', cdoc.docId, '', '') }}
+          {% endif %}
+        </div>
+      </div>
+      {% include "partials/course_detail.html" %}
+    </div>
+  </div>
+  <div class="medium-3 columns" data-sticky="large">
+    <div class="section side">
+      <div>
+        <ol class="menu">
+        {% if not cstdoc['enroll'] and handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+          <li class="menu__item">
+            <form action="" method="POST">
+              <input type="hidden" name="operation" value="enroll">
+              <button class="menu__link" type="submit">
+                <span class="icon icon-add"></span> {{ _('Enroll Course') }}
+              </button>
+            </form>
+          </li>
+        {% endif %}
+        {% if handler.user.hasPerm(perm.PERM_EDIT_TRAINING) %}
+          <li class="menu__item"><a class="menu__link" href="{{ url('course_edit', cid=cdoc.docId) }}">
+            <span class="icon icon-edit"></span>  {{ _('Edit') }}
+          </a></li>
+          <li class="menu__item"><a class="menu__link" href="{{ url('course_section_create', cid=cdoc.docId) }}">
+            <span class="icon icon-edit"></span> {{ _('Create Section') }}
+          </a></li>
+          {{ vis.menu_item('course', cdoc, cdoc.docId, '', '') }}
+        {% endif %}
+          <li class="menu__seperator"></li>
+        </ol>
+      </div>
+      <div class="section__body typo">
+        <dl class="large horizontal">
+          <dt>{{ _('Created By') }}</dt>
+          <dd>{{ user.render_inline(udoc, badge=false) }}</dd>
+        </dl>
+      </div>
+    </div>
+    <div class="section side">
+      <ol class="menu">
+        {{ sidemenu.render_item('list', 'course_detail', {cid:cdoc.docId}, label='sections_list', menu_item='course_detail') }}
+      </ol>
+    </div>
+    {% include "partials/course_enroll_cleanup.html" %}
+  </div>
+</div>
+{% endblock %}

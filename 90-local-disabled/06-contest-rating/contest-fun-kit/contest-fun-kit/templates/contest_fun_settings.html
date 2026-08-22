@@ -1,0 +1,111 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.cfk-grid { display: grid; gap: 14px; }
+.cfk-note { color: #64748b; font-size: 13px; line-height: 1.55; }
+.cfk-switches { display: grid; gap: 10px; }
+.cfk-switch { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
+.cfk-switch:last-child { border-bottom: 0; }
+.cfk-switch input { margin-top: 4px; }
+.cfk-switch strong { display: block; margin-bottom: 3px; }
+.cfk-two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.cfk-two textarea { min-height: 180px; }
+.cfk-message { padding: 8px 10px; border-radius: 6px; background: #ecfdf5; color: #166534; margin-bottom: 8px; }
+@media (max-width: 700px) { .cfk-two { grid-template-columns: 1fr; } }
+</style>
+<div class="row" data-sticky-parent>
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('比赛互动设置') }}</h1>
+      </div>
+      <div class="section__body cfk-grid">
+        {% for msg in messages %}
+          <div class="cfk-message">{{ msg }}</div>
+        {% endfor %}
+        <form method="post">
+          <div class="cfk-switches">
+            <label class="cfk-switch">
+              <input type="checkbox" name="enableGoal" value="1" {% if config.goalEnabled %}checked{% endif %}>
+              <span>
+                <strong>{{ _('赛前目标卡') }}</strong>
+                <span class="cfk-note">{{ _('学生报名后可填写目标题数、比赛策略和担心点。') }}</span>
+              </span>
+            </label>
+            <label class="cfk-switch">
+              <input type="checkbox" name="enableTask" value="1" {% if config.taskEnabled %}checked{% endif %}>
+              <span>
+                <strong>{{ _('比赛任务卡') }}</strong>
+                <span class="cfk-note">{{ _('右侧显示自动小目标：第一题、两题、失败后修正、冲刺 AC 等。') }}</span>
+              </span>
+            </label>
+            <label class="cfk-switch">
+              <input type="checkbox" name="enableHighlight" value="1" {% if config.highlightEnabled %}checked{% endif %}>
+              <span>
+                <strong>{{ _('首杀与高光时刻') }}</strong>
+                <span class="cfk-note">{{ _('根据比赛 AC 记录展示题目首杀、连续推进和冲刺阶段突破。') }}</span>
+              </span>
+            </label>
+            <label class="cfk-switch">
+              <input type="checkbox" name="enableTimeline" value="1" {% if config.timelineEnabled %}checked{% endif %}>
+              <span>
+                <strong>{{ _('赛后复盘时间线') }}</strong>
+                <span class="cfk-note">{{ _('比赛结束后开放独立复盘页，学生看自己，教师可按小组或学生筛选。') }}</span>
+              </span>
+            </label>
+            <label class="cfk-switch">
+              <input type="checkbox" name="enableGroupMode" value="1" {% if config.groupModeEnabled %}checked{% endif %}>
+              <span>
+                <strong>{{ _('小组参赛模式') }}</strong>
+                <span class="cfk-note">{{ _('只用于互动卡片和高光展示，不改变原比赛报名、评测和榜单。') }}</span>
+              </span>
+            </label>
+            <label class="cfk-switch">
+              <input type="checkbox" name="groupSelectOpen" value="1" {% if config.groupSelectOpen %}checked{% endif %}>
+              <span>
+                <strong>{{ _('允许学生自行选择小组') }}</strong>
+                <span class="cfk-note">{{ _('关闭后只能由教师在下方分配小组。') }}</span>
+              </span>
+            </label>
+          </div>
+
+          {% if classTeamSource and classTeamSource.enabled %}
+          <label class="cfk-switch">
+            <input type="checkbox" name="useClassTeams" value="1">
+            <span>
+              <strong>{{ _('保存时套用班级小队') }}</strong>
+              <span class="cfk-note">{{ _('将当前子域的班级小队复制为本场比赛小组，会覆盖下方小组列表和教师分组；保存后仍可在本场比赛中临时微调。') }}</span>
+              <span class="cfk-note">{{ _('当前班级小队') }}: {{ classTeamSource.teams.length }}</span>
+            </span>
+          </label>
+          {% else %}
+          <p class="cfk-note">{{ _('未检测到班级小队插件；仍可使用下方文本手动为本场比赛分组。') }}</p>
+          {% endif %}
+
+          <div class="cfk-two">
+            <div>
+              <label>
+                <strong>{{ _('小组列表') }}</strong>
+                <textarea name="groupNames" class="textbox" placeholder="{{ _('每行一个小组名') }}">{{ groupNamesText }}</textarea>
+              </label>
+              <p class="cfk-note">{{ _('例如：第一组、第二组、冲刺组。') }}</p>
+            </div>
+            <div>
+              <label>
+                <strong>{{ _('教师分组') }}</strong>
+                <textarea name="teamAssignments" class="textbox" placeholder="{{ _('格式：小组名: uid, 用户名') }}">{{ assignmentsText }}</textarea>
+              </label>
+              <p class="cfk-note">{{ _('每行一个小组，冒号后可以写 uid、用户名或邮箱。保存时会重建本场比赛的小组分配。') }}</p>
+            </div>
+          </div>
+
+          <button class="rounded primary button" type="submit">{{ _('保存设置') }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns" data-sticky="large">
+    {% include "partials/contest_sidebar_management.html" %}
+  </div>
+</div>
+{% endblock %}

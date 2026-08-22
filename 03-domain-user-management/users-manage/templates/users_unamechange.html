@@ -1,0 +1,34 @@
+{% extends "users_base.html" %}
+{% block users_content %}
+<div class="section">
+    <div class="section__header">
+        <h1 class="section__title">{{ _('users_unamechange') }}</h1>
+    </div>
+    <div class="section__body">
+        <form method="post">
+          {{ form.form_text({
+            label:'Username / UID',
+            name:'uidOrName',
+            autofocus:true,
+            required:true,
+            value:uidOrName
+          }) }}
+          {{ form.form_text({
+            label:'新用户名',
+            name:'newUname',
+            required:true
+          }) }}
+            <div class="row">
+                <div class="columns">
+                    <button type="submit" class="rounded primary button">
+                        {{ _('Ok') }}
+                    </button>
+                    <button type="button" class="rounded button" onclick="window.history.go(-1)">
+                        {{ _('Cancel') }}
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

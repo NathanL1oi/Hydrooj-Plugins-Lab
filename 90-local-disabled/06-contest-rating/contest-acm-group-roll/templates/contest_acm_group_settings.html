@@ -1,0 +1,109 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.cagr-settings { display: grid; gap: 14px; }
+.cagr-note { color: #64748b; font-size: 13px; line-height: 1.55; }
+.cagr-message { padding: 8px 10px; border-radius: 6px; background: #ecfdf5; color: #166534; }
+.cagr-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.cagr-field { display: grid; gap: 5px; }
+.cagr-field strong { display: block; }
+.cagr-switch { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; }
+.cagr-switch input { margin-top: 4px; }
+.cagr-source { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.cagr-source label { border: 1px solid #dbe3ef; border-radius: 8px; padding: 10px; background: #fff; cursor: pointer; }
+.cagr-source input { margin-right: 4px; }
+.cagr-source b { display: block; margin-bottom: 3px; }
+.cagr-textarea { min-height: 180px; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+.theme--dark .cagr-note { color: #94a3b8; }
+.theme--dark .cagr-source label {
+  border-color: rgba(148, 163, 184, .26);
+  background: rgba(15, 23, 42, .42);
+  color: #dbe7f5;
+}
+@media (max-width: 900px) {
+  .cagr-grid, .cagr-source { grid-template-columns: 1fr; }
+}
+</style>
+<div class="row" data-sticky-parent>
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('XCPC 小组榜设置') }}</h1>
+      </div>
+      <div class="section__body cagr-settings">
+        {% for msg in messages %}
+          <div class="cagr-message">{{ msg }}</div>
+        {% endfor %}
+        <form method="post">
+          <label class="cagr-switch">
+            <input type="checkbox" name="enabled" value="1" {% if config.enabled %}checked{% endif %}>
+            <span>
+              <strong>{{ _('启用 XCPC 小组榜与滚榜') }}</strong>
+              <span class="cagr-note">{{ _('启用后，学生端和管理员端都显示 XCPC 小组榜；封榜后学生端固定在封榜时刻，比赛结束后开放最终榜与滚榜。') }}</span>
+            </span>
+          </label>
+          <label class="cagr-switch">
+            <input type="checkbox" name="showHiddenAttempts" value="1" {% if config.showHiddenAttempts %}checked{% endif %}>
+            <span>
+              <strong>{{ _('封榜期显示隐藏提交标记') }}</strong>
+              <span class="cagr-note">{{ _('封榜后不公开结果，但可在题目格中提示有封榜提交。') }}</span>
+            </span>
+          </label>
+
+          <div class="cagr-grid">
+            <label class="cagr-field">
+              <strong>{{ _('封榜时间') }}</strong>
+              <input class="textbox" type="number" min="0" max="10080" step="1" name="freezeMinutes" value="{{ config.freezeMinutes }}">
+              <span class="cagr-note">{{ _('单位：比赛结束前多少分钟封榜。0 表示不封榜。') }}</span>
+            </label>
+            <label class="cagr-field">
+              <strong>{{ _('错误罚时') }}</strong>
+              <input class="textbox" type="number" min="0" max="240" step="1" name="penaltyMinutes" value="{{ config.penaltyMinutes }}">
+              <span class="cagr-note">{{ _('单位：分钟。AC 前每次错误提交增加该罚时。') }}</span>
+            </label>
+          </div>
+
+          <div class="cagr-field">
+            <strong>{{ _('小组来源') }}</strong>
+            <div class="cagr-source">
+              <label>
+                <input type="radio" name="teamSource" value="contestFun" {% if config.teamSource == 'contestFun' %}checked{% endif %}>
+                <b>{{ _('小组参赛模式') }}</b>
+                <span class="cagr-note">{{ sourcePreview.contestFun }} {{ _('组') }}</span>
+              </label>
+              <label>
+                <input type="radio" name="teamSource" value="classTeam" {% if config.teamSource == 'classTeam' %}checked{% endif %}>
+                <b>{{ _('班级小队') }}</b>
+                <span class="cagr-note">{{ sourcePreview.classTeam }} {{ _('组') }}</span>
+              </label>
+              <label>
+                <input type="radio" name="teamSource" value="domainGroup" {% if config.teamSource == 'domainGroup' %}checked{% endif %}>
+                <b>{{ _('Hydro 域小组') }}</b>
+                <span class="cagr-note">{{ sourcePreview.domainGroup }} {{ _('组') }}</span>
+              </label>
+              <label>
+                <input type="radio" name="teamSource" value="manual" {% if config.teamSource == 'manual' %}checked{% endif %}>
+                <b>{{ _('手动名单') }}</b>
+                <span class="cagr-note">{{ sourcePreview.manual }} {{ _('组') }}</span>
+              </label>
+            </div>
+          </div>
+
+          <label class="cagr-field">
+            <strong>{{ _('手动小组名单') }}</strong>
+            <textarea class="textbox cagr-textarea" name="manualAssignments" placeholder="{{ _('格式：小组名: uid, 用户名, 邮箱') }}">{{ manualAssignmentsText }}</textarea>
+            <span class="cagr-note">{{ _('仅当小组来源选择“手动名单”时保存并使用。每行一个小组。') }}</span>
+          </label>
+
+          <button class="rounded primary button" type="submit">{{ _('保存设置') }}</button>
+          <a class="rounded button" href="{{ url('contest_acm_group_scoreboard', tid=tdoc.docId) }}">{{ _('查看 XCPC 小组榜') }}</a>
+          <a class="rounded button" href="{{ url('contest_acm_group_roll', tid=tdoc.docId) }}">{{ _('预览滚榜') }}</a>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns" data-sticky="large">
+    {% include "partials/contest_sidebar_management.html" %}
+  </div>
+</div>
+{% endblock %}

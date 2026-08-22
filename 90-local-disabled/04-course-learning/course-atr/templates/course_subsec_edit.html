@@ -1,0 +1,413 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+{% include "course_ui_style.html" %}
+<style>
+.course-atr-problem-picker {
+  margin: 0 0 1rem;
+  padding: 1rem;
+  border: 1px solid #d8e4f2;
+  border-radius: 6px;
+  background: #fbfdff;
+}
+.course-atr-problem-picker__tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  align-items: flex-end;
+}
+.course-atr-problem-picker__tools label {
+  flex: 1 1 11rem;
+  margin-bottom: 0;
+}
+.course-atr-problem-picker__actions {
+  display: flex;
+  flex: 1 1 14rem;
+  gap: .5rem;
+  align-items: center;
+}
+.course-atr-problem-picker__meta {
+  margin: .75rem 0 .25rem;
+  color: #6b7280;
+  font-size: .875rem;
+}
+.course-atr-problem-picker table {
+  margin: .5rem 0;
+  table-layout: fixed;
+}
+.course-atr-problem-picker .col--check { width: 3rem; text-align: center; }
+.course-atr-problem-picker .col--pid { width: 6rem; }
+.course-atr-problem-picker .col--difficulty { width: 7rem; }
+.course-atr-problem-picker .col--stat { width: 7rem; }
+.course-atr-problem-picker__tag {
+  display: inline-block;
+  margin: 0 .25rem .25rem 0;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #eef2ff;
+  color: #374151;
+  font-size: .75rem;
+}
+.course-atr-problem-picker__pager {
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+}
+.course-atr-selected-sort {
+  margin: .5rem 0 1rem;
+  padding: .9rem;
+  border: 1px solid #d8e4f2;
+  border-radius: 6px;
+  background: #fff;
+}
+.course-atr-selected-sort__title {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 .65rem;
+  color: #374151;
+  font-size: .875rem;
+  font-weight: 600;
+}
+.course-atr-selected-sort__title .button {
+  margin: 0 !important;
+  height: 1.8rem;
+  padding: 0 .75rem;
+  border-color: #d8e4f2;
+  background: #f8fbff;
+  color: #45627e;
+  font-size: .75rem;
+  line-height: 1.7rem;
+}
+.course-atr-selected-sort__list {
+  display: grid;
+  gap: .5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.course-atr-selected-sort__row {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr) minmax(16rem, auto);
+  gap: .65rem;
+  align-items: center;
+  padding: .6rem .65rem;
+  border: 1px solid #d8e4f2;
+  border-radius: 6px;
+  background: #fff;
+  transition: background .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.course-atr-selected-sort__row.is-swap-main {
+  border-color: #fb923c;
+  background: #fff7ed;
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, .2);
+}
+.course-atr-selected-sort__row.is-swap-peer {
+  border-color: #60a5fa;
+  background: #eff6ff;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, .16);
+}
+.course-atr-selected-sort__index {
+  display: inline-flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #e8f2ff;
+  color: #111827;
+}
+.course-atr-selected-sort__name {
+  min-width: 0;
+  color: #172033;
+  font-size: .875rem;
+  line-height: 1.35;
+  word-break: break-word;
+}
+.course-atr-selected-sort__problem {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+  align-items: baseline;
+}
+.course-atr-selected-sort__pid {
+  font-weight: 700;
+}
+.course-atr-selected-sort__title-text {
+  color: #374151;
+}
+.course-atr-selected-sort__docid {
+  color: #8792a2;
+  font-size: .75rem;
+}
+.course-atr-selected-sort__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: .35rem;
+}
+.course-atr-selected-sort__actions .button {
+  margin: 0 !important;
+  height: 1.75rem;
+  min-width: 3.1rem;
+  padding: 0 .5rem;
+  line-height: 1.65rem;
+  font-size: .75rem;
+}
+.theme--dark .course-atr-problem-picker__meta,
+.theme--dark .course-atr-selected-sort__docid {
+  color: var(--course-muted, #94a3b8);
+}
+.theme--dark .course-atr-problem-picker,
+.theme--dark .course-atr-selected-sort {
+  border-color: var(--course-border, #3a4656) !important;
+  background: var(--course-bg-muted, #1f2630) !important;
+  color: var(--course-text, #cbd5e1);
+  box-shadow: none;
+}
+.theme--dark .course-atr-problem-picker table,
+.theme--dark .course-atr-problem-picker table tbody tr {
+  color: var(--course-text, #cbd5e1);
+}
+.theme--dark .course-atr-problem-picker__tag {
+  background: var(--course-bg-soft, #242b35);
+  color: var(--course-text, #cbd5e1);
+}
+.theme--dark .course-atr-selected-sort__title,
+.theme--dark .course-atr-selected-sort__title-text,
+.theme--dark .course-atr-selected-sort__name {
+  color: var(--course-heading, #e2e8f0);
+}
+.theme--dark .course-atr-selected-sort__title .button {
+  border-color: var(--course-border, #3a4656);
+  background: var(--course-bg-soft, #242b35);
+  color: var(--course-link, #7ab8ff);
+}
+.theme--dark .course-atr-selected-sort__row {
+  border-color: var(--course-border-soft, #303a48) !important;
+  background: var(--course-bg-card, #1b2029) !important;
+  color: var(--course-text, #cbd5e1);
+  box-shadow: none;
+}
+.theme--dark .course-atr-selected-sort__row:hover {
+  background: var(--course-bg-soft, #242b35) !important;
+}
+.theme--dark .course-atr-selected-sort__index {
+  background: var(--course-bg-soft, #242b35);
+  color: var(--course-link, #7ab8ff);
+}
+.theme--dark .course-atr-selected-sort__pid {
+  color: var(--course-link, #7ab8ff);
+}
+.theme--dark .course-atr-selected-sort__actions .button {
+  border-color: var(--course-border, #3a4656);
+  background: var(--course-bg-soft, #242b35);
+  color: var(--course-link, #7ab8ff);
+}
+.theme--dark .course-atr-selected-sort__actions .button:hover:not(:disabled) {
+  background: var(--course-bg-muted, #1a1f27);
+  color: var(--course-heading, #e2e8f0);
+}
+.theme--dark .course-atr-selected-sort__actions .button:disabled {
+  border-color: var(--course-border-soft, #303a48);
+  background: transparent;
+  color: var(--course-muted, #94a3b8);
+  opacity: .58;
+}
+.theme--dark .course-atr-selected-sort__row.is-swap-main {
+  border-color: #fb923c !important;
+  background: rgba(124, 45, 18, .32) !important;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, .18);
+}
+.theme--dark .course-atr-selected-sort__row.is-swap-peer {
+  border-color: #60a5fa !important;
+  background: rgba(30, 64, 175, .28) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, .16);
+}
+html.hydro-user-background-enabled .course-atr-problem-picker,
+html.hydro-user-background-enabled .course-atr-selected-sort {
+  border-color: var(--course-border) !important;
+  background: var(--course-bg-muted) !important;
+  color: var(--course-text);
+  box-shadow: none !important;
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+}
+html.hydro-user-background-enabled .course-atr-problem-picker table,
+html.hydro-user-background-enabled .course-atr-problem-picker table tbody tr {
+  color: var(--course-text);
+}
+html.hydro-user-background-enabled .course-atr-problem-picker__meta,
+html.hydro-user-background-enabled .course-atr-selected-sort__docid {
+  color: var(--course-muted);
+}
+html.hydro-user-background-enabled .course-atr-problem-picker__tag,
+html.hydro-user-background-enabled .course-atr-selected-sort__index {
+  background: var(--course-bg-soft) !important;
+  color: var(--course-link, var(--course-text)) !important;
+}
+html.hydro-user-background-enabled .course-atr-selected-sort__title,
+html.hydro-user-background-enabled .course-atr-selected-sort__title-text,
+html.hydro-user-background-enabled .course-atr-selected-sort__name {
+  color: var(--course-heading) !important;
+}
+html.hydro-user-background-enabled .course-atr-selected-sort__title .button,
+html.hydro-user-background-enabled .course-atr-selected-sort__actions .button {
+  border-color: var(--course-border) !important;
+  background: var(--course-bg-soft) !important;
+  color: var(--course-link, var(--course-text)) !important;
+  box-shadow: none !important;
+}
+html.hydro-user-background-enabled .course-atr-selected-sort__row {
+  border-color: var(--course-border-soft) !important;
+  background: var(--course-bg-nested) !important;
+  color: var(--course-text);
+  box-shadow: none !important;
+}
+html.hydro-user-background-enabled .course-atr-selected-sort__row:hover {
+  background: var(--course-bg-soft) !important;
+}
+html.hydro-user-background-enabled .course-atr-selected-sort__row.is-swap-main {
+  border-color: #fb923c !important;
+  background: rgba(249, 115, 22, .16) !important;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, .16) !important;
+}
+html.hydro-user-background-enabled .course-atr-selected-sort__row.is-swap-peer {
+  border-color: #60a5fa !important;
+  background: rgba(37, 99, 235, .14) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, .14) !important;
+}
+@media screen and (max-width: 720px) {
+  .course-atr-selected-sort__row { grid-template-columns: 2rem minmax(0, 1fr); }
+  .course-atr-selected-sort__actions { grid-column: 2; justify-content: flex-start; }
+}
+</style>
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">编辑小节</h1>
+      </div>
+      <div class="section__body">
+        <form method="post">
+          <div class="row">
+            <div class="medium-9 columns">
+              <label>
+                标题
+                <input name="title" placeholder="请输入小节标题" value="{{ ssdoc.title|default('') }}" class="textbox"
+                  autofocus>
+              </label>
+            </div>
+            <div class="medium-3 columns">
+              <label>
+                排序权重
+                <input name="pin" placeholder="数值越大越靠前" value="{{ ssdoc.pin|default(0) }}" class="textbox">
+                <p class="help-text">数值越大越靠前。</p>
+              </label>
+            </div>
+          </div>
+          <div class="row">
+            <div class="medium-12 columns">
+              <label>
+                题目
+                <input type="text" name="pids" value="{{ ssdoc.pids }}" placeholder="用英文逗号分隔，如 1001,1002" class="textbox autocomplete-dummy">
+              </label>
+              <div class="course-atr-selected-sort" data-selected-problem-sort>
+                <div class="course-atr-selected-sort__title">
+                  <span>调整题目顺序</span>
+                  <button type="button" class="rounded button" data-selected-sort-by-pid>按 PID 排序</button>
+                </div>
+                <ol class="course-atr-selected-sort__list" data-selected-problem-list></ol>
+              </div>
+              <div class="course-atr-problem-picker" data-search-url="{{ url('course_problem_search') }}" data-problem-url-template="{{ url('problem_detail', pid='__pid__') }}">
+                <div class="course-atr-problem-picker__tools">
+                  <label>
+                    关键词
+                    <input type="text" class="textbox" data-problem-search-q placeholder="P1000 / 标题 / Trie001">
+                  </label>
+                  <label>
+                    标签
+                    <input type="text" class="textbox" data-problem-search-tags placeholder="#Trie001. 字典树入门">
+                  </label>
+                  <label>
+                    难度
+                    <input type="text" class="textbox" data-problem-search-difficulty placeholder="入门 / 普及-">
+                  </label>
+                  <div class="course-atr-problem-picker__actions">
+                    <button type="button" class="rounded button" data-problem-search-submit>搜索</button>
+                    <button type="button" class="rounded button" data-problem-search-add>加入选中</button>
+                  </div>
+                </div>
+                <div class="course-atr-problem-picker__meta">
+                  当前已选 <span data-problem-selected-count>0</span> 题
+                  <span data-problem-search-count></span>
+                </div>
+                <table class="data-table">
+                  <colgroup>
+                    <col class="col--check">
+                    <col class="col--pid">
+                    <col>
+                    <col class="col--difficulty">
+                    <col class="col--stat">
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th><input type="checkbox" data-problem-search-check-all></th>
+                      <th>题号</th>
+                      <th>题目</th>
+                      <th>难度</th>
+                      <th>通过</th>
+                    </tr>
+                  </thead>
+                  <tbody data-problem-search-results>
+                    <tr><td colspan="5">输入条件后搜索题目</td></tr>
+                  </tbody>
+                </table>
+                <div class="course-atr-problem-picker__pager">
+                  <button type="button" class="rounded button" data-problem-search-prev>上一页</button>
+                  <span data-problem-search-page>1 / 1</span>
+                  <button type="button" class="rounded button" data-problem-search-next>下一页</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="columns">
+              <label>
+                描述
+                <textarea name="content" class="textbox" data-markdown
+                  style="height: 200px">{{ ssdoc['content']|default('') }}</textarea>
+              </label>
+            </div>
+          </div>
+          <div class="row">
+            <div class="columns">
+              {% if page_name == 'course_subsec_edit' %}
+              <button type="submit" class="rounded primary button">
+                更新
+              </button>
+              {% if handler.user.hasPerm(perm.PERM_EDIT_TRAINING) %}
+              <button name="operation" value="delete" type="submit" class="rounded button">
+                删除
+              </button>
+              {% endif %}
+              {% else %}
+              <button type="submit" class="rounded primary button">
+                创建
+              </button>
+              {% endif %}
+              <button type="button" class="rounded button" onclick="window.history.go(-1)">
+                取消
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    {% include 'components/md_hint.html' %}
+  </div>
+</div>
+{% endblock %}

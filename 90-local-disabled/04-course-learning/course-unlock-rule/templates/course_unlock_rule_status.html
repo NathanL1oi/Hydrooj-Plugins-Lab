@@ -1,0 +1,39 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">课程解锁状态 - {{ cdoc.title }}</h1>
+  </div>
+  <div class="section__body">
+    <p>本课程规则：{{ '开启' if rule.enabled else '关闭' }}，前置完成要求 {{ rule.requiredRate }}%。</p>
+  </div>
+  <div class="section__body no-padding">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>顺序</th>
+          <th>小节</th>
+          <th>当前完成</th>
+          <th>前置小节</th>
+          <th>前置完成</th>
+          <th>状态</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td>{{ row.order }}</td>
+          <td><a href="{{ url('course_subsec_detail', cid=cidText, csid=row.csidText, ssid=row.ssidText) }}">{{ row.sectionTitle }} / {{ row.title }}</a></td>
+          <td>{{ row.selfProgress.text }}</td>
+          <td>{{ row.prereqTitle }}</td>
+          <td>{{ row.prereqProgress.text }}</td>
+          <td>{{ '已解锁' if row.unlocked or not rule.enabled else '未解锁' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6">暂无课程小节。</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

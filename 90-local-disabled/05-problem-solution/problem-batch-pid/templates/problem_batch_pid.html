@@ -1,0 +1,181 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.pbp-row { display: grid; grid-template-columns: repeat(5, minmax(140px, 1fr)); gap: 16px; align-items: end; max-width: 980px; }
+.pbp-row .form__item { margin: 0; }
+.pbp-row .form__label { display: block; margin-bottom: 6px; color: #4b5563; font-weight: 500; }
+.pbp-small { width: 100%; box-sizing: border-box; }
+.pbp-order-input { min-height: 150px; width: 100%; box-sizing: border-box; font-family: Consolas, Monaco, monospace; line-height: 1.55; }
+.pbp-help { color: #6b7280; font-size: 13px; line-height: 1.6; margin-top: 6px; }
+.pbp-table { width: 100%; table-layout: fixed; }
+.pbp-table th, .pbp-table td { word-break: break-word; vertical-align: top; }
+.pbp-status { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; line-height: 1.6; background: #e5e7eb; color: #374151; }
+.pbp-status.ok { background: #dcfce7; color: #166534; }
+.pbp-status.noop { background: #fef3c7; color: #92400e; }
+.pbp-status.reserved { background: #ede9fe; color: #5b21b6; }
+.pbp-status.error { background: #fee2e2; color: #991b1b; }
+.pbp-status.done { background: #dbeafe; color: #1d4ed8; }
+.pbp-messages { background: #f8fafc; border: 1px solid #d1d5db; padding: 10px; margin: 0 0 1em; font-size: .9em; line-height: 1.65; overflow: auto; max-height: 260px; white-space: pre-wrap; }
+.pbp-hidden { display: none !important; }
+.theme--dark .pbp-row .form__label,
+.theme--dark .pbp-help {
+  color: #9fb0c6;
+}
+.theme--dark .pbp-messages {
+  background: rgba(15, 23, 42, .42);
+  border-color: rgba(148, 163, 184, .26);
+  color: #dbe7f5;
+}
+.theme--dark .pbp-status { background: rgba(148, 163, 184, .18); color: #e2e8f0; }
+.theme--dark .pbp-status.ok { background: rgba(22, 101, 52, .32); color: #86efac; }
+.theme--dark .pbp-status.noop { background: rgba(146, 64, 14, .34); color: #fcd34d; }
+.theme--dark .pbp-status.reserved { background: rgba(91, 33, 182, .32); color: #ddd6fe; }
+.theme--dark .pbp-status.error { background: rgba(127, 29, 29, .34); color: #fca5a5; }
+.theme--dark .pbp-status.done { background: rgba(37, 99, 235, .24); color: #bfdbfe; }
+@media screen and (max-width: 720px) {
+  .pbp-row { grid-template-columns: 1fr; }
+}
+</style>
+
+<div class="row">
+  <div class="medium-12 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">批量修改题号</h1>
+      </div>
+      <div class="section__body">
+        {% if messages and messages|length %}
+        <pre class="pbp-messages">{% for m in messages %}{{ m }}
+{% endfor %}</pre>
+        {% endif %}
+
+        <blockquote class="note" style="margin-bottom:1.2em">
+          <p>这里的输入顺序就是最终重新编号顺序。Hydro 勾选后带入的顺序可能是题库原排序；如果要自定义顺序，请直接在下方粘贴或调整 PID / 题目名列表。</p>
+        </blockquote>
+
+        <form method="post">
+          <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+
+          <div class="form__item">
+            <label class="form__label">自定义题目顺序</label>
+            <textarea name="problemIds" class="textbox pbp-order-input" placeholder="Z027&#9;妙妙咒语&#10;Z141&#9;Inversion&#10;&#9;分割&#10;Z028&#9;枢纽">{{ problemIds|default('') }}</textarea>
+            <div class="pbp-help">
+              支持直接粘贴 Excel 两列：第一列 PID/docId，第二列题目名；第一列有值时按 PID/docId 查找，第一列为空时按题目名精确查找。也可以只粘贴一列 PID，如 <code>C001 Z001 B020 B001</code>。系统会严格按这里的行序生成新 PID；某行题目未找到或整行为空时会保留该新 PID，执行时跳过，方便之后单独补题。
+            </div>
+          </div>
+
+          <div class="pbp-row" style="margin:.8em 0 1em">
+            <div class="form__item">
+              <label class="form__label">前缀</label>
+              <input name="prefix" class="textbox pbp-small" value="{{ prefix|default('D') }}" placeholder="D">
+            </div>
+            <div class="form__item">
+              <label class="form__label">排号方式</label>
+              <select name="sequenceType" class="select pbp-small" data-pbp-sequence-type>
+                <option value="number"{% if sequenceType|default('number') == 'number' %} selected{% endif %}>数字递进</option>
+                <option value="letter"{% if sequenceType|default('number') == 'letter' %} selected{% endif %}>字母递进</option>
+              </select>
+            </div>
+            <div class="form__item">
+              <label class="form__label">起始编号</label>
+              <input name="start" type="number" class="textbox pbp-small" value="{{ start|default(1) }}" data-pbp-sequence-input="number">
+            </div>
+            <div class="form__item">
+              <label class="form__label">数字宽度</label>
+              <input name="width" type="number" class="textbox pbp-small" value="{{ width|default(2) }}" data-pbp-sequence-input="number">
+            </div>
+            <div class="form__item">
+              <label class="form__label">起始字母</label>
+              <input name="alphaStart" class="textbox pbp-small" value="{{ alphaStart|default('A') }}" placeholder="A" data-pbp-sequence-input="letter">
+            </div>
+          </div>
+          <div class="pbp-help" style="margin-top:-.4em;margin-bottom:1em">
+            数字递进沿用 <code>D01, D02</code>；字母递进使用“前缀 + 字母”，例如前缀 <code>CC09</code>、起始字母 <code>A</code> 会生成 <code>CC09A, CC09B, CC09C</code>，超过 <code>Z</code> 后继续 <code>AA, AB</code>。
+          </div>
+
+          <div class="form__item" style="margin-top:1em">
+            <div class="form__input" style="display:flex;gap:8px;flex-wrap:wrap">
+              <button type="submit" name="action" value="preview" class="button">
+                <span class="icon icon-check"></span> 预览映射
+              </button>
+              <button type="submit" name="action" value="execute" class="button rounded primary" onclick="return confirm('确认按当前输入顺序批量修改 PID？');">
+                <span class="icon icon-play"></span> 确认修改
+              </button>
+              <a href="{{ url('problem_main') }}" class="button rounded">返回题库</a>
+            </div>
+          </div>
+        </form>
+        <script>
+        (function () {
+          function closestField(control) {
+            var node = control;
+            while (node && node !== document) {
+              if (node.classList && node.classList.contains('form__item')) return node;
+              node = node.parentNode;
+            }
+            return control.parentNode;
+          }
+
+          function toggleProblemBatchPidSequence() {
+            var select = document.querySelector('[data-pbp-sequence-type]');
+            if (!select) return;
+            var mode = select.value === 'letter' ? 'letter' : 'number';
+            var controls = document.querySelectorAll('[data-pbp-sequence-input]');
+            for (var i = 0; i < controls.length; i++) {
+              var control = controls[i];
+              var active = control.getAttribute('data-pbp-sequence-input') === mode;
+              var field = closestField(control);
+              if (field && field.classList) field.classList.toggle('pbp-hidden', !active);
+              control.disabled = !active;
+            }
+          }
+
+          toggleProblemBatchPidSequence();
+          var select = document.querySelector('[data-pbp-sequence-type]');
+          if (select) select.addEventListener('change', toggleProblemBatchPidSequence);
+          document.addEventListener('vjContentNew', toggleProblemBatchPidSequence);
+        })();
+        </script>
+      </div>
+    </div>
+
+    {% if rows and rows|length %}
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">映射预览</h1>
+      </div>
+      <div class="section__body no-padding">
+        <table class="data-table pbp-table">
+          <thead>
+            <tr>
+              <th style="width:70px">顺序</th>
+              <th style="width:90px">docId</th>
+              <th>查找输入</th>
+              <th>题目</th>
+              <th style="width:120px">原 PID</th>
+              <th style="width:120px">新 PID</th>
+              <th style="width:90px">状态</th>
+              <th>说明</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+            <tr>
+              <td>{{ row.lineNo }}</td>
+              <td>{% if row.docId %}{{ row.docId }}{% else %}-{% endif %}</td>
+              <td><code>{{ row.source }}</code></td>
+              <td>{% if row.oldTitle %}{{ row.oldTitle }}{% else %}-{% endif %}</td>
+              <td>{% if row.oldPid %}<code>{{ row.oldPid }}</code>{% else %}-{% endif %}</td>
+              <td>{% if row.newPid %}<code>{{ row.newPid }}</code>{% else %}-{% endif %}</td>
+              <td><span class="pbp-status {{ row.status }}">{{ row.status }}</span></td>
+              <td>{{ row.message }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

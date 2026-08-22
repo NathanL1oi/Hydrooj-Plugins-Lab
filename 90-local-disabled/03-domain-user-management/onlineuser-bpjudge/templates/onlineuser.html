@@ -1,0 +1,468 @@
+{% import "components/user.html" as user with context %}
+{% import "components/nothing.html" as nothing with context %}
+{% extends "layout/basic.html" %}
+
+{% block content %}
+<style>
+.onlineuser-page {
+  --ou-surface: rgba(255, 255, 255, .72);
+  --ou-surface-soft: rgba(248, 250, 252, .70);
+  --ou-surface-hover: rgba(239, 246, 255, .64);
+  --ou-head: rgba(255, 255, 255, .38);
+  --ou-border: rgba(226, 234, 242, .74);
+  --ou-border-soft: rgba(226, 234, 242, .52);
+  --ou-text: #24364b;
+  --ou-muted: #718096;
+  --ou-accent: #4f8bd6;
+  --ou-accent-soft: rgba(79, 139, 214, .14);
+  --ou-online-bg: rgba(34, 197, 94, .14);
+  --ou-online-text: #15803d;
+  --ou-offline-bg: rgba(100, 116, 139, .14);
+  --ou-offline-text: #64748b;
+  --ou-shadow: 0 16px 36px rgba(15, 23, 42, .10);
+}
+.theme--dark .onlineuser-page,
+.theme-dark .onlineuser-page,
+.theme_dark .onlineuser-page,
+[data-theme="dark"] .onlineuser-page,
+body.dark .onlineuser-page {
+  --ou-surface: rgba(31, 36, 44, .68);
+  --ou-surface-soft: rgba(24, 30, 39, .58);
+  --ou-surface-hover: rgba(42, 52, 66, .64);
+  --ou-head: rgba(36, 43, 53, .48);
+  --ou-border: rgba(58, 70, 86, .72);
+  --ou-border-soft: rgba(58, 70, 86, .48);
+  --ou-text: #e2e8f0;
+  --ou-muted: #94a3b8;
+  --ou-accent: #7aa7e4;
+  --ou-accent-soft: rgba(122, 167, 228, .16);
+  --ou-online-bg: rgba(34, 197, 94, .18);
+  --ou-online-text: #86efac;
+  --ou-offline-bg: rgba(148, 163, 184, .14);
+  --ou-offline-text: #cbd5e1;
+  --ou-shadow: 0 16px 36px rgba(0, 0, 0, .18);
+}
+@media (prefers-color-scheme: dark) {
+  .onlineuser-page {
+    --ou-surface: rgba(31, 36, 44, .68);
+    --ou-surface-soft: rgba(24, 30, 39, .58);
+    --ou-surface-hover: rgba(42, 52, 66, .64);
+    --ou-head: rgba(36, 43, 53, .48);
+    --ou-border: rgba(58, 70, 86, .72);
+    --ou-border-soft: rgba(58, 70, 86, .48);
+    --ou-text: #e2e8f0;
+    --ou-muted: #94a3b8;
+    --ou-accent: #7aa7e4;
+    --ou-accent-soft: rgba(122, 167, 228, .16);
+    --ou-online-bg: rgba(34, 197, 94, .18);
+    --ou-online-text: #86efac;
+    --ou-offline-bg: rgba(148, 163, 184, .14);
+    --ou-offline-text: #cbd5e1;
+    --ou-shadow: 0 16px 36px rgba(0, 0, 0, .18);
+  }
+}
+.onlineuser-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 16px;
+  align-items: start;
+}
+.onlineuser-main.section,
+.onlineuser-side.section {
+  overflow: hidden;
+  border: 1px solid var(--ou-border);
+  border-radius: 8px;
+  background: var(--ou-surface);
+  box-shadow: var(--ou-shadow);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+}
+.onlineuser-main .section__header,
+.onlineuser-side .section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-color: var(--ou-border-soft);
+  background: var(--ou-head);
+}
+.onlineuser-title-wrap {
+  min-width: 0;
+}
+.onlineuser-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--ou-text);
+}
+.onlineuser-title .icon {
+  color: var(--ou-accent);
+}
+.onlineuser-subtitle {
+  margin: 4px 0 0;
+  color: var(--ou-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.onlineuser-actions {
+  flex: 0 0 auto;
+}
+.onlineuser-refresh.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  border-color: var(--ou-border);
+  border-radius: 8px;
+  background: var(--ou-surface-soft);
+  color: var(--ou-text);
+  box-shadow: none;
+}
+.onlineuser-refresh.button:hover {
+  border-color: var(--ou-accent);
+  background: var(--ou-accent-soft);
+  color: var(--ou-text);
+}
+.onlineuser-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--ou-border-soft);
+  background: linear-gradient(180deg, var(--ou-head), transparent);
+}
+.onlineuser-stat {
+  min-width: 0;
+  border: 1px solid var(--ou-border-soft);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: var(--ou-surface-soft);
+}
+.onlineuser-stat__label {
+  display: block;
+  overflow: hidden;
+  color: var(--ou-muted);
+  font-size: 12px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.onlineuser-stat__value {
+  display: block;
+  margin-top: 4px;
+  overflow: hidden;
+  color: var(--ou-text);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.onlineuser-table-wrap {
+  overflow-x: auto;
+}
+.onlineuser-table {
+  min-width: 760px;
+  table-layout: fixed;
+}
+.onlineuser-table .col--uid {
+  width: 72px;
+}
+.onlineuser-table .col--user {
+  width: 30%;
+}
+.onlineuser-table .col--status {
+  width: 106px;
+}
+.onlineuser-table .col--last {
+  width: 170px;
+}
+.onlineuser-table .col--active {
+  width: 136px;
+}
+.onlineuser-table .col--hits {
+  width: 84px;
+}
+.onlineuser-table th,
+.onlineuser-table td {
+  vertical-align: middle;
+}
+.onlineuser-table thead th {
+  border-color: var(--ou-border-soft);
+  background: var(--ou-surface-soft);
+  color: var(--ou-muted);
+  font-weight: 700;
+}
+.onlineuser-table tbody tr {
+  color: var(--ou-text);
+  transition: background .16s ease;
+}
+.onlineuser-table tbody tr:hover {
+  background: var(--ou-surface-hover);
+}
+.onlineuser-table tbody td {
+  border-color: var(--ou-border-soft);
+}
+.onlineuser-uid,
+.onlineuser-last,
+.onlineuser-active,
+.onlineuser-hits {
+  color: var(--ou-muted);
+  font-size: 13px;
+}
+.onlineuser-user {
+  min-width: 0;
+}
+.onlineuser-last small {
+  display: block;
+  margin-top: 2px;
+  color: var(--ou-muted);
+}
+.onlineuser-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 70px;
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.onlineuser-status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+}
+.onlineuser-status.is-online {
+  background: var(--ou-online-bg);
+  color: var(--ou-online-text);
+}
+.onlineuser-status.is-offline {
+  background: var(--ou-offline-bg);
+  color: var(--ou-offline-text);
+}
+.onlineuser-empty {
+  padding: 24px 16px;
+}
+.onlineuser-side .section__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ou-text);
+}
+.onlineuser-side .section__title .icon {
+  color: var(--ou-accent);
+}
+.onlineuser-side .section__body {
+  padding: 4px 16px 12px;
+}
+.onlineuser-side-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 11px 0;
+  border-top: 1px solid var(--ou-border-soft);
+}
+.onlineuser-side-line:first-child {
+  border-top: 0;
+}
+.onlineuser-side-line span {
+  min-width: 0;
+  color: var(--ou-muted);
+  font-size: 13px;
+}
+.onlineuser-side-line strong {
+  color: var(--ou-text);
+  font-weight: 700;
+  text-align: right;
+}
+.onlineuser-side-note {
+  grid-column: 1 / -1;
+  line-height: 1.5;
+}
+@media (max-width: 960px) {
+  .onlineuser-layout {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 720px) {
+  .onlineuser-main .section__header,
+  .onlineuser-side .section__header {
+    display: block;
+  }
+  .onlineuser-actions {
+    margin-top: 12px;
+  }
+  .onlineuser-stats {
+    grid-template-columns: 1fr;
+  }
+  .onlineuser-table {
+    min-width: 0;
+  }
+  .onlineuser-table colgroup,
+  .onlineuser-table thead {
+    display: none;
+  }
+  .onlineuser-table,
+  .onlineuser-table tbody,
+  .onlineuser-table tr,
+  .onlineuser-table td {
+    display: block;
+    width: 100%;
+  }
+  .onlineuser-table tbody {
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+  }
+  .onlineuser-table tbody tr {
+    box-sizing: border-box;
+    border: 1px solid var(--ou-border-soft);
+    border-radius: 8px;
+    padding: 10px 12px;
+    background: var(--ou-surface-soft);
+  }
+  .onlineuser-table tbody td {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 10px;
+    box-sizing: border-box;
+    border: 0 !important;
+    padding: 5px 0 !important;
+  }
+  .onlineuser-table tbody td::before {
+    content: attr(data-label);
+    color: var(--ou-muted);
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .onlineuser-table tbody td.onlineuser-user {
+    grid-template-columns: minmax(0, 1fr);
+    padding-bottom: 8px !important;
+  }
+  .onlineuser-table tbody td.onlineuser-user::before {
+    display: none;
+  }
+}
+</style>
+
+<div class="row onlineuser-page"><div class="medium-12 columns">
+  <div class="onlineuser-layout">
+    <section class="section onlineuser-main">
+      <div class="section__header onlineuser-header">
+        <div class="onlineuser-title-wrap">
+          <h1 class="section__title onlineuser-title"><span class="icon icon-user"></span>{{ _('Recent Online') }}</h1>
+          <p class="onlineuser-subtitle">{{ _('Recent 24h active users: {0}').format(recentCount) }}</p>
+        </div>
+        <div class="onlineuser-actions">
+          <button type="button" class="rounded button onlineuser-refresh" data-onlineuser-refresh>
+            <span class="icon icon-refresh"></span>{{ _('Refresh Now') }}
+          </button>
+        </div>
+      </div>
+
+      <div class="onlineuser-stats">
+        <div class="onlineuser-stat">
+          <span class="onlineuser-stat__label">{{ _('Current Online') }}</span>
+          <strong class="onlineuser-stat__value">{{ onlineCount }}</strong>
+        </div>
+        <div class="onlineuser-stat">
+          <span class="onlineuser-stat__label">{{ _('Active Last Hour') }}</span>
+          <strong class="onlineuser-stat__value">{{ activeLastHourCount }}</strong>
+        </div>
+        <div class="onlineuser-stat">
+          <span class="onlineuser-stat__label">{{ _('Recent Window') }}</span>
+          <strong class="onlineuser-stat__value">{{ recentHours }}h</strong>
+        </div>
+      </div>
+
+      {% if not rows.length %}
+      <div class="section__body onlineuser-empty">
+        {{ nothing.render(_('No Recent Online Users')) }}
+      </div>
+      {% else %}
+      <div class="section__body no-padding table-layout-guard onlineuser-table-wrap">
+        <table class="data-table onlineuser-table">
+          <colgroup>
+            <col class="col--uid">
+            <col class="col--user">
+            <col class="col--status">
+            <col class="col--last">
+            <col class="col--active">
+            <col class="col--hits">
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="col--uid">UID</th>
+              <th class="col--user">{{ _('Username') }}</th>
+              <th class="col--status">{{ _('Status') }}</th>
+              <th class="col--last">{{ _('Last Seen') }}</th>
+              <th class="col--active">{{ _('Estimated Active Time') }}</th>
+              <th class="col--hits">{{ _('Hits') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {%- for row in rows -%}
+            <tr>
+              <td class="col--uid onlineuser-uid" data-label="UID">{{ row.udoc._id }}</td>
+              <td class="col--user onlineuser-user" data-label="{{ _('Username') }}">{{ user.render_inline(row.udoc) }}</td>
+              <td class="col--status" data-label="{{ _('Status') }}"><span class="onlineuser-status {{ row.statusClass }}">{{ _(row.statusText) }}</span></td>
+              <td class="col--last onlineuser-last" data-label="{{ _('Last Seen') }}">{{ row.lastActiveText }}<small>{{ row.agoText }}</small></td>
+              <td class="col--active onlineuser-active" data-label="{{ _('Estimated Active Time') }}">{{ row.activeMinutes }} min</td>
+              <td class="col--hits onlineuser-hits" data-label="{{ _('Hits') }}">{{ row.hits }}</td>
+            </tr>
+            {%- endfor -%}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </section>
+
+    <aside class="section side onlineuser-side">
+      <div class="section__header">
+        <h1 class="section__title"><span class="icon icon-statistics"></span>{{ _('Status') }}</h1>
+      </div>
+      <div class="section__body">
+        <div class="onlineuser-side-line">
+          <span>{{ _('Current Domain') }}</span>
+          <strong>{{ domainId }}</strong>
+        </div>
+        <div class="onlineuser-side-line">
+          <span>{{ _('Current Online') }}</span>
+          <strong>{{ onlineCount }}</strong>
+        </div>
+        <div class="onlineuser-side-line">
+          <span>{{ _('Active Last Hour') }}</span>
+          <strong>{{ activeLastHourCount }}</strong>
+        </div>
+        <div class="onlineuser-side-line">
+          <span>{{ _('Auto refresh every {0}s').format(refreshSeconds) }}</span>
+          <strong>{{ refreshSeconds }}s</strong>
+        </div>
+        <div class="onlineuser-side-line">
+          <span class="onlineuser-side-note">{{ _('Only domain managers can view this page.') }}</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div></div>
+
+<script>
+  window.addEventListener('load', function() {
+    var refreshSeconds = Number({{ refreshSeconds|default(30) }}) || 30;
+    var refreshButton = document.querySelector('[data-onlineuser-refresh]');
+    if (refreshButton) refreshButton.addEventListener('click', function() {
+      window.location.reload();
+    });
+    window.setTimeout(function() {
+      window.location.reload();
+    }, refreshSeconds * 1000);
+  }, { once: true });
+</script>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row">
+  <div class="medium-12 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('题目快速导入导出') }}</h1>
+      </div>
+      <div class="section__body typo">
+        <form method="get">
+          <input type="hidden" name="download" value="1">
+          <div class="row">
+            <div class="medium-6 columns">
+              <label>
+                {{ _('题号 / docId 列表') }}
+                <textarea class="textbox" name="ids" rows="7" placeholder="A001 A002 18 19"></textarea>
+              </label>
+            </div>
+            <div class="medium-6 columns">
+              <label>
+                {{ _('PID 筛选') }}
+                <input class="textbox" name="pidFilter" placeholder="A|B|C">
+              </label>
+              <label>
+                <input type="checkbox" name="solutions" value="1">
+                {{ _('包含题解') }}
+              </label>
+              <button class="rounded primary button" type="submit">{{ _('服务器快速导出') }}</button>
+            </div>
+          </div>
+        </form>
+        <hr>
+        <form method="post" enctype="multipart/form-data">
+          <input type="hidden" name="operation" value="import">
+          <div class="row">
+            <div class="medium-5 columns">
+              <label>
+                {{ _('Hydro ZIP') }}
+                <input type="file" name="file" accept=".zip" required>
+              </label>
+            </div>
+            <div class="medium-3 columns">
+              <label>
+                {{ _('首选前缀') }}
+                <input class="textbox" name="preferredPrefix" placeholder="D">
+              </label>
+            </div>
+            <div class="medium-4 columns">
+              <label><input type="checkbox" name="hidden" value="1"> {{ _('导入后隐藏') }}</label>
+              <label><input type="checkbox" name="keepUser" value="1"> {{ _('保留原 owner') }}</label>
+              <button class="rounded button" type="submit">{{ _('清理后导入') }}</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{
+  "name": "hydrooj-sol2image",
+  "version": "0.1.1",
+  "main": "index.js",
+  "devDependencies": {
+    "hydrooj": "^5.0.0-beta.11"
+  },
+  "dependencies": {
+    "@fontsource-variable/noto-sans-sc": "^5.2.9",
+    "@fontsource/jetbrains-mono": "^5.2.8",
+    "@fontsource/source-code-pro": "^5.2.7",
+    "@hydrooj/ui-default": "^4.58.0-beta.10",
+    "chrome-finder": "^1.0.7",
+    "crypto": "^1.0.1",
+    "github-markdown-css": "^5.8.1",
+    "katex": "^0.16.25",
+    "prismjs": "^1.30.0",
+    "puppeteer-core": "^24.29.0",
+    "puppeteer-extra": "^3.3.6"
+  }
+}

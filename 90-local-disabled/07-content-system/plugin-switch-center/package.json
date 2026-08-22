@@ -1,0 +1,14 @@
+{
+  "name": "hydrooj-plugin-switch-center",
+  "version": "0.2.0",
+  "description": "Global runtime switch center for installed HydroOJ plugins",
+  "main": "index.js",
+  "license": "AGPL-3.0",
+  "dependencies": {
+    "typescript": "^5.8.3"
+  },
+  "devDependencies": {
+    "@hydrooj/ui-default": "^4.58.0-beta.6",
+    "hydrooj": "^5.0.0-beta.6"
+  }
+}

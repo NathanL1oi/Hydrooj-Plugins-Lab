@@ -1,0 +1,52 @@
+{% extends "badge_base.html" %}
+{% import "components/paginator.html" as paginator with context %}
+{% import "components/nothing.html" as nothing with context %}
+{% block badge_content %}
+<div class="section">
+    <div class="section__header">
+        <h1 class="section__title">{{ _('badge_manage')}}</h1>
+        <div class="section__tools">
+            <a class="primary rounded button" href="{{ url('badge_add') }}">{{ _('badge_add') }}</a>
+        </div>
+    </div>
+    <div class="section__body no-padding">
+        {% if not ddocs.length %}
+        {{ nothing.render('对不起，没有徽章。') }}
+        {% else %}
+        <div class="section__table-container">
+            <table class="data-table section__table-heade">
+                <colgroup>
+                    <col class="col--id" style="width:5rem">
+                    <col class="col--title">
+                    <col class="col--preview">
+                    <col class="col--actions">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>{{ _('徽章ID') }}</th>
+                        <th>{{ _('徽章标题') }}</th>
+                        <th>{{ _('徽章预览') }}</th>
+                        <th>{{ _('Action') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {%- for ddoc in ddocs -%}
+                    <tr>
+                        <td>{{ ddoc._id }}</td>
+                        <td>{{ ddoc.title }}</td>
+                        <td>
+                            <a href="{{ url('badge_detail', id=ddoc._id) }}" class="user-profile-badge v-center" style="background-color:{{ ddoc.backgroundColor }};color:{{ ddoc.fontColor }};" data-tooltip="{{ ddoc.title }}">{{ ddoc.short }}</a>
+                        </td>
+                        <td>
+                            <a href="{{ url('badge_edit', id=ddoc._id) }}" class="typo-a contest-tag">{{ _('Edit') }}</a>
+                        </td>
+                    </tr>
+                    {%- endfor -%}
+                </tbody>
+            </table>
+            {{ paginator.render(page, dpcount) }}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock%}

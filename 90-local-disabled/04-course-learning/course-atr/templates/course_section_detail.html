@@ -1,0 +1,97 @@
+{% import "partials/disable_sol_controls.html" as solctl with context %}
+{% import "partials/course_visibility_toggle.html" as vis with context %}
+{% extends "layout/basic.html" %}
+{% block content %}
+{% include "course_ui_style.html" %}
+{{ solctl.style() }}
+{{ vis.style() }}
+{{ set(UiContext, 'csid', csdoc.docId) }}
+<div class="row" data-sticky-parent>
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+          <h1 class="section__title"><a href="{{ url('course_section_detail', cid=cdoc.docId, csid=csdoc.docId) }}">{{ _('Section') }}: {{ csdoc['title'] }}</a>{{ vis.badge(csdoc) }}</h1>
+      </div>
+      <!-- <div class="section__body">
+          {{ cdoc['title'] }}
+      </div> -->
+    </div>
+    {% if csdoc.content %}
+      <div class="section">
+        <div class="section__body typo richmedia">
+          {{ csdoc.content|default('')|markdown|safe }}
+        </div>
+      </div>
+    {% endif %}
+    <div class="section course-bulk-section">
+      <div class="section__header course-bulk-toolbar">
+        <h2 class="section__title">小节列表</h2>
+        <div class="course-bulk-actions">
+          {% if handler.user.hasPerm(perm.PERM_EDIT_DOMAIN) or handler.user.hasPerm(perm.PERM_EDIT_TRAINING) %}
+            {{ solctl.button('section', csdoc, solstats.section, '打开本章题解', '关闭本章题解', cdoc.docId, csdoc.docId, '') }}
+          {% endif %}
+        </div>
+      </div>
+      {% include "partials/course_section_detail.html" %}
+    </div>
+  </div>
+  <div class="medium-3 columns" data-sticky="large">
+    {% if handler.user.hasPerm(perm.PERM_EDIT_TRAINING) %}
+    <div class="section side course-side-results">
+      <div class="section__header">
+        <h1 class="section__title"><span class="icon icon-statistics"></span> {{ _('Scoreboard') }}</h1>
+      </div>
+      <ol class="menu course-side-results-menu">
+        <li class="menu__item course-side-primary-result"><a class="menu__link" href="{{ url('course_section_scoreboard', cid=cdoc.docId, csid=csdoc.docId) }}">
+          <span class="icon icon-statistics"></span>  {{ _('Scoreboard') }}
+        </a></li>
+      </ol>
+    </div>
+    {% endif %}
+    <div class="section side course-side-actions-panel">
+      <div>
+        <ol class="menu course-side-actions-menu">
+        {% if not cstdoc['enroll'] and handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+          <li class="menu__item">
+            <form action="" method="POST">
+              <input type="hidden" name="operation" value="enroll">
+              <button class="menu__link" type="submit">
+                <span class="icon icon-add"></span> {{ _('Enroll Course') }}
+              </button>
+            </form>
+          </li>
+        {% endif %}
+          <li class="menu__item"><a class="menu__link" href="{{ url('course_detail', cid=cdoc.docId) }}">
+            <span class="icon icon-award"></span> {{ _('View Course') }}
+          </a></li>
+        {% if handler.user.hasPerm(perm.PERM_EDIT_TRAINING) %}
+          <li class="menu__item"><a class="menu__link" href="{{ url('course_section_edit', cid=cdoc.docId, csid=csdoc.docId) }}">
+            <span class="icon icon-edit"></span>  {{ _('Edit Section') }}
+          </a></li>
+          {{ vis.menu_item('section', csdoc, cdoc.docId, csdoc.docId, '') }}
+          <li class="menu__item"><a class="menu__link" href="{{ url('course_subsec_create', cid=cdoc.docId, csid=csdoc.docId) }}">
+            <span class="icon icon-edit"></span>  {{ _('New Subsection') }}
+          </a></li>
+        {% endif %}
+          <li class="menu__seperator"></li>
+        </ol>
+      </div>
+      <div class="section__body typo">
+        <dl class="large horizontal">
+            <dt>{{ _('Belongs to') }}</dt>
+            <dd><a href="{{ url('course_detail', cid=cdoc.docId) }}">{{ cdoc.title }}</a></dd>
+        </dl>
+        <dl class="large horizontal">
+          <dt>{{ _('Created By') }}</dt>
+          <dd>{{ user.render_inline(udoc, badge=false) }}</dd>
+        </dl>
+      </div>
+    </div>
+    <div class="section side">
+      <ol class="menu">
+        {{ sidemenu.render_item('list', 'course_section_detail', {cid:cdoc.docId,csid:csdoc.docId}, label='sections_s', menu_item='course_section_detail') }}
+      </ol>
+    </div>
+  </div>
+</div>
+{% endblock %}

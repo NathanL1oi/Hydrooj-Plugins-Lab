@@ -1,0 +1,7 @@
+{
+  "name": "hydrooj-exportEx",
+  "main": "index.js",
+  "devDependencies": {
+    "hydrooj": "^5.0.0-beta.15"
+  }
+}

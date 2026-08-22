@@ -1,0 +1,111 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+{% include "course_ui_style.html" %}
+{% set subsecUrl = url('course_subsec_detail', cid=cdoc.docId, csid=csdoc.docId, ssid=ssdoc._id) %}
+<div class="row">
+  <div class="medium-12 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">比赛排名：{{ ssdoc.title }}</h1>
+      </div>
+      <div class="section__body">
+        <p>
+          赛制：{{ exam.ruleLabel }}。
+          {% if exam.rule == 'acm' %}
+            按解题数量与罚时排序，同题通过前错误提交每次罚时 20 分钟。
+          {% elif exam.rule == 'oi' %}
+            OI 赛制比赛中不公布分数，比赛结束后显示成绩与排名。
+          {% else %}
+            IOI 赛制按实时总分排序，参赛者可以看到当前得分。
+          {% endif %}
+        </p>
+      </div>
+      <div class="section__body no-padding">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 4rem">排名</th>
+              <th>用户</th>
+              <th>总分</th>
+              <th>通过</th>
+              {% if exam.rule == 'acm' %}<th>罚时</th>{% endif %}
+              {% for pid in exam.pids %}
+                <th>P{{ loop.index }}</th>
+              {% endfor %}
+              <th>状态</th>
+              <th>开始</th>
+              <th>结束</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+              {% set udoc = udict[row.uid] %}
+              <tr>
+                <td>{{ '-' if row.resultHidden else row.rank }}</td>
+                <td>
+                  {% if udoc %}
+                    {{ user.render_inline(udoc, badge=false) }}
+                  {% else %}
+                    UID {{ row.uid }}
+                  {% endif %}
+                </td>
+                {% if row.resultHidden %}
+                  <td>赛后公布</td>
+                  <td>赛后公布</td>
+                  {% if exam.rule == 'acm' %}<td>赛后公布</td>{% endif %}
+                {% else %}
+                  <td>{{ row.result.score if row.result else 0 }} / {{ row.result.maxScore if row.result else exam.maxScore }}</td>
+                  <td>{{ row.result.solved if row.result else 0 }} / {{ row.result.total if row.result else exam.pids.length }}</td>
+                  {% if exam.rule == 'acm' %}<td>{{ row.result.penalty if row.result else 0 }}</td>{% endif %}
+                {% endif %}
+                {% for pid in exam.pids %}
+                  {% set item = row.result.details[pid] if row.result and row.result.details else null %}
+                  <td>
+                    {% if row.resultHidden %}
+                      封榜
+                    {% elif exam.rule == 'acm' %}
+                      {% if item and item.accepted %}
+                        +{% if item.wrong %}{{ item.wrong }}{% endif %}
+                      {% elif item and item.wrong %}
+                        -{{ item.wrong }}
+                      {% else %}
+                        -
+                      {% endif %}
+                    {% else %}
+                      {{ item.score if item else 0 }}
+                    {% endif %}
+                  </td>
+                {% endfor %}
+                <td>
+                  {% if row.resultHidden %}
+                    进行中
+                  {% elif row.finished %}
+                    已结束
+                    {% if row.expired %}（超时）{% endif %}
+                  {% else %}
+                    进行中
+                  {% endif %}
+                </td>
+                <td>{{ row.startedAtText }}</td>
+                <td>{{ row.endedAtText or '-' }}</td>
+              </tr>
+            {% else %}
+              {% if exam.rule == 'acm' %}
+                <tr><td colspan="{{ 8 + exam.pids.length }}">暂无参赛记录。</td></tr>
+              {% else %}
+                <tr><td colspan="{{ 7 + exam.pids.length }}">暂无参赛记录。</td></tr>
+              {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="section__body">
+        <a class="rounded button" href="{{ subsecUrl }}/exam">返回考试</a>
+        {% if canManage %}
+          <a class="rounded button" href="{{ subsecUrl }}/exam/results">考试记录</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

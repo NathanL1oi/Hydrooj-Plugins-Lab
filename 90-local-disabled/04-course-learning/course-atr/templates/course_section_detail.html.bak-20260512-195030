@@ -1,0 +1,77 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+{{ set(UiContext, 'csid', csdoc.docId) }}
+<div class="row" data-sticky-parent>
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+          <h1 class="section__title"><a href="{{ url('course_section_detail', cid=cdoc.docId, csid=csdoc.docId) }}">{{ _('Section') }}: {{ csdoc['title'] }}</a></h1>
+      </div>
+      <!-- <div class="section__body">
+          {{ cdoc['title'] }}
+      </div> -->
+    </div>
+    {% if csdoc.content %}
+      <div class="section">
+        <div class="section__body typo richmedia">
+          {{ csdoc.content|default('')|markdown|safe }}
+        </div>
+      </div>
+    {% endif %}
+    <div class="section">
+      {% include "partials/course_section_detail.html" %}
+    </div>
+  </div>
+  <div class="medium-3 columns" data-sticky="large">
+    <div class="section side">
+      <div>
+        <ol class="menu">
+        {% if not cstdoc['enroll'] and handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+          <li class="menu__item">
+            <form action="" method="POST">
+              <input type="hidden" name="operation" value="enroll">
+              <button class="menu__link" type="submit">
+                <span class="icon icon-add"></span> {{ _('Enroll Course') }}
+              </button>
+            </form>
+          </li>
+        {% endif %}
+          <li class="menu__item"><a class="menu__link" href="{{ url('course_detail', cid=cdoc.docId) }}">
+            <span class="icon icon-award"></span> {{ _('View Course') }}
+          </a></li>
+        {% if handler.user.hasPerm(perm.PERM_EDIT_TRAINING) %}
+          <li class="menu__item"><a class="menu__link" href="{{ url('course_section_edit', cid=cdoc.docId, csid=csdoc.docId) }}">
+            <span class="icon icon-edit"></span>  {{ _('Edit Section') }}
+          </a></li>
+          <li class="menu__item"><a class="menu__link" href="{{ url('course_subsec_create', cid=cdoc.docId, csid=csdoc.docId) }}">
+            <span class="icon icon-edit"></span>  {{ _('New Subsection') }}
+          </a></li>
+          <li class="menu__item"><a class="menu__link" href="{{ url('course_subsec_order', cid=cdoc.docId, csid=csdoc.docId) }}">
+            <span class="icon icon-sliders"></span>  {{ _('Adjust Subsection Order') }}
+          </a></li>
+          <li class="menu__item"><a class="menu__link" href="{{ url('course_section_scoreboard', cid=cdoc.docId, csid=csdoc.docId) }}">
+            <span class="icon icon-statistics"></span>  {{ _('Scoreboard') }}
+          </a></li>
+        {% endif %}
+          <li class="menu__seperator"></li>
+        </ol>
+      </div>
+      <div class="section__body typo">
+        <dl class="large horizontal">
+            <dt>{{ _('Belongs to') }}</dt>
+            <dd><a href="{{ url('course_detail', cid=cdoc.docId) }}">{{ cdoc.title }}</a></dd>
+        </dl>
+        <dl class="large horizontal">
+          <dt>{{ _('Created By') }}</dt>
+          <dd>{{ user.render_inline(udoc, badge=false) }}</dd>
+        </dl>
+      </div>
+    </div>
+    <div class="section side">
+      <ol class="menu">
+        {{ sidemenu.render_item('list', 'course_section_detail', {cid:cdoc._id,csid:csdoc._id}, label='sections_s', menu_item='course_section_detail') }}
+      </ol>
+    </div>
+  </div>
+</div>
+{% endblock %}

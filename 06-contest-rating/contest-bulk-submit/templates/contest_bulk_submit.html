@@ -1,0 +1,201 @@
+{% extends "layout/basic.html" %}
+
+{% block content %}
+<style>
+.contest-bulk-page .cbs-upload-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 320px) minmax(220px, 300px) auto auto;
+  gap: 10px 12px;
+  align-items: center;
+  justify-content: start;
+}
+.contest-bulk-page .cbs-upload-row input[type="file"] {
+  width: 100%;
+  max-width: 360px;
+}
+.contest-bulk-page .cbs-note {
+  grid-column: 1 / -1;
+  margin: 2px 0 0;
+  color: #888;
+  line-height: 1.6;
+}
+.contest-bulk-page .cbs-default-problem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  white-space: nowrap;
+}
+.contest-bulk-page .cbs-default-problem select {
+  min-width: 150px;
+}
+.contest-bulk-page .cbs-table th,
+.contest-bulk-page .cbs-table td {
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.contest-bulk-page .cbs-table .cbs-problem {
+  white-space: normal;
+}
+.contest-bulk-page .cbs-title {
+  font-weight: 500;
+}
+.contest-bulk-page .cbs-muted {
+  color: #999;
+  margin-left: 6px;
+}
+.contest-bulk-page .cbs-mono {
+  font-family: var(--font-mono, Consolas, Monaco, monospace);
+}
+.contest-bulk-page .cbs-map-input {
+  width: 100%;
+  min-width: 130px;
+  margin: 0;
+  font-family: var(--font-mono, Consolas, Monaco, monospace);
+}
+@media (max-width: 720px) {
+  .contest-bulk-page .cbs-upload-row {
+    grid-template-columns: 1fr;
+  }
+  .contest-bulk-page .cbs-upload-row .button {
+    width: 100%;
+    margin-bottom: 0;
+  }
+  .contest-bulk-page .cbs-default-problem {
+    display: block;
+    white-space: normal;
+  }
+  .contest-bulk-page .cbs-default-problem select {
+    width: 100%;
+    margin-top: 6px;
+  }
+  .contest-bulk-page .cbs-table th,
+  .contest-bulk-page .cbs-table td {
+    white-space: normal;
+  }
+}
+</style>
+
+<div class="row contest-bulk-page">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('Upload Contest Submissions') }}</h1>
+      </div>
+      <div class="section__body">
+        <form id="contest-bulk-submit-form" method="post" enctype="multipart/form-data">
+          <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+          <div class="cbs-upload-row">
+            <input type="file" name="file" accept=".zip,application/zip" required>
+            <label class="cbs-default-problem">
+              <span>未识别时导入到</span>
+              <select name="defaultProblem">
+                <option value="">按目录/文件名识别</option>
+                {% for problem in problems %}
+                <option value="{{ problem.docId }}"{% if selectedDefaultProblemDocId == problem.docId %} selected{% endif %}>
+                  {{ problem.index }}. {{ problem.title or problem.pid }}{% if problem.pid %} ({{ problem.pid }}){% endif %}
+                </option>
+                {% endfor %}
+              </select>
+            </label>
+            <button type="submit" class="rounded primary button">
+              <span class="icon icon-upload"></span> 上传并评测
+            </button>
+            <a class="rounded button" href="{{ url('contest_detail', tid=tid) }}">返回比赛</a>
+            <p class="cbs-note">
+              推荐结构：姓名 / 题号或 PID / 源文件.cpp；也兼容姓名 / 源文件.cpp。可在下方修改交卷目录和源文件映射，多个别名用逗号分隔。
+            </p>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    {% if result %}
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">导入结果</h1>
+      </div>
+      <div class="section__body">
+        <table class="data-table">
+          <tbody>
+            <tr>
+              <th>文件</th>
+              <td>{{ uploadName }}</td>
+              <th>源码候选</th>
+              <td>{{ result.total }}</td>
+            </tr>
+            <tr>
+              <th>已导入</th>
+              <td>{{ result.imported }}</td>
+              <th>自动参赛</th>
+              <td>{{ result.attended }}</td>
+            </tr>
+            <tr>
+              <th>跳过</th>
+              <td>{{ result.skipped }}</td>
+              <th>失败</th>
+              <td>{{ result.failed }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <pre style="margin-top:12px;background:#f7f7f7;border:1px solid #ddd;border-radius:4px;padding:12px;max-height:320px;overflow:auto;line-height:1.6">{% for message in result.messages %}{{ message }}
+{% endfor %}</pre>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">题目映射</h1>
+      </div>
+      <div class="section__body no-padding">
+        <table class="data-table cbs-table">
+          <thead>
+            <tr>
+              <th style="width:56px">题号</th>
+              <th>题目</th>
+              <th style="width:140px">交卷目录</th>
+              <th style="width:140px">源文件</th>
+              <th style="width:170px">文件 IO</th>
+              <th style="width:150px">限制</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for problem in problems %}
+            <tr>
+              <td>{{ problem.index }}</td>
+              <td class="cbs-problem">
+                <span class="cbs-title">{{ problem.title or problem.pid }}</span>
+                <span class="cbs-muted">{{ problem.pid }}</span>
+              </td>
+              <td>
+                <input
+                  class="textbox cbs-map-input"
+                  form="contest-bulk-submit-form"
+                  name="folderName_{{ problem.docId }}"
+                  value="{{ problem.folderName }}"
+                  placeholder="如 collection">
+              </td>
+              <td>
+                <input
+                  class="textbox cbs-map-input"
+                  form="contest-bulk-submit-form"
+                  name="sourceFile_{{ problem.docId }}"
+                  value="{{ problem.sourceFile }}"
+                  placeholder="如 collection.cpp">
+              </td>
+              <td class="cbs-mono">{{ problem.fileIo }}</td>
+              <td>{{ problem.time }} / {{ problem.memory }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="medium-3 columns">
+    {% include "partials/contest_sidebar.html" %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{
+  "name": "hydrooj-plugin-codeforces-round-rule",
+  "version": "0.1.1",
+  "main": "index.js",
+  "license": "MIT",
+  "hydrooj": {
+    "frontend": {
+      "codeforces_round_rule.page.js": "frontend/codeforces_round_rule.page.js"
+    }
+  },
+  "devDependencies": {
+    "hydrooj": "latest",
+    "@hydrooj/ui-default": "latest"
+  }
+}

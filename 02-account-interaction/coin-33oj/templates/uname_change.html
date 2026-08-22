@@ -1,0 +1,42 @@
+{% extends "layout/immersive.html" %}
+{% block content %}
+<div class="row"><div class="columns">
+  <div class="immersive--content immersive--center">
+    <h1>{{ _('uname_change') }}</h1>
+    <div class="row"><div class="columns">
+      <label class="inverse material textbox">
+        {{ _('Username') }}
+        <input name="Uname" type="text" value="{{ uidOrName }}" readonly>
+      </label>
+    </div></div>
+    <form method="POST">
+      <div class="row"><div class="columns">
+        <label class="inverse material textbox">
+          {{ _('Current Password') }}
+          <input name="password" type="password" autofocus>
+        </label>
+      </div></div>
+      <div class="row"><div class="columns">
+        <label class="inverse material textbox">
+          {{ _('新用户名') }}
+          <input name="newUname" type="text" autocomplete="username webauthn">
+        </label>
+      </div></div>
+      <br/>
+      <div class="row"><div class="columns">
+        <div class="text-center">
+          {% if handler.user.olduname %}
+              <button name="operation" value="bycoin" type="submit" class="inverse expanded rounded primary button">
+                  {{ _('修改用户名（ {0} 硬币）').format(coinCost) }}
+              </button>
+          {% else %}
+              <button name="operation" value="free" type="submit" class="inverse expanded rounded primary button">
+                  {{ _('修改用户名（首次免费）') }}
+              </button>
+          {% endif %}
+        </div>
+      </div></div>
+    </form>
+  </div>
+</div></div>
+{% endblock %}

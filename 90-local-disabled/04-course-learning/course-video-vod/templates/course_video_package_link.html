@@ -1,0 +1,155 @@
+{% extends "manage_base.html" %}
+{% block manage_content %}
+<style>
+.cvlink-page { display: grid; gap: 16px; font-size: 14px; }
+.cvlink-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; align-items: center; }
+.cvlink-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.cvlink-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.cvlink-card { border: 1px solid #dfeaf5; border-radius: 8px; background: #fff; padding: 16px; }
+.cvlink-card h2 { margin: 0 0 14px; font-size: 18px; color: #24364d; }
+.cvlink-form { display: grid; gap: 12px; }
+.cvlink-form label { display: grid; gap: 5px; margin: 0; color: #506070; }
+.cvlink-form .textbox, .cvlink-form .select { width: 100%; min-height: 36px; }
+.cvlink-note { padding: 10px 12px; border-left: 3px solid #5aa3e6; background: #f8fbff; color: #506680; line-height: 1.65; }
+.cvlink-submit { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+@media screen and (max-width: 900px) { .cvlink-grid { grid-template-columns: 1fr; } }
+</style>
+{% include "course_video_theme.html" %}
+{% set ready = sourceDomainId and packageId and versionId and chapterId and lessonId and targetDomainId and targetCourseId and targetSectionId and targetSubSectionId %}
+<div class="cvlink-page">
+  <div class="section">
+    <div class="section__header cvlink-head">
+      <h1 class="section__title">补建课程包节视频同步关系</h1>
+      <div class="cvlink-actions">
+        <a class="rounded button" href="{{ url('course_video_main') }}">返回视频库</a>
+      </div>
+    </div>
+    <div class="section__body">
+      {% if message == 'synced' %}
+        <p class="cvlink-note">映射已建立，并已同步当前课程包节视频绑定。</p>
+      {% elif message == 'recorded' %}
+        <p class="cvlink-note">映射已建立。当前课程包节没有绑定视频，目标课程小节已保持未绑定状态。</p>
+      {% endif %}
+      {% if not packagePluginReady or not coursePluginReady %}
+        <p class="cvlink-note">课程包插件或课程插件尚未就绪，暂时无法补建同步关系。</p>
+      {% else %}
+        <form method="get" class="cvlink-form" id="course-video-package-link-picker">
+          <div class="cvlink-grid">
+            <div class="cvlink-card">
+              <h2>来源课程包节</h2>
+              <label>
+                来源域
+                <select class="select" name="sourceDomainId" data-auto-submit>
+                  {% for domain in domains %}
+                    <option value="{{ domain.id }}" {% if sourceDomainId == domain.id %}selected{% endif %}>{{ domain.id }}{% if domain.name and domain.name != domain.id %} / {{ domain.name }}{% endif %}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label>
+                课程包
+                <select class="select" name="packageId" data-auto-submit>
+                  <option value="">请选择课程包</option>
+                  {% for item in packages %}
+                    <option value="{{ item.docIdText }}" {% if packageId == item.docIdText %}selected{% endif %}>{{ item.title }} / {{ item.docIdText }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label>
+                版本
+                <select class="select" name="versionId" data-auto-submit>
+                  <option value="">请选择版本</option>
+                  {% for item in versions %}
+                    <option value="{{ item.docIdText }}" {% if versionId == item.docIdText %}selected{% endif %}>{{ item.version or item.title }} / {{ item.docIdText }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label>
+                章
+                <select class="select" name="chapterId" data-auto-submit>
+                  <option value="">请选择章</option>
+                  {% for item in chapters %}
+                    <option value="{{ item.id }}" {% if chapterId == item.id %}selected{% endif %}>{{ item.title }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label>
+                节
+                <select class="select" name="lessonId" data-auto-submit>
+                  <option value="">请选择节</option>
+                  {% for item in lessons %}
+                    <option value="{{ item.id }}" {% if lessonId == item.id %}selected{% endif %}>{{ item.title }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+            </div>
+
+            <div class="cvlink-card">
+              <h2>目标课程小节</h2>
+              <label>
+                目标域
+                <select class="select" name="targetDomainId" data-auto-submit>
+                  {% for domain in domains %}
+                    <option value="{{ domain.id }}" {% if targetDomainId == domain.id %}selected{% endif %}>{{ domain.id }}{% if domain.name and domain.name != domain.id %} / {{ domain.name }}{% endif %}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label>
+                目标课程
+                <select class="select" name="targetCourseId" data-auto-submit>
+                  <option value="">请选择课程</option>
+                  {% for item in targetCourses %}
+                    <option value="{{ item.docIdText }}" {% if targetCourseId == item.docIdText %}selected{% endif %}>{{ item.title }} / {{ item.docIdText }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label>
+                目标章
+                <select class="select" name="targetSectionId" data-auto-submit>
+                  <option value="">请选择章</option>
+                  {% for item in targetSections %}
+                    <option value="{{ item.docIdText }}" {% if targetSectionId == item.docIdText %}selected{% endif %}>{{ item.title }} / {{ item.docIdText }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label>
+                目标小节
+                <select class="select" name="targetSubSectionId" data-auto-submit>
+                  <option value="">请选择小节</option>
+                  {% for item in targetSubSections %}
+                    <option value="{{ item.id }}" {% if targetSubSectionId == item.id %}selected{% endif %}>{{ item.title }} / {{ item.id }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+            </div>
+          </div>
+        </form>
+
+        <form method="post" class="cvlink-submit">
+          <input type="hidden" name="sourceDomainId" value="{{ sourceDomainId }}">
+          <input type="hidden" name="packageId" value="{{ packageId }}">
+          <input type="hidden" name="versionId" value="{{ versionId }}">
+          <input type="hidden" name="chapterId" value="{{ chapterId }}">
+          <input type="hidden" name="lessonId" value="{{ lessonId }}">
+          <input type="hidden" name="targetDomainId" value="{{ targetDomainId }}">
+          <input type="hidden" name="targetCourseId" value="{{ targetCourseId }}">
+          <input type="hidden" name="targetSectionId" value="{{ targetSectionId }}">
+          <input type="hidden" name="targetSubSectionId" value="{{ targetSubSectionId }}">
+          <button class="rounded primary button" type="submit" {% if not ready %}disabled{% endif %}>建立关系并立即同步</button>
+          {% if not ready %}<span class="cvlink-note">请先完整选择来源课程包节和目标课程小节。</span>{% endif %}
+        </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var form = document.getElementById('course-video-package-link-picker');
+  if (!form) return;
+  form.querySelectorAll('[data-auto-submit]').forEach(function (item) {
+    item.addEventListener('change', function () {
+      form.submit();
+    });
+  });
+})();
+</script>
+{% endblock %}

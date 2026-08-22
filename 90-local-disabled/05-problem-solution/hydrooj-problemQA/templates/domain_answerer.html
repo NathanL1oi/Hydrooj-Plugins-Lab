@@ -1,0 +1,78 @@
+{% extends "domain_base.html" %}
+{% block domain_content %}
+<style>
+.domain-set_answerer {
+  --answerer-surface: #ffffff;
+  --answerer-surface-soft: #f8fafc;
+  --answerer-border: #dbe7f4;
+  --answerer-text: #24364b;
+  --answerer-muted: #64748b;
+}
+.domain-set_answerer .data-table {
+  background: transparent;
+}
+.domain-set_answerer .data-table td {
+  padding: 16px;
+}
+.domain-set_answerer input[data-gid],
+.domain-set_answerer .autocomplete-dummy {
+  min-height: 38px;
+  width: 100%;
+  border: 1px solid var(--answerer-border);
+  border-radius: 8px;
+  background: var(--answerer-surface);
+  color: var(--answerer-text);
+  outline: none;
+  padding: 0 10px;
+}
+.domain-set_answerer .autocomplete-dummy:focus {
+  border-color: #5aa1dc;
+  box-shadow: 0 0 0 3px rgba(90, 161, 220, 0.14);
+}
+.domain-set_answerer .autocomplete-container {
+  color: var(--answerer-text);
+}
+.theme--dark .domain-set_answerer {
+  --answerer-surface: rgba(15, 23, 42, 0.62);
+  --answerer-surface-soft: rgba(31, 42, 58, 0.58);
+  --answerer-border: rgba(255, 255, 255, 0.12);
+  --answerer-text: #f8fafc;
+  --answerer-muted: #b7c4d5;
+}
+.theme--dark .domain-set_answerer .data-table td {
+  border-color: var(--answerer-border);
+}
+.theme--dark .domain-set_answerer input[data-gid],
+.theme--dark .domain-set_answerer .autocomplete-dummy {
+  background: var(--answerer-surface);
+  border-color: var(--answerer-border);
+  color: var(--answerer-text);
+}
+.theme--dark .domain-set_answerer .autocomplete-dummy:focus {
+  background: rgba(24, 30, 39, 0.82);
+  border-color: rgba(96, 165, 250, 0.42);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.14);
+}
+</style>
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">{{ _('Set Answerer') }}</h1>
+  </div>
+  {{ noscript_note.render() }}
+  <div class="section__body no-padding domain-set_answerer">
+    <table class="data-table">
+      <tbody>
+        <tr data-gid="{{ domain._id }}">
+          <td>
+            {% set answerers = domain.answerers|default([]) %}
+            <input class="textbox domain-answerer-input" type="text" value="{{ answerers.join(',') }}" data-gid="{{ domain._id }}" />
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="section__body">
+    <button class="rounded button" name="save_all">{{ _('Save All Changes') }}</button>
+  </div>
+</div>
+{% endblock %}

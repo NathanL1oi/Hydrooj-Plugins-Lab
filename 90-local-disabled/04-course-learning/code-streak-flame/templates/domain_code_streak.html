@@ -1,0 +1,55 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.csf-page .csf-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; background: #fff; max-width: 720px; }
+.csf-page .csf-muted { color: #64748b; font-size: 13px; line-height: 1.55; }
+.csf-page .csf-switch { display: flex; gap: 8px; align-items: center; font-weight: 600; margin: 8px 0; }
+.csf-page .csf-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.theme--dark .csf-page .csf-card {
+  border-color: rgba(148, 163, 184, .28);
+  background: rgba(31, 41, 55, .72);
+  color: #e2e8f0;
+}
+.theme--dark .csf-page .csf-muted { color: #94a3b8; }
+html.hydro-user-background-enabled .csf-page .csf-card {
+  background: var(--hub-surface) !important;
+  border-color: var(--hub-border) !important;
+  color: var(--hub-text) !important;
+  box-shadow: var(--hub-shadow) !important;
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+}
+</style>
+<div class="row csf-page">
+  <div class="columns">
+    <div class="section">
+      <div class="section__header"><h1 class="section__title">{{ _('训练火苗') }}</h1></div>
+      <div class="section__body">
+        {% for msg in messages %}<blockquote class="note">{{ msg }}</blockquote>{% endfor %}
+        <div class="csf-card">
+          <form method="post">
+            <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+            <label class="csf-switch">
+              <input type="checkbox" name="enabled" value="true" {% if config.enabled %}checked{% endif %}>
+              <span>{{ _('启用用户页火苗和火苗榜') }}</span>
+            </label>
+            <label class="csf-switch">
+              <input type="checkbox" name="requireAccepted" value="true" {% if config.requireAccepted %}checked{% endif %}>
+              <span>{{ _('必须 AC 才点亮当天') }}</span>
+            </label>
+            <label>
+              {{ _('榜单统计天数') }}
+              <input class="textbox" type="number" name="windowDays" min="14" max="365" value="{{ config.windowDays }}">
+            </label>
+            <p class="csf-muted">{{ _('默认“提交即可点亮”，更适合小学生和初中生保持训练节奏；需要更严格时再切换为 AC 点亮。') }}</p>
+            <div class="csf-actions">
+              <button class="button rounded primary" type="submit">{{ _('保存设置') }}</button>
+              <a class="button rounded" href="{{ rankingUrl }}">{{ _('查看火苗榜') }}</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

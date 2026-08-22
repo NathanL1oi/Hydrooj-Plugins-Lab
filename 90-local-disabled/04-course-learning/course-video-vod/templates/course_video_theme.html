@@ -1,0 +1,178 @@
+<style>
+.theme--dark .cvlib-page,
+.theme--dark .cvfolder-page,
+.theme--dark .cvsub-page,
+.theme--dark .cvlink-page {
+  color: #e2e8f0;
+}
+
+.theme--dark .cvlib-note,
+.theme--dark .cvfolder-note,
+.theme--dark .cvsub-note,
+.theme--dark .cvlink-note {
+  border-left-color: #60a5fa;
+  background: rgba(59, 130, 246, .14);
+  color: #bfdbfe;
+}
+
+.theme--dark .cvlib-stat,
+.theme--dark .cvlib-panel,
+.theme--dark .cvlib-tool-link,
+.theme--dark .cvlib-dir-course,
+.theme--dark .cvlib-course,
+.theme--dark .cvlib-asset,
+.theme--dark .cvfolder-course,
+.theme--dark .cvfolder-row,
+.theme--dark .cvsub-card,
+.theme--dark .cvlink-card {
+  border-color: rgba(148, 163, 184, .28);
+  background: rgba(31, 41, 55, .78);
+  color: #e2e8f0;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .18);
+}
+
+.theme--dark .cvlib-dir-summary,
+.theme--dark .cvlib-dir-head,
+.theme--dark .cvlib-dir-row.is-chapter,
+.theme--dark .cvlib-course-head,
+.theme--dark .cvlib-mini-form,
+.theme--dark .cvlib-empty,
+.theme--dark .cvfolder-course > summary,
+.theme--dark .cvfolder-body,
+.theme--dark .cvfolder-row.is-course,
+.theme--dark .cvfolder-empty,
+.theme--dark .cvfolder-empty-row {
+  border-color: rgba(148, 163, 184, .24);
+  background: rgba(15, 23, 42, .42);
+  color: #cbd5e1;
+}
+
+.theme--dark .cvlib-stat b,
+.theme--dark .cvlib-panel h2,
+.theme--dark .cvlib-tool-link strong,
+.theme--dark .cvlib-create-panel > summary,
+.theme--dark .cvlib-manual > summary,
+.theme--dark .cvlib-dir-summary strong,
+.theme--dark .cvlib-dir-name strong,
+.theme--dark .cvlib-course-title,
+.theme--dark .cvlib-chapter-title,
+.theme--dark .cvlib-asset-title,
+.theme--dark .cvlib-status,
+.theme--dark .cvfolder-title strong,
+.theme--dark .cvsub-card h2,
+.theme--dark .cvlink-card h2 {
+  color: #f8fafc;
+}
+
+.theme--dark .cvlib-page label,
+.theme--dark .cvsub-page label,
+.theme--dark .cvlink-form label {
+  color: #dbeafe;
+}
+
+.theme--dark .cvlib-muted,
+.theme--dark .cvlib-meta,
+.theme--dark .cvlib-stat span,
+.theme--dark .cvlib-tool-link span,
+.theme--dark .cvlib-dir-summary span,
+.theme--dark .cvlib-dir-head,
+.theme--dark .cvlib-dir-name small,
+.theme--dark .cvlib-folder-empty,
+.theme--dark .cvfolder-title span,
+.theme--dark .cvfolder-meta,
+.theme--dark .cvfolder-empty,
+.theme--dark .cvfolder-empty-row {
+  color: #94a3b8;
+}
+
+.theme--dark .cvlib-dir-badge,
+.theme--dark .cvlib-index,
+.theme--dark .cvlib-tag,
+.theme--dark .cvfolder-toggle,
+.theme--dark .cvfolder-badge {
+  border-color: rgba(147, 197, 253, .28);
+  background: rgba(59, 130, 246, .16);
+  color: #bfdbfe;
+}
+
+.theme--dark .cvlib-meta code {
+  background: rgba(239, 68, 68, .14);
+  color: #fecaca;
+}
+
+.theme--dark .cvlib-confirm,
+.theme--dark .cvfolder-delete .button {
+  border-color: rgba(248, 113, 113, .42) !important;
+  background: rgba(127, 29, 29, .34) !important;
+  color: #fecaca !important;
+}
+
+.theme--dark .cvlib-page .textbox,
+.theme--dark .cvlib-page .select,
+.theme--dark .cvfolder-page .textbox,
+.theme--dark .cvfolder-page .select,
+.theme--dark .cvsub-page .textbox,
+.theme--dark .cvsub-page .select,
+.theme--dark .cvlink-page .textbox,
+.theme--dark .cvlink-page .select {
+  border-color: rgba(148, 163, 184, .32) !important;
+  background: rgba(15, 23, 42, .58) !important;
+  color: #e2e8f0 !important;
+}
+
+html.hydro-user-background-enabled .cvlib-note,
+html.hydro-user-background-enabled .cvfolder-note,
+html.hydro-user-background-enabled .cvsub-note,
+html.hydro-user-background-enabled .cvlink-note {
+  background: var(--hub-accent-soft) !important;
+  border-color: var(--hub-border) !important;
+  color: var(--hub-text) !important;
+}
+
+html.hydro-user-background-enabled .cvlib-stat,
+html.hydro-user-background-enabled .cvlib-panel,
+html.hydro-user-background-enabled .cvlib-tool-link,
+html.hydro-user-background-enabled .cvlib-dir-course,
+html.hydro-user-background-enabled .cvlib-course,
+html.hydro-user-background-enabled .cvlib-asset,
+html.hydro-user-background-enabled .cvfolder-course,
+html.hydro-user-background-enabled .cvfolder-row,
+html.hydro-user-background-enabled .cvsub-card,
+html.hydro-user-background-enabled .cvlink-card {
+  background: var(--hub-surface) !important;
+  border-color: var(--hub-border) !important;
+  color: var(--hub-text) !important;
+  box-shadow: var(--hub-shadow) !important;
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+}
+
+html.hydro-user-background-enabled .cvlib-dir-summary,
+html.hydro-user-background-enabled .cvlib-dir-head,
+html.hydro-user-background-enabled .cvlib-dir-row.is-chapter,
+html.hydro-user-background-enabled .cvlib-course-head,
+html.hydro-user-background-enabled .cvlib-mini-form,
+html.hydro-user-background-enabled .cvlib-empty,
+html.hydro-user-background-enabled .cvfolder-course > summary,
+html.hydro-user-background-enabled .cvfolder-body,
+html.hydro-user-background-enabled .cvfolder-row.is-course,
+html.hydro-user-background-enabled .cvfolder-empty,
+html.hydro-user-background-enabled .cvfolder-empty-row {
+  background: var(--hub-surface-soft) !important;
+  border-color: var(--hub-border) !important;
+  color: var(--hub-text) !important;
+}
+
+html.hydro-user-background-enabled .cvlib-page .textbox,
+html.hydro-user-background-enabled .cvlib-page .select,
+html.hydro-user-background-enabled .cvfolder-page .textbox,
+html.hydro-user-background-enabled .cvfolder-page .select,
+html.hydro-user-background-enabled .cvsub-page .textbox,
+html.hydro-user-background-enabled .cvsub-page .select,
+html.hydro-user-background-enabled .cvlink-page .textbox,
+html.hydro-user-background-enabled .cvlink-page .select {
+  background: var(--hub-input-bg) !important;
+  border-color: var(--hub-border) !important;
+  color: var(--hub-text) !important;
+}
+</style>

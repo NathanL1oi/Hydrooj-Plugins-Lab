@@ -1,0 +1,9 @@
+{
+    "name": "hydrooj-article-kkkw",
+    "version": "1.0.6-course-visibility",
+    "main": "index.js",
+    "dependencies": {
+        "fs-extra": "^11.3.1",
+        "lodash": "^4.17.21"
+    }
+}

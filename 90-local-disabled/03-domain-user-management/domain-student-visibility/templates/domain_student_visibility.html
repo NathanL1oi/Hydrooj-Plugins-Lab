@@ -1,0 +1,127 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.dsv .section { border-radius: 8px; overflow: hidden; }
+.dsv-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.dsv-muted { color: #64748b; }
+.dsv-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.dsv-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; background: #f8fafc; min-height: 142px; }
+.dsv-card h2 { margin: 0 0 8px; font-size: 16px; line-height: 1.35; color: #0f172a; }
+.dsv-card p { margin: 0 0 12px; color: #64748b; line-height: 1.55; font-size: 13px; }
+.dsv-switch { display: flex; gap: 8px; align-items: center; font-weight: 600; color: #0f172a; cursor: pointer; }
+.dsv-switch input { margin: 0; }
+.dsv-pill { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #dcfce7; color: #166534; font-size: 12px; }
+.dsv-pill.off { background: #fee2e2; color: #991b1b; }
+.dsv-note { margin-top: 14px; padding: 12px; border-radius: 8px; background: #eef6ff; color: #475569; line-height: 1.65; }
+.dsv-actions { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.theme--dark .dsv-muted,
+.theme--dark .dsv-card p,
+.theme--dark .dsv-note {
+  color: #9fb0c6;
+}
+.theme--dark .dsv-card,
+.theme--dark .dsv-note {
+  background: rgba(15, 23, 42, .42);
+  border-color: rgba(148, 163, 184, .26);
+}
+.theme--dark .dsv-card h2,
+.theme--dark .dsv-switch {
+  color: #e2e8f0;
+}
+.theme--dark .dsv-pill {
+  background: rgba(22, 101, 52, .32);
+  color: #86efac;
+}
+.theme--dark .dsv-pill.off {
+  background: rgba(127, 29, 29, .34);
+  color: #fca5a5;
+}
+html.hydro-user-background-enabled .dsv-card,
+html.hydro-user-background-enabled .dsv-note {
+  background: var(--hub-surface) !important;
+  border-color: var(--hub-border) !important;
+  color: var(--hub-text) !important;
+  box-shadow: var(--hub-shadow) !important;
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+}
+html.hydro-user-background-enabled .dsv-card p,
+html.hydro-user-background-enabled .dsv-muted {
+  color: var(--hub-muted) !important;
+}
+@media screen and (max-width: 900px) {
+  .dsv-grid { grid-template-columns: 1fr; }
+}
+</style>
+<div class="row dsv">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <div class="dsv-head">
+          <h1 class="section__title">{{ _('学生可见性') }}</h1>
+          <span class="dsv-muted">{{ _('当前域') }}: {{ handler.domain.name or handler.domain._id }}</span>
+        </div>
+      </div>
+      <div class="section__body">
+        <form method="post" id="domain-student-visibility-form">
+          <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+          <div class="dsv-grid">
+            <div class="dsv-card">
+              <h2>{{ _('题库入口') }}</h2>
+              <p>{{ _('关闭后，普通学生看不到顶部题库入口，并且直接访问题库列表时会被拦截。') }}</p>
+              <label class="dsv-switch">
+                <input type="checkbox" name="allowProblemSet" value="true" {% if config.allowProblemSet %}checked{% endif %}>
+                <span>{{ _('允许学生查看题库') }}</span>
+              </label>
+            </div>
+            <div class="dsv-card">
+              <h2>{{ _('尝试与已通过') }}</h2>
+              <p>{{ _('关闭后，普通学生看不到每题的 AC / Tried、尝试、已通过等统计信息。') }}</p>
+              <label class="dsv-switch">
+                <input type="checkbox" name="showProblemStats" value="true" {% if config.showProblemStats %}checked{% endif %}>
+                <span>{{ _('显示题目统计') }}</span>
+              </label>
+            </div>
+            <div class="dsv-card">
+              <h2>{{ _('难度与标签') }}</h2>
+              <p>{{ _('关闭后，普通学生看不到普及-、提高+、算法分类等题目难度和标签。') }}</p>
+              <label class="dsv-switch">
+                <input type="checkbox" name="showProblemDifficultyTags" value="true" {% if config.showProblemDifficultyTags %}checked{% endif %}>
+                <span>{{ _('显示难度和标签') }}</span>
+              </label>
+            </div>
+          </div>
+          <div class="dsv-actions">
+            <button type="submit" class="button rounded primary">
+              <span class="icon icon-save"></span> {{ _('保存设置') }}
+            </button>
+            <span class="dsv-pill {% if not config.allowProblemSet %}off{% endif %}">
+              {{ _('题库') }}: {% if config.allowProblemSet %}{{ _('开启') }}{% else %}{{ _('关闭') }}{% endif %}
+            </span>
+            <span class="dsv-pill {% if not config.showProblemStats %}off{% endif %}">
+              {{ _('统计') }}: {% if config.showProblemStats %}{{ _('显示') }}{% else %}{{ _('隐藏') }}{% endif %}
+            </span>
+            <span class="dsv-pill {% if not config.showProblemDifficultyTags %}off{% endif %}">
+              {{ _('标签') }}: {% if config.showProblemDifficultyTags %}{{ _('显示') }}{% else %}{{ _('隐藏') }}{% endif %}
+            </span>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    <div class="section side">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('规则') }}</h1>
+      </div>
+      <div class="section__body typo">
+        <ul>
+          <li>{{ _('配置按域保存，只影响当前子域。') }}</li>
+          <li>{{ _('只限制普通学生，不影响域管理员、教师、题目管理员和系统超管。') }}</li>
+          <li>{{ _('题库入口关闭时会拦截 /p；题目列表、题目详情和训练题目会同步隐藏敏感列。') }}</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

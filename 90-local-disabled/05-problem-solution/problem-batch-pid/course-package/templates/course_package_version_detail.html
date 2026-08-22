@@ -1,0 +1,115 @@
+{% import "components/user.html" as user with context %}
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.course-package-version .section { border-radius: 8px; overflow: hidden; }
+.course-package-version .cp-hero { background: linear-gradient(135deg, #f8fafc 0%, #eef6ff 100%); border: 1px solid #e4edf7; }
+.course-package-version .cp-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+.course-package-version .cp-summary span { padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; color: #64748b; }
+.course-package-version .cp-summary b { display: block; color: #111827; font-size: 1.35rem; line-height: 1.2; }
+.course-package-version .cp-chapter-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.course-package-version .cp-chapter-title { display: flex; align-items: center; gap: 10px; margin: 0; }
+.course-package-version .cp-index { display: inline-flex; width: 28px; height: 28px; border-radius: 50%; align-items: center; justify-content: center; background: #e8f2ff; color: #0f172a; font-size: .9rem; }
+.course-package-version .cp-lesson { border: 1px solid #e8edf3; border-radius: 8px; margin-bottom: 12px; padding: 14px 16px; background: #fff; }
+.course-package-version .cp-lesson h3 { margin-top: 0; }
+.course-package-version .cp-problems a { display: inline-block; margin: 0 4px 4px 0; padding: 2px 8px; border-radius: 999px; background: #f3f4f6; }
+.course-package-version .cp-actions a { margin-right: 8px; }
+</style>
+<div class="row course-package-version" data-sticky-parent>
+  <div class="medium-9 columns">
+    <div class="section cp-hero">
+      <div class="section__header">
+        <h1 class="section__title"><a href="{{ url('course_package_detail', cpid=cpdoc.docId) }}">{{ cpdoc.title }}</a>: {{ vpdoc.version }}</h1>
+      </div>
+      <div class="section__body typo richmedia">
+        {{ vpdoc.content|default('')|markdown|safe }}
+        <div class="cp-summary">
+          <span><b>{{ summary.chapterCount }}</b>{{ _('章') }}</span>
+          <span><b>{{ summary.lessonCount }}</b>{{ _('节') }}</span>
+          <span><b>{{ summary.problemCount }}</b>{{ _('题目') }}</span>
+        </div>
+      </div>
+    </div>
+    {% if not chapters.length %}
+    <div class="section">
+      <div class="section__body typo">
+        <p>{{ _('这个版本还没有章。') }}</p>
+        {% if canManage %}
+        <p><a class="rounded primary button" href="{{ url('course_package_chapter_create', cpid=cpdoc.docId, vid=vpdoc.docId) }}">{{ _('创建第一章') }}</a></p>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+    {% for chapter in chapters %}
+    <div class="section">
+      <div class="section__header">
+        <div class="cp-chapter-head">
+          <h1 class="section__title cp-chapter-title"><span class="cp-index">{{ loop.index }}</span>{{ chapter.title }}</h1>
+          {% if canManage or canCopy %}
+          <div class="section__tools cp-actions">
+            {% if canManage %}
+            <a class="button rounded" href="{{ url('course_package_chapter_edit', cpid=cpdoc.docId, vid=vpdoc.docId, chapterId=chapter.id) }}">{{ _('编辑章') }}</a>
+            <a class="button rounded" href="{{ url('course_package_lesson_create', cpid=cpdoc.docId, vid=vpdoc.docId, chapterId=chapter.id) }}">{{ _('创建节') }}</a>
+            {% endif %}
+            {% if canCopy %}
+            <a class="button rounded" href="{{ url('course_package_copy', cpid=cpdoc.docId, vid=vpdoc.docId, query={mode:'chapter', nodeId:chapter.id}) }}">{{ _('复制本章') }}</a>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% if chapter.content %}
+      <div class="section__body typo richmedia">{{ chapter.content|markdown|safe }}</div>
+      {% endif %}
+      <ol class="section__list">
+        {% for lesson in chapter.lessons %}
+        <li class="section__list__item cp-lesson">
+          <h3>{{ lesson.title }}</h3>
+          {% if lesson.content %}<div class="typo richmedia">{{ lesson.content|markdown|safe }}</div>{% endif %}
+          {% if lesson.pids.length %}
+          <p class="cp-problems">{{ _('题目') }}: {% for pid in lesson.pids %}<a href="{{ url('problem_detail', pid=pid) }}">P{{ pid }}</a>{% endfor %}</p>
+          {% endif %}
+          {% if canManage or canCopy %}
+          <p class="cp-actions">
+            {% if canManage %}
+            <a href="{{ url('course_package_lesson_edit', cpid=cpdoc.docId, vid=vpdoc.docId, chapterId=chapter.id, lessonId=lesson.id) }}">{{ _('编辑本节') }}</a>
+            {% endif %}
+            {% if canCopy %}
+            <a href="{{ url('course_package_copy', cpid=cpdoc.docId, vid=vpdoc.docId, query={mode:'lesson', nodeId:lesson.id}) }}">{{ _('复制本节') }}</a>
+            {% endif %}
+          </p>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ol>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="medium-3 columns" data-sticky="large">
+    <div class="section side">
+      <ol class="menu">
+        {% if canManage %}
+        <li class="menu__item"><a class="menu__link" href="{{ url('course_package_version_edit', cpid=cpdoc.docId, vid=vpdoc.docId) }}"><span class="icon icon-edit"></span> {{ _('Edit') }}</a></li>
+        <li class="menu__item"><a class="menu__link" href="{{ url('course_package_chapter_create', cpid=cpdoc.docId, vid=vpdoc.docId) }}"><span class="icon icon-add"></span> {{ _('创建章') }}</a></li>
+        {% endif %}
+        {% if canCopy %}
+        <li class="menu__item"><a class="menu__link" href="{{ url('course_package_copy', cpid=cpdoc.docId, vid=vpdoc.docId, query={mode:'package'}) }}"><span class="icon icon-copy"></span> {{ _('复制整个课程包') }}</a></li>
+        {% endif %}
+        {% if canExport %}
+        <li class="menu__item"><a class="menu__link" href="{{ url('course_package_export', cpid=cpdoc.docId, vid=vpdoc.docId) }}"><span class="icon icon-download"></span> {{ _('导出课程包 ZIP') }}</a></li>
+        {% endif %}
+      </ol>
+      <div class="section__body typo">
+        <dl class="large horizontal">
+          <dt>{{ _('Created By') }}</dt>
+          <dd>{{ user.render_inline(udoc, badge=false) }}</dd>
+          <dt>{{ _('章') }}</dt>
+          <dd>{{ summary.chapterCount }}</dd>
+          <dt>{{ _('版本定位') }}</dt>
+          <dd>{{ _('内容快照') }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

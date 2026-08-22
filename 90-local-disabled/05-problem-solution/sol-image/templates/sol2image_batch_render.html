@@ -1,0 +1,107 @@
+{% extends "layout/basic.html" %}
+
+{% block content %}
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">批量渲染题解图片</h1>
+      </div>
+      <div class="section__body typo">
+        {% if messages and messages.length %}
+          {% for message in messages %}
+            <p class="notification success">{{ message }}</p>
+          {% endfor %}
+        {% endif %}
+        <p>当前子域：<code>{{ domainId }}</code></p>
+        <table class="data-table">
+          <tr>
+            <th>全部题解</th>
+            <th>已完成</th>
+            <th>缺失或未完成</th>
+            <th>等待中</th>
+            <th>失败</th>
+          </tr>
+          <tr>
+            <td>{{ stats.total }}</td>
+            <td>{{ stats.completed }}</td>
+            <td>{{ stats.missing }}</td>
+            <td>{{ stats.pending }}</td>
+            <td>{{ stats.failed }}</td>
+          </tr>
+        </table>
+
+        {% if job %}
+          <h2>当前任务</h2>
+          <table class="data-table">
+            <tr>
+              <th>模式</th>
+              <td>{{ "强制重新渲染全部题解" if job.force else "渲染缺失或未完成题解" }}</td>
+            </tr>
+            <tr>
+              <th>状态</th>
+              <td>{{ "已完成" if job.finishedAt else ("停止中" if job.cancelled else "运行中") }}</td>
+            </tr>
+            <tr>
+              <th>进度</th>
+              <td>{{ job.scanned }} / {{ job.total }}</td>
+            </tr>
+            <tr>
+              <th>成功 / 失败 / 跳过</th>
+              <td>{{ job.rendered }} / {{ job.failed }} / {{ job.skipped }}</td>
+            </tr>
+            <tr>
+              <th>开始时间</th>
+              <td>{{ job.startedAtText }}</td>
+            </tr>
+            {% if job.finishedAt %}
+              <tr>
+                <th>结束时间</th>
+                <td>{{ job.finishedAtText }}</td>
+              </tr>
+            {% endif %}
+            {% if job.current %}
+              <tr>
+                <th>正在处理</th>
+                <td><code>{{ job.current }}</code></td>
+              </tr>
+            {% endif %}
+          </table>
+          {% if job.messages and job.messages.length %}
+            <ul>
+              {% for message in job.messages %}
+                <li>{{ message }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        {% endif %}
+
+        <form method="post">
+          <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+          <button class="rounded primary button" name="operation" value="start_missing" type="submit">
+            渲染缺失或未完成题解
+          </button>
+          <button class="rounded button" name="operation" value="start_all" type="submit" data-confirm="确定要重新渲染当前子域的全部题解吗？">
+            强制重新渲染全部题解
+          </button>
+          {% if job and not job.finishedAt %}
+            <button class="rounded button" name="operation" value="stop" type="submit">
+              停止当前任务
+            </button>
+          {% endif %}
+          <a class="rounded button" href="{{ url('sol2image_batch_render') }}">刷新状态</a>
+          <a class="rounded button" href="{{ url('problem_main') }}">返回题库</a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if job and not job.finishedAt %}
+<script>
+  window.setTimeout(function () {
+    window.location.reload();
+  }, 5000);
+</script>
+{% endif %}
+{% endblock %}

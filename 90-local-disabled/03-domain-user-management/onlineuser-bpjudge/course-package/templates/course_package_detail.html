@@ -1,0 +1,59 @@
+{% import "components/user.html" as user with context %}
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row" data-sticky-parent>
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('课程包') }}: {{ cpdoc.title }}</h1>
+      </div>
+      <div class="section__body typo richmedia">
+        {{ cpdoc.content|default('')|markdown|safe }}
+      </div>
+    </div>
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('版本') }}</h1>
+      </div>
+      {% if not versions.length %}
+      <div class="section__body typo"><p>{{ _('暂无版本') }}</p></div>
+      {% else %}
+      <ol class="section__list discussion__list">
+        {% for vpdoc in versions %}
+        <li class="section__list__item discussion__item">
+          <div class="media">
+            <div class="media__body middle">
+              <h1 class="discussion__title">
+                <a href="{{ url('course_package_version_detail', cpid=cpdoc.docId, vid=vpdoc.docId) }}">{{ vpdoc.title }}</a>
+              </h1>
+              <ul class="supplementary list">
+                <li>{{ vpdoc.version }}</li>
+                <li>|</li>
+                <li>{{ vpdoc.stages.length }} {{ _('阶段') }}</li>
+              </ul>
+            </div>
+          </div>
+        </li>
+        {% endfor %}
+      </ol>
+      {% endif %}
+    </div>
+  </div>
+  <div class="medium-3 columns" data-sticky="large">
+    <div class="section side">
+      <ol class="menu">
+        {% if handler.user.hasPerm(perm.PERM_EDIT_TRAINING) %}
+        <li class="menu__item"><a class="menu__link" href="{{ url('course_package_edit', cpid=cpdoc.docId) }}"><span class="icon icon-edit"></span> {{ _('Edit') }}</a></li>
+        <li class="menu__item"><a class="menu__link" href="{{ url('course_package_version_create', cpid=cpdoc.docId) }}"><span class="icon icon-add"></span> {{ _('创建版本') }}</a></li>
+        {% endif %}
+      </ol>
+      <div class="section__body typo">
+        <dl class="large horizontal">
+          <dt>{{ _('Created By') }}</dt>
+          <dd>{{ user.render_inline(udoc, badge=false) }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

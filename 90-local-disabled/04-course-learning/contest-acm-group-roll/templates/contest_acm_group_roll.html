@@ -1,0 +1,162 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.cagr-roll { --cagr-ink: #111827; --cagr-muted: #64748b; --cagr-line: #dbe3ef; --cagr-blue: #2563eb; --cagr-pink: #e11d48; --cagr-green: #16a34a; --cagr-gold: #f59e0b; }
+.cagr-roll .cagr-shell { display: grid; gap: 14px; }
+.cagr-roll .cagr-stage { position: relative; overflow: hidden; border-radius: 8px; border: 1px solid #cbd5e1; background: linear-gradient(135deg, #0f172a 0%, #1f2937 52%, #3b1021 100%); color: #f8fafc; min-height: 460px; padding: 22px; box-shadow: 0 20px 54px rgba(15, 23, 42, .22); }
+.cagr-roll .cagr-stage::before { content: ""; position: absolute; inset: 0; background: linear-gradient(115deg, rgba(37, 99, 235, .24), transparent 34%, rgba(225, 29, 72, .2) 72%, transparent), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px); background-size: auto, 44px 44px; pointer-events: none; }
+.cagr-roll .cagr-stage > * { position: relative; z-index: 1; }
+.cagr-roll .cagr-topbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 18px; }
+.cagr-roll .cagr-title h1 { color: #fff; font-size: 30px; line-height: 1.2; margin: 3px 0 4px; }
+.cagr-roll .cagr-kicker { color: #93c5fd; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; }
+.cagr-roll .cagr-note { color: #cbd5e1; font-size: 13px; line-height: 1.55; }
+.cagr-roll .cagr-controls { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.cagr-roll .cagr-controls .button { margin-bottom: 0; }
+.cagr-roll .cagr-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(300px, .7fr); gap: 16px; align-items: stretch; }
+.cagr-roll .cagr-current { min-height: 250px; border: 1px solid rgba(255,255,255,.18); border-radius: 8px; background: rgba(15, 23, 42, .52); padding: 22px; display: grid; align-content: center; gap: 16px; backdrop-filter: blur(12px); }
+.cagr-roll .cagr-current h2 { margin: 0; color: #fff; font-size: clamp(30px, 5vw, 64px); line-height: 1.06; word-break: break-word; }
+.cagr-roll .cagr-current .cagr-big-rank { font-size: clamp(44px, 7vw, 92px); color: #fde68a; font-weight: 800; line-height: .95; }
+.cagr-roll .cagr-current .cagr-meta { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.cagr-roll .cagr-pill { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 6px 10px; background: rgba(255,255,255,.12); color: #e5e7eb; font-weight: 700; }
+.cagr-roll .cagr-pill.is-up { background: rgba(22, 163, 74, .22); color: #bbf7d0; }
+.cagr-roll .cagr-pill.is-down { background: rgba(225, 29, 72, .22); color: #fecdd3; }
+.cagr-roll .cagr-pill.is-new { background: rgba(245, 158, 11, .22); color: #fde68a; }
+.cagr-roll .cagr-queue { border: 1px solid rgba(255,255,255,.16); border-radius: 8px; background: rgba(255,255,255,.08); padding: 12px; min-height: 250px; }
+.cagr-roll .cagr-queue h2 { color: #fff; margin: 0 0 10px; font-size: 18px; }
+.cagr-roll .cagr-queue-list { display: grid; gap: 7px; max-height: 360px; overflow: auto; padding-right: 3px; }
+.cagr-roll .cagr-queue-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) 74px; gap: 9px; align-items: center; padding: 9px 10px; border-radius: 8px; background: rgba(15,23,42,.42); color: #dbeafe; transition: transform .25s ease, background .25s ease, opacity .25s ease; }
+.cagr-roll .cagr-queue-row.is-current { background: linear-gradient(90deg, rgba(37,99,235,.75), rgba(225,29,72,.62)); transform: scale(1.02); color: #fff; }
+.cagr-roll .cagr-queue-row.is-revealed { background: rgba(22,163,74,.22); color: #dcfce7; }
+.cagr-roll .cagr-queue-index { font-weight: 800; color: #fde68a; }
+.cagr-roll .cagr-queue-team { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.cagr-roll .cagr-queue-result { text-align: right; color: #e5e7eb; font-weight: 700; }
+.cagr-roll .cagr-progress { height: 8px; border-radius: 999px; background: rgba(255,255,255,.14); overflow: hidden; margin-top: 16px; }
+.cagr-roll .cagr-progress-bar { width: 0%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #38bdf8, #f43f5e, #f59e0b); transition: width .35s ease; }
+.cagr-roll .cagr-board-panel { border: 1px solid #dbe3ef; border-radius: 8px; background: #fff; overflow: hidden; }
+.cagr-roll .cagr-board-head { display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 12px 14px; border-bottom: 1px solid #e2e8f0; }
+.cagr-roll .cagr-board-head h2 { margin: 0; font-size: 20px; color: var(--cagr-ink); }
+.cagr-roll .cagr-table-wrap { overflow-x: auto; }
+.cagr-roll table { min-width: 780px; }
+.cagr-roll th, .cagr-roll td { text-align: center; white-space: nowrap; }
+.cagr-roll th:nth-child(2), .cagr-roll td:nth-child(2) { text-align: left; }
+.cagr-roll .cagr-board-panel .cagr-pill { background: #eef2ff; color: #334155; }
+.cagr-roll .cagr-board-panel .cagr-pill.is-up { background: #dcfce7; color: #166534; }
+.cagr-roll .cagr-board-panel .cagr-pill.is-down { background: #ffe4e6; color: #be123c; }
+.cagr-roll .cagr-board-panel .cagr-pill.is-new { background: #fef3c7; color: #92400e; }
+.cagr-roll .cagr-team { color: var(--cagr-ink); font-weight: 800; }
+.cagr-roll .cagr-members { color: var(--cagr-muted); font-size: 12px; max-width: 360px; overflow: hidden; text-overflow: ellipsis; }
+.cagr-roll tr.is-new-row { animation: cagr-flash 1.1s ease; }
+.cagr-roll .cagr-empty { color: var(--cagr-muted); padding: 16px; text-align: center; }
+.cagr-roll.is-theater { position: fixed; inset: 0; z-index: 9999; background: #020617; padding: 18px; overflow: auto; }
+.cagr-roll.is-theater .row, .cagr-roll.is-theater .columns { width: 100%; max-width: none; }
+.cagr-roll.is-theater .section { margin: 0; background: transparent; box-shadow: none; }
+.cagr-roll.is-theater .section__header { display: none; }
+.cagr-roll.is-theater .cagr-stage { min-height: 58vh; }
+@keyframes cagr-flash {
+  0% { background: #fef3c7; transform: translateY(-4px); }
+  100% { background: transparent; transform: translateY(0); }
+}
+.theme--dark .cagr-roll .cagr-board-panel {
+  background: rgba(15, 23, 42, .42);
+  border-color: rgba(148, 163, 184, .26);
+}
+.theme--dark .cagr-roll .cagr-board-head { border-color: rgba(148, 163, 184, .24); }
+.theme--dark .cagr-roll .cagr-board-head h2,
+.theme--dark .cagr-roll .cagr-team { color: #e2e8f0; }
+.theme--dark .cagr-roll .cagr-empty,
+.theme--dark .cagr-roll .cagr-members { color: #94a3b8; }
+.theme--dark .cagr-roll .cagr-board-panel .cagr-pill {
+  background: rgba(148, 163, 184, .18);
+  color: #e2e8f0;
+}
+.theme--dark .cagr-roll .cagr-board-panel .cagr-pill.is-up { background: rgba(22, 101, 52, .32); color: #86efac; }
+.theme--dark .cagr-roll .cagr-board-panel .cagr-pill.is-down { background: rgba(127, 29, 29, .34); color: #fca5a5; }
+.theme--dark .cagr-roll .cagr-board-panel .cagr-pill.is-new { background: rgba(146, 64, 14, .34); color: #fcd34d; }
+@media (max-width: 960px) {
+  .cagr-roll .cagr-grid { grid-template-columns: 1fr; }
+  .cagr-roll .cagr-topbar { display: grid; }
+  .cagr-roll .cagr-controls { justify-content: flex-start; }
+}
+</style>
+<div class="cagr-roll" data-cagr-roll-root>
+  <div class="row">
+    <div class="medium-12 columns">
+      <div class="section">
+        <div class="section__header">
+          <h1 class="section__title">{{ _('XCPC 滚榜') }}</h1>
+        </div>
+        <div class="section__body cagr-shell">
+          {% if not cutoff.done and manager %}
+            <blockquote class="note">{{ _('比赛尚未结束，当前为管理员预览。学生端比赛结束后才能查看滚榜。') }}</blockquote>
+          {% endif %}
+          <div class="cagr-stage" data-cagr-roll>
+            <div class="cagr-topbar">
+              <div class="cagr-title">
+                <div class="cagr-kicker">XCPC GROUP ROLLING BOARD</div>
+                <h1>{{ tdoc.title }}</h1>
+                <div class="cagr-note">{{ _('从封榜时排名靠后的队伍开始，逐组揭晓封榜后的新增通过和最终名次。') }}</div>
+              </div>
+              <div class="cagr-controls">
+                <button class="rounded primary button" type="button" data-cagr-start>{{ _('开始') }}</button>
+                <button class="rounded button" type="button" data-cagr-next>{{ _('下一组') }}</button>
+                <button class="rounded button" type="button" data-cagr-reset>{{ _('重置') }}</button>
+                <button class="rounded button" type="button" data-cagr-theater>{{ _('全屏展示') }}</button>
+                <a class="rounded button" href="{{ url('contest_acm_group_scoreboard', tid=tdoc.docId) }}">{{ _('返回小组榜') }}</a>
+              </div>
+            </div>
+            <div class="cagr-grid">
+              <div class="cagr-current" data-cagr-current>
+                <div class="cagr-note">{{ _('等待开始') }}</div>
+                <h2>{{ _('准备揭晓最终排名') }}</h2>
+                <div class="cagr-meta">
+                  <span class="cagr-pill">{{ revealPlan.length }} {{ _('组') }}</span>
+                  <span class="cagr-pill">{{ _('封榜后结果将在这里逐队展开') }}</span>
+                </div>
+              </div>
+              <div class="cagr-queue">
+                <h2>{{ _('揭榜队列') }}</h2>
+                <div class="cagr-queue-list">
+                  {% for item in revealPlan %}
+                    <div class="cagr-queue-row" data-cagr-queue-row="{{ loop.index0 }}">
+                      <div class="cagr-queue-index">{{ loop.index }}</div>
+                      <div class="cagr-queue-team" title="{{ item.teamName }}">{{ item.teamName }}</div>
+                      <div class="cagr-queue-result" data-cagr-queue-result>{{ _('待揭晓') }}</div>
+                    </div>
+                  {% else %}
+                    <div class="cagr-empty">{{ _('暂无可滚榜的小组。') }}</div>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+            <div class="cagr-progress"><div class="cagr-progress-bar" data-cagr-progress></div></div>
+          </div>
+
+          <div class="cagr-board-panel">
+            <div class="cagr-board-head">
+              <h2>{{ _('已揭晓最终榜') }}</h2>
+              <span class="cagr-note" data-cagr-counter>0 / {{ revealPlan.length }}</span>
+            </div>
+            <div class="cagr-table-wrap table-layout-guard">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>{{ _('最终名次') }}</th>
+                    <th>{{ _('小组') }}</th>
+                    <th>{{ _('封榜名次') }}</th>
+                    <th>{{ _('小组通过') }}</th>
+                    <th>{{ _('罚时') }}</th>
+                    <th>{{ _('变化') }}</th>
+                  </tr>
+                </thead>
+                <tbody data-cagr-final-board>
+                  <tr data-cagr-empty-row><td colspan="6" class="cagr-empty">{{ _('等待开始滚榜。') }}</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

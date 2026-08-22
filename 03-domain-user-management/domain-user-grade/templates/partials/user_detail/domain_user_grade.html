@@ -1,0 +1,12 @@
+{% if handler.user.hasPerm(perm.PERM_EDIT_DOMAIN) and udoc.grade %}
+<li class="section__tab-item">
+  <h1 class="section__tab-title">年级</h1>
+  <div class="section__tab-main">
+    <div class="section__body">
+      <p>
+        <strong>年级：</strong>{{ udoc.grade }}
+      </p>
+    </div>
+  </div>
+</li>
+{% endif %}

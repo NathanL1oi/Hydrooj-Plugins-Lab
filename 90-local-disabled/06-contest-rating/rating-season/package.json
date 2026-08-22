@@ -1,0 +1,11 @@
+{
+  "name": "hydrooj-rating-season",
+  "version": "0.1.0",
+  "description": "Season view and growth leaderboard for contest rating",
+  "main": "index.ts",
+  "license": "AGPL-3.0",
+  "devDependencies": {
+    "hydrooj": "^5.0.0-beta.6",
+    "typescript": "^5.8.3"
+  }
+}

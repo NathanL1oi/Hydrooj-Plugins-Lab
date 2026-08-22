@@ -1,0 +1,126 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+{{ set(
+UiContext, 'requestUrl',
+"/blog/user/manage?"
++ (("&uidOrName=" + filterUidOrName) if filterUidOrName else "")
++ (("&status=" + filterStatus) if typeof(filterStatus) == 'string' else "")
+) }}
+{{ set(UiContext, 'groups', groups) }}
+<div class="row">
+  <div class="medium-9 columns">
+    <form method="get">
+      <div class="section">
+        <div class="section__header">
+          <h1 class="section__title">{{ _('User Management') }}</h1>
+          <div class="section__tools">
+            <button type="submit" class="primary button"><span class="icon icon-filter"></span> {{
+              _('Filter')
+              }}</button>
+            <a href="{{ url('blog_user_admin') }}" class="button">{{ _('Reset') }}</a>
+            <a class="primary button" name="select_user"><span class="icon icon-search"></span>
+              {{ _('Select User') }}</a>
+            <a class="primary button" name="select_group"><span class="icon icon-search"></span>
+              {{ _('Select Group') }}</a>
+          </div>
+        </div>
+        <div class="section__body">
+          <div class="row">
+            <div class="medium-8 columns">
+              <label class="filter-user">
+                {{ _('By Username / UID') }}
+                <input name="uidOrName" type="text" class="textbox" value="{{ filterUidOrName }}" autocomplete="off"
+                  data-autofocus>
+              </label>
+            </div>
+            <div class="medium-4 columns">
+              <label>
+                {{ _('Blog Status') }}
+                <select class="compact select" name="status">
+                  <option value="" {% if typeof(filterStatus) !='string' %}selected{% else %}{% endif %}>所有</option>
+                  <option value="disabled" {% if typeof(filterStatus)=='string' and filterStatus=='disabled'
+                    %}selected{% else %}{% endif %}>禁用</option>
+                  <option value="enabled" {% if typeof(filterStatus)=='string' and filterStatus=='enabled' %}selected{%
+                    else %}{% endif %}>非禁用</option>
+                </select>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <div class="section">
+      {{ noscript_note.render() }}
+      <div class="section__body no-padding">
+        <table class="data-table">
+          <colgroup>
+            <col class="col--uid">
+            <col class="col--user">
+            <col class="col--school">
+            <col class="col--status">
+            <col class="col--actions">
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="col--uid">{{ _('UID') }}</th>
+              <th class="col--user">{{ _('Username') }}</th>
+              <th class="col--school">{{ _('School') }}</th>
+              <th class="col--status">{{ _('Blog Status') }}</th>
+              <th class="col--actions"><span class="icon icon-wrench"></span></th>
+            </tr>
+          </thead>
+          {% include "partials/blog_user_admin.html" %}
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    <div data-sticky="large">
+      <div class="section side">
+        <ol class="menu">
+          <li class="menu__item">
+            <div class="menu__link expandable">
+              <span class="icon icon-info"></span> {{ _('Article') }}
+            </div>
+            <ol class="menu collapsed">
+              <li class="menu__item" id="menu-item-{{ menu_item or page_name }}">
+                {% set target_url = url('article_main') %}
+                <a href="{{ target_url }}"
+                  class="menu__link{% if handler.request.path == target_url %} active{% endif %}">
+                  {{ _('Article') }}
+                </a>
+              </li>
+              <li class="menu__item" id="menu-item-{{ menu_item or page_name }}">
+                {% set target_url = url('blog_main', uid=handler.user._id) %}
+                <a href="{{ target_url }}"
+                  class="menu__link{% if handler.request.path == target_url %} active{% endif %}">
+                  {{ _('Blog') }}
+                </a>
+              </li>
+              {% if handler.user.hasPerm(perm.PERM_EDIT_DOMAIN) %}
+              <li class="menu__item" id="menu-item-{{ menu_item or page_name }}">
+                {% set target_url = url('article_main_admin') %}
+                <a href="{{ target_url }}"
+                  class="menu__link{% if handler.request.path == target_url %} active{% endif %}">
+                  {{ _('Article Management') }}
+                </a>
+              </li>
+              {% endif %}
+              {% if handler.user.hasPerm(perm.PERM_EDIT_DOMAIN) %}
+              <li class="menu__item" id="menu-item-{{ menu_item or page_name }}">
+                {% set target_url = url('blog_user_admin') %}
+                <a href="{{ target_url }}"
+                  class="menu__link{% if handler.request.path == target_url %} active{% endif %}">
+                  {{ _('User Management') }}
+                </a>
+              </li>
+              {% endif %}
+            </ol>
+          </li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.cfk-card { display: grid; gap: 14px; }
+.cfk-note { color: #64748b; font-size: 13px; line-height: 1.55; }
+.cfk-form-grid { display: grid; gap: 14px; }
+.cfk-form-grid textarea { min-height: 110px; }
+.cfk-pill { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #eef2ff; color: #3730a3; font-size: 12px; }
+.cfk-message { padding: 10px 12px; border-radius: 6px; background: #f8fafc; color: #475569; }
+</style>
+<div class="row" data-sticky-parent>
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('赛前目标卡') }}</h1>
+      </div>
+      <div class="section__body cfk-card">
+        {% if not config.goalEnabled and not config.groupModeEnabled %}
+          <div class="cfk-message">{{ _('本场比赛尚未开启赛前目标卡或小组模式。') }}</div>
+        {% elif not canSubmit %}
+          <div class="cfk-message">{{ _('请先报名本场比赛，然后再填写目标卡或选择小组。') }}</div>
+        {% else %}
+          {% if goal %}
+            <div>
+              <span class="cfk-pill">{{ _('已保存') }}</span>
+              <span class="cfk-note">{{ _('你可以在比赛前或比赛中继续调整。') }}</span>
+            </div>
+          {% endif %}
+          <form method="post" class="cfk-form-grid">
+            {% if config.groupModeEnabled %}
+              <label>
+                <strong>{{ _('我的小组') }}</strong>
+                {% if config.groupSelectOpen %}
+                  <select name="teamName" class="select">
+                    <option value="">{{ _('暂不选择') }}</option>
+                    {% for name in config.groupNames %}
+                      <option value="{{ name }}" {% if team and team.teamName == name %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                  </select>
+                  <p class="cfk-note">{{ _('小组只用于互动展示，不影响原比赛排名。') }}</p>
+                {% else %}
+                  <div class="cfk-message">{{ team.teamName if team else _('教师尚未为你分配小组') }}</div>
+                {% endif %}
+              </label>
+            {% endif %}
+
+            {% if config.goalEnabled %}
+              <label>
+                <strong>{{ _('目标题数') }}</strong>
+                <input class="textbox" type="number" min="0" max="{{ tdoc.pids.length }}" name="targetSolve" value="{{ goal.targetSolve if goal else 0 }}">
+              </label>
+              <label>
+                <strong>{{ _('我的比赛策略') }}</strong>
+                <textarea class="textbox" name="strategy" placeholder="{{ _('例如：先读完全部题，再从 A/B 题开始稳定拿分。') }}">{{ goal.strategy if goal else '' }}</textarea>
+              </label>
+              <label>
+                <strong>{{ _('我最担心的问题') }}</strong>
+                <textarea class="textbox" name="worry" placeholder="{{ _('例如：调试时间过长、读题漏条件、时间分配失衡。') }}">{{ goal.worry if goal else '' }}</textarea>
+              </label>
+            {% endif %}
+            <button class="rounded primary button" type="submit">{{ _('保存目标卡') }}</button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns" data-sticky="large">
+    {% include "partials/contest_sidebar.html" %}
+  </div>
+</div>
+{% endblock %}

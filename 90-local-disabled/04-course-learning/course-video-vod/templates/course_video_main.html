@@ -1,0 +1,469 @@
+{% extends "manage_base.html" %}
+{% block manage_content %}
+<style>
+.cvlib-page { display: grid; gap: 18px; font-size: 13px; }
+.cvlib-page .section__body { padding-top: 18px; }
+.cvlib-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.cvlib-head-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.cvlib-note { margin: 0; padding: 10px 12px; border-left: 3px solid #5aa3e6; background: #f8fbff; color: #506680; line-height: 1.65; }
+.cvlib-overview { display: grid; grid-template-columns: minmax(240px, 360px) minmax(0, 1fr); gap: 14px; align-items: stretch; margin-bottom: 16px; }
+.cvlib-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.cvlib-stat { border: 1px solid #dfeaf5; border-radius: 8px; padding: 10px 12px; background: #fff; }
+.cvlib-stat b { display: block; font-size: 22px; line-height: 1.1; color: #10233f; }
+.cvlib-stat span { color: #64748b; font-size: 13px; }
+.cvlib-filter { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(150px, 1fr) auto auto; gap: 8px; align-items: end; }
+.cvlib-page label { margin: 0; color: #506070; font-size: 13px; }
+.cvlib-page .textbox, .cvlib-page .select { width: 100%; min-height: 34px; font-size: 13px; }
+.cvlib-page .button.rounded, .cvlib-page summary.button.rounded { min-height: 32px; padding: 6px 13px; line-height: 1.2; font-size: 13px; }
+.cvlib-page .primary.button { box-shadow: none; }
+.cvlib-workbench { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(330px, .88fr); gap: 14px; align-items: start; margin-top: 16px; }
+.cvlib-panel { border: 1px solid #dfeaf5; border-radius: 8px; background: #fff; padding: 14px; }
+.cvlib-panel h2 { margin: 0 0 12px; font-size: 17px; line-height: 1.25; color: #24364d; }
+.cvlib-form { display: grid; gap: 11px; }
+.cvlib-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-items: end; }
+.cvlib-form-grid .wide { grid-column: 1 / -1; }
+.cvlib-progress { display: none; height: 8px; border-radius: 999px; background: #e5e7eb; overflow: hidden; margin-top: 10px; }
+.cvlib-progress span { display: block; width: 0; height: 100%; background: #2f80ed; transition: width .2s ease; }
+.cvlib-upload-state { min-height: 22px; color: #64748b; margin-top: 6px; font-size: 13px; }
+.cvlib-directory { display: grid; gap: 12px; }
+.cvlib-directory > .cvlib-create-panel,
+.cvlib-directory > .cvlib-folder-tree,
+.cvlib-directory > .cvlib-manual { display: none; }
+.cvlib-tool-links { display: grid; gap: 10px; }
+.cvlib-tool-link { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 12px; border: 1px solid #dfeaf5; border-radius: 8px; background: #f8fbff; color: #24364d; text-decoration: none; }
+.cvlib-tool-link:hover { background: #f1f7ff; text-decoration: none; }
+.cvlib-tool-link strong { display: block; font-size: 15px; line-height: 1.35; color: #10233f; }
+.cvlib-tool-link span { color: #64748b; font-size: 12px; }
+.cvlib-tool-arrow { color: #5aa3e6; font-weight: 700; }
+.cvlib-directory .textbox, .cvlib-directory .select { min-height: 32px !important; height: 32px; padding: 4px 9px !important; font-size: 13px !important; }
+.cvlib-directory .button.rounded, .cvlib-directory summary.button.rounded { min-width: 0 !important; min-height: 30px !important; padding: 4px 11px !important; border-radius: 999px !important; font-size: 13px !important; line-height: 1.2 !important; }
+.cvlib-create-panel, .cvlib-manual { border-top: 1px solid #e5eef7; padding-top: 10px; }
+.cvlib-create-panel:first-of-type { border-top: 0; padding-top: 0; }
+.cvlib-create-panel > summary, .cvlib-manual > summary { cursor: pointer; color: #24364d; font-size: 15px; font-weight: 700; padding: 4px 0; }
+.cvlib-directory-forms { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.cvlib-mini-form { display: grid; grid-template-columns: minmax(0, 1fr) 76px auto; gap: 8px; align-items: end; padding: 10px; border: 1px solid #e5eef7; border-radius: 8px; background: #fbfdff; }
+.cvlib-mini-form.cvlib-chapter-create { grid-template-columns: minmax(0, .9fr) minmax(0, 1fr) 76px auto; }
+.cvlib-mini-form label { display: grid; gap: 4px; }
+.cvlib-folder-tree { display: grid; gap: 8px; max-height: 390px; overflow: auto; padding-right: 3px; }
+.cvlib-folder-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; align-items: center; }
+.cvlib-order-form { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0; }
+.cvlib-order-form label { display: flex; align-items: center; gap: 5px; font-size: 12px; }
+.cvlib-order-input { width: 64px !important; min-height: 30px !important; padding-left: 7px; padding-right: 7px; }
+.cvlib-folder-empty { color: #64748b; font-size: 13px; }
+.cvlib-dir-course { border: 1px solid #dfeaf5; border-radius: 8px; background: #fff; overflow: hidden; }
+.cvlib-dir-course + .cvlib-dir-course { margin-top: 8px; }
+.cvlib-dir-summary { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; cursor: pointer; background: #f8fbff; }
+.cvlib-dir-summary strong { display: block; min-width: 0; color: #10233f; font-size: 15px; line-height: 1.35; overflow-wrap: anywhere; }
+.cvlib-dir-summary span { color: #64748b; font-size: 12px; white-space: nowrap; }
+.cvlib-dir-table { display: grid; border-top: 1px solid #dfeaf5; }
+.cvlib-dir-head, .cvlib-dir-row { display: grid; grid-template-columns: minmax(0, 1fr) 112px 118px; gap: 8px; align-items: center; }
+.cvlib-dir-head { padding: 7px 10px; background: #fbfdff; color: #64748b; font-size: 12px; font-weight: 700; }
+.cvlib-dir-row { min-height: 42px; padding: 8px 10px; border-top: 1px solid #edf2f7; }
+.cvlib-dir-row.is-chapter { padding-left: 26px; background: #fbfdff; }
+.cvlib-dir-name { display: flex; min-width: 0; gap: 8px; align-items: center; }
+.cvlib-dir-name strong { min-width: 0; color: #10233f; line-height: 1.35; overflow-wrap: anywhere; }
+.cvlib-dir-name small { color: #64748b; white-space: nowrap; }
+.cvlib-dir-badge { flex: none; display: inline-flex; align-items: center; justify-content: center; min-width: 34px; padding: 1px 7px; border-radius: 999px; background: #edf5ff; color: #24537d; font-size: 12px; font-weight: 700; }
+.cvlib-dir-order-form { display: flex; gap: 5px; align-items: center; margin: 0; }
+.cvlib-dir-order-input { width: 58px !important; min-height: 28px !important; padding: 4px 6px !important; font-size: 12px !important; }
+.cvlib-dir-actions { display: flex; gap: 5px; justify-content: flex-end; align-items: center; }
+.cvlib-dir-actions form { margin: 0; }
+.cvlib-dir-order-form .button.rounded, .cvlib-dir-actions .button.rounded { min-height: 28px !important; padding: 4px 9px !important; font-size: 12px !important; border-radius: 999px; }
+.cvlib-dir-empty { padding: 10px 12px; border-top: 1px solid #edf2f7; color: #64748b; font-size: 13px; background: #fbfdff; }
+.cvlib-list-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.cvlib-list-head .section__title { margin: 0; }
+.cvlib-list { display: grid; gap: 12px; }
+.cvlib-course { border: 1px solid #d9e6f4; border-radius: 8px; background: #fff; overflow: visible; }
+.cvlib-course-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 14px; background: #f7fbff; border-bottom: 1px solid #d9e6f4; }
+.cvlib-index { display: inline-flex; width: 28px; height: 28px; border-radius: 50%; align-items: center; justify-content: center; background: #e8f2ff; color: #17446f; font-weight: 700; flex: none; }
+.cvlib-course-title { min-width: 0; font-size: 18px; line-height: 1.25; color: #24364d; overflow-wrap: anywhere; }
+.cvlib-muted { color: #64748b; font-size: 13px; }
+.cvlib-chapter { padding: 10px 14px 12px; border-bottom: 1px solid #edf2f7; }
+.cvlib-chapter:last-child { border-bottom: 0; }
+.cvlib-chapter-title { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; margin-bottom: 8px; color: #0f172a; font-weight: 700; }
+.cvlib-assets { display: grid; gap: 8px; }
+.cvlib-asset { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid #e5eef7; border-radius: 8px; background: #fbfdff; overflow: visible; }
+.cvlib-asset-title { margin-bottom: 5px; font-size: 16px; line-height: 1.35; font-weight: 700; color: #111827; overflow-wrap: anywhere; }
+.cvlib-meta { display: flex; flex-wrap: wrap; gap: 5px 10px; color: #64748b; font-size: 13px; line-height: 1.7; }
+.cvlib-meta code { color: #dc2626; background: #fff5f5; padding: 1px 4px; border-radius: 4px; overflow-wrap: anywhere; }
+.cvlib-tag { display: inline-flex; align-items: center; padding: 1px 8px; border-radius: 999px; background: #e8f2ff; color: #1e3a8a; font-size: 12px; font-weight: 700; }
+.cvlib-status { font-weight: 700; color: #111827; }
+.cvlib-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; min-width: 152px; align-items: flex-start; }
+.cvlib-actions form { margin: 0; }
+.cvlib-delete { display: grid; justify-items: end; position: relative; }
+.cvlib-delete > summary { list-style: none; cursor: pointer; }
+.cvlib-delete > summary::-webkit-details-marker { display: none; }
+.cvlib-confirm { width: min(280px, 72vw); margin-top: 8px; padding: 10px; border: 1px solid #fecaca; border-radius: 8px; background: #fff7f7; color: #7f1d1d; box-shadow: 0 10px 24px rgba(15, 23, 42, .12); }
+.cvlib-confirm p { margin: 0 0 8px; font-size: 13px; line-height: 1.55; }
+.cvlib-danger { background: #dc2626 !important; color: #fff !important; border-color: #dc2626 !important; }
+.cvlib-empty { padding: 24px; text-align: center; color: #64748b; border: 1px dashed #cbd5e1; border-radius: 8px; background: #f8fafc; }
+@media screen and (max-width: 1100px) {
+  .cvlib-overview, .cvlib-workbench { grid-template-columns: 1fr; }
+}
+@media screen and (max-width: 760px) {
+  .cvlib-stats, .cvlib-filter, .cvlib-form-grid, .cvlib-directory-forms { grid-template-columns: 1fr; }
+  .cvlib-form-grid .wide { grid-column: auto; }
+  .cvlib-course-head, .cvlib-asset { grid-template-columns: 1fr; }
+  .cvlib-dir-summary, .cvlib-dir-head, .cvlib-dir-row { grid-template-columns: 1fr; }
+  .cvlib-folder-actions { justify-content: flex-start; }
+  .cvlib-actions { justify-content: flex-start; min-width: 0; }
+  .cvlib-delete { justify-items: start; }
+}
+</style>
+{% include "course_video_theme.html" %}
+
+<div class="cvlib-page">
+  <div class="section">
+    <div class="section__header cvlib-head">
+      <h1 class="section__title">{{ _('课程视频库') }}</h1>
+      <div class="cvlib-head-actions">
+        <a class="rounded button" href="{{ url('course_video_config') }}">{{ _('VOD 兼容配置') }}</a>
+      </div>
+    </div>
+    <div class="section__body">
+      <div class="cvlib-overview">
+        <div class="cvlib-stats">
+          <div class="cvlib-stat"><b>{{ assets.length }}</b><span>视频</span></div>
+          <div class="cvlib-stat"><b>{{ folderTree.length }}</b><span>自建课程</span></div>
+          <div class="cvlib-stat"><b>{{ chapterCount }}</b><span>自建章</span></div>
+        </div>
+        <form class="cvlib-filter" method="get" data-cvv-path-selects>
+          <label>
+            按课程过滤
+            <select class="select" name="courseId" data-cvv-course-select>
+              <option value="">全部课程</option>
+              {% for course in folderTree %}
+                <option value="{{ course.id }}" {% if currentCourseId == course.id %}selected{% endif %}>{{ course.name }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>
+            按章过滤
+            <select class="select" name="chapterId" data-cvv-chapter-select>
+              <option value="">全部章</option>
+              {% for course in folderTree %}
+                {% for chapter in course.chapters %}
+                  <option value="{{ chapter.id }}" data-course-id="{{ course.id }}" {% if currentChapterId == chapter.id %}selected{% endif %}>{{ chapter.name }}</option>
+                {% endfor %}
+              {% endfor %}
+            </select>
+          </label>
+          <button class="rounded button" type="submit">筛选</button>
+          {% if currentCourseId or currentChapterId %}
+            <a class="rounded button" href="{{ url('course_video_main') }}">清除</a>
+          {% endif %}
+        </form>
+      </div>
+
+      <p class="cvlib-note">
+        视频文件直接上传并存储在腾讯云 VOD。这里的课程、章是视频库自己的目录，只用于整理视频；上传时选择已有课程和章，然后手动填写视频名。
+      </p>
+
+      <div class="cvlib-workbench">
+        <form id="course-video-vod-upload-form" class="cvlib-panel cvlib-form"
+          data-sign-url="{{ url('course_video_upload_sign') }}"
+          data-complete-url="{{ url('course_video_upload_complete') }}"
+          data-return-url="{{ url('course_video_main') }}">
+          <h2>上传到腾讯云 VOD</h2>
+          <div class="cvlib-form-grid" data-cvv-path-selects>
+            <label>
+              课程
+              <select class="select" name="folderCourseId" data-cvv-course-select required>
+                <option value="">请选择课程</option>
+                {% for course in folderTree %}
+                  <option value="{{ course.id }}" {% if currentCourseId == course.id %}selected{% endif %}>{{ course.name }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label>
+              章
+              <select class="select" name="folderChapterId" data-cvv-chapter-select required>
+                <option value="">请选择章</option>
+                {% for course in folderTree %}
+                  {% for chapter in course.chapters %}
+                    <option value="{{ chapter.id }}" data-course-id="{{ course.id }}" {% if currentChapterId == chapter.id %}selected{% endif %}>{{ chapter.name }}</option>
+                  {% endfor %}
+                {% endfor %}
+              </select>
+            </label>
+            <label>
+              视频名
+              <input class="textbox" name="videoTitle" placeholder="例如：树形 DP 讲解视频 1" required>
+            </label>
+            <label>
+              时长（秒，可空）
+              <input class="textbox" name="duration" placeholder="9418">
+            </label>
+            <label class="wide">
+              VOD 视频文件
+              <input class="textbox" type="file" name="video" accept=".mp4,.m4v,.mov,.webm,video/*" required>
+            </label>
+            <div class="wide">
+              <button class="rounded primary button" type="submit">{{ _('上传到 VOD') }}</button>
+              <div class="cvlib-progress" data-vod-upload-progress><span></span></div>
+              <div class="cvlib-upload-state" data-vod-upload-state></div>
+            </div>
+          </div>
+        </form>
+
+        <div class="cvlib-panel cvlib-directory">
+          <h2>目录管理</h2>
+          <div class="cvlib-tool-links">
+            <a class="cvlib-tool-link" href="{{ url('course_video_folder_create') }}">
+              <div>
+                <strong>新建课程 / 章</strong>
+                <span>单独页面创建视频库目录，避免表单挤在侧栏。</span>
+              </div>
+              <span class="cvlib-tool-arrow">进入</span>
+            </a>
+            <a class="cvlib-tool-link" href="{{ url('course_video_folder_manage') }}">
+              <div>
+                <strong>管理已有课程 / 章</strong>
+                <span>调整排序、删除目录；不会删除 VOD 视频文件。</span>
+              </div>
+              <span class="cvlib-tool-arrow">进入</span>
+            </a>
+            <a class="cvlib-tool-link" href="{{ url('course_video_manual_register') }}">
+              <div>
+                <strong>登记已有 VOD FileId</strong>
+                <span>把控制台已有 FileId 纳入课程视频库。</span>
+              </div>
+              <span class="cvlib-tool-arrow">进入</span>
+            </a>
+            <a class="cvlib-tool-link" href="{{ url('course_video_package_link') }}">
+              <div>
+                <strong>补建课程包节同步关系</strong>
+                <span>为已复制到子域课程的小节建立视频同步关系，并立即同步当前绑定。</span>
+              </div>
+              <span class="cvlib-tool-arrow">进入</span>
+            </a>
+          </div>
+          <details class="cvlib-create-panel" {% if not folderTree.length %}open{% endif %}>
+            <summary>新建课程 / 章</summary>
+            <div class="cvlib-directory-forms" style="margin-top:10px">
+              <form method="post" class="cvlib-form cvlib-mini-form">
+                <input type="hidden" name="operation" value="create_course">
+                <label>
+                  新建课程
+                  <input class="textbox" name="name" placeholder="例如：语法 v1" required>
+                </label>
+                <label>
+                  排序值
+                  <input class="textbox" name="order" value="100">
+                </label>
+                <button class="rounded button" type="submit">新建课程</button>
+              </form>
+              <form method="post" class="cvlib-form cvlib-mini-form cvlib-chapter-create">
+                <input type="hidden" name="operation" value="create_chapter">
+                <label>
+                  所属课程
+                  <select class="select" name="folderCourseId" required>
+                    <option value="">请选择课程</option>
+                    {% for course in folderTree %}
+                      <option value="{{ course.id }}" {% if currentCourseId == course.id %}selected{% endif %}>{{ course.name }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+                <label>
+                  新建章
+                  <input class="textbox" name="name" placeholder="例如：顺序结构" required>
+                </label>
+                <label>
+                  排序值
+                  <input class="textbox" name="order" value="100">
+                </label>
+                <button class="rounded button" type="submit">新建章</button>
+              </form>
+            </div>
+          </details>
+
+          <div class="cvlib-folder-tree">
+            {% for course in folderTree %}
+              <details class="cvlib-dir-course">
+                <summary class="cvlib-dir-summary">
+                  <strong>{{ course.name }}</strong>
+                  <span>{{ course.chapters.length }} 章 · 排序 {{ course.order }}</span>
+                </summary>
+                <div class="cvlib-dir-table">
+                  <div class="cvlib-dir-head">
+                    <span>名称</span>
+                    <span>排序</span>
+                    <span>操作</span>
+                  </div>
+                  <div class="cvlib-dir-row is-course">
+                    <div class="cvlib-dir-name">
+                      <span class="cvlib-dir-badge">课程</span>
+                      <strong>{{ course.name }}</strong>
+                    </div>
+                    <form method="post" class="cvlib-dir-order-form">
+                      <input type="hidden" name="operation" value="update_folder">
+                      <input type="hidden" name="folderId" value="{{ course.id }}">
+                      <input class="textbox cvlib-dir-order-input" name="order" value="{{ course.order }}" aria-label="课程排序">
+                      <button class="rounded button" type="submit">保存</button>
+                    </form>
+                    <div class="cvlib-dir-actions">
+                      <form method="post" onsubmit="return confirm('删除课程会隐藏它下面的章目录，视频不会从 VOD 删除。确定继续吗？')">
+                        <input type="hidden" name="operation" value="delete_folder">
+                        <input type="hidden" name="folderId" value="{{ course.id }}">
+                        <button class="rounded button" type="submit">删除</button>
+                      </form>
+                    </div>
+                  </div>
+                  {% if course.chapters.length %}
+                  {% for chapter in course.chapters %}
+                    <div class="cvlib-dir-row is-chapter">
+                      <div class="cvlib-dir-name">
+                        <span class="cvlib-dir-badge">章</span>
+                        <strong>{{ chapter.name }}</strong>
+                        <small>属于 {{ course.name }}</small>
+                      </div>
+                      <form method="post" class="cvlib-dir-order-form">
+                        <input type="hidden" name="operation" value="update_folder">
+                        <input type="hidden" name="folderId" value="{{ chapter.id }}">
+                        <input class="textbox cvlib-dir-order-input" name="order" value="{{ chapter.order }}" aria-label="章排序">
+                        <button class="rounded button" type="submit">保存</button>
+                      </form>
+                      <div class="cvlib-dir-actions">
+                        <form method="post" onsubmit="return confirm('删除章目录不会删除 VOD 视频。确定继续吗？')">
+                          <input type="hidden" name="operation" value="delete_folder">
+                          <input type="hidden" name="folderId" value="{{ chapter.id }}">
+                          <button class="rounded button" type="submit">删除</button>
+                        </form>
+                      </div>
+                    </div>
+                  {% endfor %}
+                  {% else %}
+                  <div class="cvlib-dir-empty">暂无章</div>
+                  {% endif %}
+                </div>
+              </details>
+            {% else %}
+              <div class="cvlib-empty">先建立课程，再在课程下建立章。</div>
+            {% endfor %}
+          </div>
+
+          <details class="cvlib-manual">
+            <summary>登记已有 VOD FileId（可选）</summary>
+            <form method="post" class="cvlib-form" style="margin-top:12px">
+              <input type="hidden" name="operation" value="manual_create">
+              <div class="cvlib-form-grid" data-cvv-path-selects>
+                <label>
+                  课程
+                  <select class="select" name="folderCourseId" data-cvv-course-select required>
+                    <option value="">请选择课程</option>
+                    {% for course in folderTree %}
+                      <option value="{{ course.id }}">{{ course.name }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+                <label>
+                  章
+                  <select class="select" name="folderChapterId" data-cvv-chapter-select required>
+                    <option value="">请选择章</option>
+                    {% for course in folderTree %}
+                      {% for chapter in course.chapters %}
+                        <option value="{{ chapter.id }}" data-course-id="{{ course.id }}">{{ chapter.name }}</option>
+                      {% endfor %}
+                    {% endfor %}
+                  </select>
+                </label>
+                <label>
+                  视频名
+                  <input class="textbox" name="videoTitle" placeholder="例如：树形 DP 讲解视频 1" required>
+                </label>
+                <label>
+                  VOD FileId
+                  <input class="textbox" name="fileId" placeholder="5001834805754623728" required>
+                </label>
+                <label>
+                  大小（字节，可空）
+                  <input class="textbox" name="size" placeholder="1492500000">
+                </label>
+                <label>
+                  时长（秒，可空）
+                  <input class="textbox" name="duration" placeholder="9418">
+                </label>
+              </div>
+              <button class="rounded button" type="submit">{{ _('登记 VOD') }}</button>
+            </form>
+          </details>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section__header cvlib-list-head">
+      <h1 class="section__title">{{ _('视频列表') }}</h1>
+      <span class="cvlib-muted">按自建课程 / 章整理</span>
+    </div>
+    <div class="section__body">
+      {% if assetGroups.length %}
+      <div class="cvlib-list">
+        {% for course in assetGroups %}
+        <div class="cvlib-course">
+          <div class="cvlib-course-head">
+            <span class="cvlib-index">{{ loop.index }}</span>
+            <div class="cvlib-course-title">{{ course.title }}</div>
+            <div class="cvlib-muted">{{ course.count }} 个视频</div>
+          </div>
+          {% for chapter in course.chapters %}
+          <div class="cvlib-chapter">
+            <div class="cvlib-chapter-title">
+              <span>{{ chapter.title }}</span>
+              <span class="cvlib-muted">{{ chapter.count }} 个视频</span>
+            </div>
+            <div class="cvlib-assets">
+              {% for asset in chapter.assets %}
+              <div class="cvlib-asset">
+                <div>
+                  <div class="cvlib-asset-title">{{ asset.title }}</div>
+                  <div class="cvlib-meta">
+                    <span class="cvlib-tag">VOD</span>
+                    <span>FileId: <code>{{ asset.fileId }}</code></span>
+                    <span>大小：{% if asset.size %}{{ (asset.size / 1024 / 1024)|round(1) }} MB{% else %}-{% endif %}</span>
+                    <span>时长：{% if asset.duration %}{{ (asset.duration / 60)|round(1) }} 分钟{% else %}-{% endif %}</span>
+                    <span>状态：<b class="cvlib-status">{{ asset.status }}</b></span>
+                  </div>
+                </div>
+                <div class="cvlib-actions">
+                  {% if asset.status == 'disabled' %}
+                  <form method="post">
+                    <input type="hidden" name="operation" value="enable">
+                    <input type="hidden" name="assetId" value="{{ asset.id }}">
+                    <button class="rounded button" type="submit">{{ _('启用') }}</button>
+                  </form>
+                  {% else %}
+                  <form method="post">
+                    <input type="hidden" name="operation" value="disable">
+                    <input type="hidden" name="assetId" value="{{ asset.id }}">
+                    <button class="rounded button" type="submit">{{ _('禁用') }}</button>
+                  </form>
+                  {% endif %}
+                  <details class="cvlib-delete">
+                    <summary class="rounded button">{{ _('删除') }}</summary>
+                    <div class="cvlib-confirm">
+                      <p>会同时删除腾讯云 VOD 中的媒体文件，并清理所有课程绑定。</p>
+                      <form method="post">
+                        <input type="hidden" name="operation" value="delete">
+                        <input type="hidden" name="assetId" value="{{ asset.id }}">
+                        <button class="rounded button cvlib-danger" type="submit">再次确认删除</button>
+                      </form>
+                    </div>
+                  </details>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+        <div class="cvlib-empty">{{ _('暂无视频。请先建立课程和章，再上传到 VOD。') }}</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

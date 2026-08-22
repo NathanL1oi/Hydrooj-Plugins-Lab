@@ -1,0 +1,235 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.rok-edit-page { --rok-accent: #2563eb; --rok-accent-soft: #eff6ff; --rok-ok: #168a5a; --rok-ok-soft: #ecfdf3; --rok-warn: #b45309; --rok-warn-soft: #fffbeb; --rok-danger: #dc2626; --rok-danger-soft: #fef2f2; --rok-line: #d8e0ea; --rok-line-soft: #edf2f7; --rok-soft: #f8fafc; --rok-text: #111827; --rok-muted: #667085; }
+.rok-edit-head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; padding-bottom: 14px; border-bottom: 1px solid var(--rok-line-soft); }
+.rok-edit-title { min-width: 0; }
+.rok-kicker { color: var(--rok-accent); font-size: 12px; font-weight: 700; letter-spacing: 0; margin-bottom: 4px; }
+.rok-muted { color: var(--rok-muted); line-height: 1.6; }
+.rok-head-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.rok-edit-shell { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
+.rok-editor-pane { min-width: 0; }
+.rok-workbench { border: 1px solid var(--rok-line); border-radius: 8px; background: #fff; overflow: hidden; }
+.rok-workbench__top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 340px); gap: 14px; padding: 16px; border-bottom: 1px solid var(--rok-line-soft); background: var(--rok-soft); align-items: end; }
+.rok-field { display: grid; gap: 6px; }
+.rok-label { color: #344054; font-weight: 700; }
+.rok-segment { display: inline-grid; grid-template-columns: 1fr 1fr; gap: 3px; padding: 3px; border: 1px solid var(--rok-line); border-radius: 8px; background: #fff; }
+.rok-segment__item { margin: 0; cursor: pointer; }
+.rok-segment__item input { position: absolute; opacity: 0; pointer-events: none; }
+.rok-segment__item span { display: block; min-width: 0; padding: 7px 12px; border-radius: 6px; text-align: center; color: #344054; font-weight: 700; line-height: 1.3; }
+.rok-segment__item input:checked + span { background: var(--rok-accent); color: #fff; }
+.rok-enable-row { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--rok-line-soft); }
+.rok-switch { display: inline-flex; gap: 8px; align-items: center; margin: 0; font-weight: 700; color: #344054; }
+.rok-switch input { margin: 0; }
+.rok-panel { padding: 16px; }
+.rok-field-head { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; margin-bottom: 8px; }
+.rok-field-meta { color: var(--rok-muted); font-size: 12px; white-space: nowrap; }
+.rok-editor, .rok-css-editor, .rok-h5-editor { width: 100%; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; line-height: 1.5; resize: vertical; }
+.rok-editor { min-height: 420px; }
+.rok-css-editor { min-height: 180px; }
+.rok-h5-editor { min-height: 460px; }
+.rok-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 14px 16px; border-top: 1px solid var(--rok-line-soft); background: #fff; }
+.rok-edit-status { margin-left: auto; color: var(--rok-muted); font-size: 13px; }
+.rok-side { position: sticky; top: 12px; border: 1px solid var(--rok-line); border-radius: 8px; overflow: hidden; background: #fff; }
+.rok-side .section__header { background: var(--rok-soft); border-bottom: 1px solid var(--rok-line-soft); }
+.rok-state-grid { display: grid; gap: 8px; margin-bottom: 14px; }
+.rok-state-row { display: flex; justify-content: space-between; gap: 12px; align-items: center; color: #344054; }
+.rok-state { display: inline-flex; align-items: center; min-height: 24px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--rok-line); background: #fff; color: #344054; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.rok-state--good { border-color: #abe7cd; background: var(--rok-ok-soft); color: #067647; }
+.rok-state--warn { border-color: #fed7aa; background: var(--rok-warn-soft); color: var(--rok-warn); }
+.rok-question-list { display: grid; gap: 7px; margin-top: 10px; }
+.rok-question-pill { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 8px; align-items: center; padding: 7px 8px; border: 1px solid var(--rok-line-soft); border-radius: 7px; background: #fff; color: #344054; }
+.rok-question-pill__index { display: inline-flex; justify-content: center; align-items: center; width: 24px; height: 24px; border-radius: 50%; background: #eef2ff; color: #334155; font-weight: 700; font-size: 12px; }
+.rok-question-pill__main { min-width: 0; }
+.rok-question-pill__type { color: var(--rok-muted); font-size: 12px; }
+.rok-code-line { display: block; margin-top: 6px; padding: 8px; border: 1px solid var(--rok-line-soft); border-radius: 7px; background: var(--rok-soft); overflow-x: auto; }
+.rok-side-actions { display: grid; gap: 8px; margin-top: 12px; }
+.rok-side-note { border: 1px solid var(--rok-line-soft); border-radius: 7px; padding: 8px; background: var(--rok-soft); color: var(--rok-muted); line-height: 1.5; }
+.rok-success { border: 1px solid #abe7cd; background: var(--rok-ok-soft); color: #067647; border-radius: 7px; padding: 10px 12px; margin-bottom: 12px; line-height: 1.55; }
+.rok-warning, .rok-error { border-radius: 7px; padding: 10px 12px; margin-bottom: 12px; line-height: 1.55; }
+.rok-warning { border: 1px solid #fed7aa; background: var(--rok-warn-soft); color: var(--rok-warn); }
+.rok-error { border: 1px solid #fecaca; background: var(--rok-danger-soft); color: #991b1b; white-space: pre-wrap; }
+@media (max-width: 900px) {
+  .rok-edit-head { flex-direction: column; }
+  .rok-head-actions { justify-content: flex-start; }
+  .rok-edit-shell, .rok-workbench__top { grid-template-columns: 1fr; }
+  .rok-side { position: static; order: -1; }
+  .rok-enable-row { flex-direction: column; align-items: flex-start; }
+  .rok-edit-status { width: 100%; margin-left: 0; }
+}
+</style>
+<div class="section rok-edit-page">
+  <div class="section__header rok-edit-head">
+    <div class="rok-edit-title">
+      <div class="rok-kicker">{{ _('富交互客观题配置') }}</div>
+      <h1 class="section__title">{{ pdoc.pid|default(pdoc.docId) }}. {{ pdoc.title }}</h1>
+      <div class="rok-muted">{{ _('底层题型使用 submit_answer，插件负责渲染、保存和提交答案。') }}</div>
+    </div>
+    <div class="rok-head-actions">
+      <a class="button rounded" href="{{ submitUrl }}">{{ _('预览学生入口') }}</a>
+      <a class="button rounded" href="{{ originalUrl }}">{{ _('返回原题') }}</a>
+    </div>
+  </div>
+  <div class="section__body">
+    {% if not hydroReady %}
+      <div class="rok-warning">
+        {{ _('当前 Hydro 题型还不是 submit_answer。请到评测设置中设置 type: submit_answer，并配置 checker_type/checker。') }}
+      </div>
+    {% endif %}
+    {% if schemaError %}
+      <div class="rok-error">{{ schemaError }}</div>
+    {% endif %}
+    {% if checkerSetup.message %}
+      <div class="rok-success">{{ checkerSetup.message }}</div>
+    {% endif %}
+    <form method="post" class="rok-edit-shell" data-rok-edit-form>
+      <div class="rok-editor-pane">
+        <input type="hidden" name="enabled" value="off">
+        <div class="rok-workbench">
+          <div class="rok-workbench__top">
+            <label class="rok-field">
+              <span class="rok-label">{{ _('标题') }}</span>
+              <input class="textbox" name="title" value="{{ formTitle }}">
+            </label>
+            <div class="rok-field">
+              <span class="rok-label">{{ _('渲染模式') }}</span>
+              <div class="rok-segment" data-rok-mode-group>
+                <label class="rok-segment__item">
+                  <input type="radio" name="mode" value="schema" data-rok-mode {% if formMode != 'h5' %}checked{% endif %}>
+                  <span>{{ _('Markdown 题单') }}</span>
+                </label>
+                <label class="rok-segment__item">
+                  <input type="radio" name="mode" value="h5" data-rok-mode {% if formMode == 'h5' %}checked{% endif %}>
+                  <span>{{ _('H5') }}</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="rok-enable-row">
+            <label class="rok-switch">
+              <input type="checkbox" name="enabled" value="on" {% if formEnabled %}checked{% endif %} data-rok-enabled>
+              <span>{{ _('启用学生富交互入口') }}</span>
+            </label>
+            <span class="rok-muted">{{ _('保存后立即用于学生入口。') }}</span>
+          </div>
+          <div class="rok-panel" data-rok-panel="schema">
+            <div class="rok-field-head">
+              <span class="rok-label">{{ _('题目内容（Markdown）') }}</span>
+              <span class="rok-field-meta"><span data-rok-editor-count>0</span> {{ _('字') }}</span>
+            </div>
+            <textarea class="textbox rok-editor" name="schemaText" data-rok-schema-text>{{ schemaTextValue }}</textarea>
+          </div>
+          <div class="rok-panel" data-rok-panel="h5">
+            <div class="rok-field-head">
+              <span class="rok-label">{{ _('H5 HTML') }}</span>
+              <span class="rok-field-meta"><span data-rok-h5-count>0</span> {{ _('字') }}</span>
+            </div>
+            <textarea class="textbox rok-h5-editor" name="h5Html" placeholder="<!doctype html>..." data-rok-h5-text>{{ form['h5Html'] }}</textarea>
+          </div>
+          <div class="rok-panel">
+            <div class="rok-field-head">
+              <span class="rok-label">{{ _('自定义 CSS') }}</span>
+              <span class="rok-field-meta"><span data-rok-css-count>0</span> {{ _('字') }}</span>
+            </div>
+            <textarea class="textbox rok-css-editor" name="customCss" placeholder=".rok-paper { ... }" data-rok-css-text>{{ form['customCss'] }}</textarea>
+          </div>
+          <div class="rok-actions">
+            <button class="button rounded primary" type="submit">
+              <span class="icon icon-save"></span> {{ _('保存配置') }}
+            </button>
+            {% if config %}
+              <button class="button rounded" name="operation" value="delete" type="submit" onclick="return confirm('{{ _('确认删除这道题的富交互客观题配置？') }}')">
+                <span class="icon icon-delete"></span> {{ _('删除配置') }}
+              </button>
+            {% endif %}
+            <span class="rok-edit-status" data-rok-edit-status>{{ _('未修改') }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="section side rok-side">
+        <div class="section__header">
+          <h1 class="section__title">{{ _('配置检查') }}</h1>
+        </div>
+        <div class="section__body">
+          <div class="rok-state-grid">
+            <div class="rok-state-row">
+              <span>{{ _('题型') }}</span>
+              {% if hydroReady %}
+                <span class="rok-state rok-state--good">submit_answer</span>
+              {% else %}
+                <span class="rok-state rok-state--warn">{{ _('未就绪') }}</span>
+              {% endif %}
+            </div>
+            <div class="rok-state-row">
+              <span>{{ _('入口') }}</span>
+              {% if formEnabled %}
+                <span class="rok-state rok-state--good" data-rok-enabled-label>{{ _('已启用') }}</span>
+              {% else %}
+                <span class="rok-state" data-rok-enabled-label>{{ _('未启用') }}</span>
+              {% endif %}
+            </div>
+            <div class="rok-state-row">
+              <span>{{ _('模式') }}</span>
+              <span class="rok-state" data-rok-edit-mode-label>{% if formMode == 'h5' %}H5{% else %}Markdown{% endif %}</span>
+            </div>
+          </div>
+          <hr>
+          <div class="rok-state-grid">
+            <div class="rok-state-row">
+              <span>{{ _('评测配置') }}</span>
+              {% if checkerSetup.ready %}
+                <span class="rok-state rok-state--good">{{ _('已就绪') }}</span>
+              {% else %}
+                <span class="rok-state rok-state--warn">{{ _('待补齐') }}</span>
+              {% endif %}
+            </div>
+            <div class="rok-state-row">
+              <span>checker</span>
+              {% if checkerSetup.checker %}
+                <span class="rok-state{% if checkerSetup.hasCheckerFile %} rok-state--good{% else %} rok-state--warn{% endif %}">{{ checkerSetup.checker }}</span>
+              {% else %}
+                <span class="rok-state rok-state--warn">{{ _('未配置') }}</span>
+              {% endif %}
+            </div>
+            <div class="rok-state-row">
+              <span>checker.cc</span>
+              {% if checkerSetup.hasCheckerCc %}
+                <span class="rok-state rok-state--good">{{ _('已存在') }}</span>
+              {% else %}
+                <span class="rok-state">{{ _('未生成') }}</span>
+              {% endif %}
+            </div>
+          </div>
+          <div class="rok-side-actions">
+            <button class="button rounded" name="operation" value="init_checker" type="submit" formnovalidate>
+              <span class="icon icon-wrench"></span> {{ _('补齐 checker 示例') }}
+            </button>
+            <div class="rok-side-note">
+              {{ _('会按当前 Markdown 题单生成一题一个函数的 checker 模板；已有 checker.cc 时只生成参考文件。') }}
+            </div>
+          </div>
+          {% if schema %}
+            <div class="rok-muted">{{ schema.questions|length }} {{ _('道题') }}</div>
+            <div class="rok-question-list">
+              {% for q in schema.questions %}
+                <div class="rok-question-pill">
+                  <span class="rok-question-pill__index">{{ loop.index }}</span>
+                  <div class="rok-question-pill__main">
+                    <div>{{ q.id }}</div>
+                    <div class="rok-question-pill__type">{{ q.type }}</div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="rok-muted">{{ _('H5 模式需要页面导出 answers。') }}</p>
+          {% endif %}
+          <hr>
+          <div class="rok-muted">{{ _('H5 导出格式') }}</div>
+          <code class="rok-code-line">window.parent.postMessage({ type: 'rich-objective:answers', answers }, '*')</code>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

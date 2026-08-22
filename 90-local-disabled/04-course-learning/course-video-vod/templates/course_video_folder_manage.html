@@ -1,0 +1,300 @@
+{% extends "manage_base.html" %}
+{% block manage_content %}
+<style>
+.cvfolder-page {
+  --cv-border: #dbe7f4;
+  --cv-soft: #f7fbff;
+  --cv-card: #fff;
+  --cv-ink: #1f2f46;
+  --cv-muted: #66758d;
+  --cv-blue: #5aa3e6;
+  display: grid;
+  gap: 16px;
+  color: var(--cv-ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.cvfolder-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+.cvfolder-head .section__title {
+  margin: 0;
+  font-size: 24px !important;
+  line-height: 1.3;
+  font-weight: 500;
+}
+.cvfolder-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.cvfolder-page .button {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  min-width: 0 !important;
+  min-height: 30px !important;
+  padding: 0 12px !important;
+  line-height: 28px !important;
+  white-space: nowrap !important;
+  font-size: 13px !important;
+}
+.cvfolder-note {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--cv-blue);
+  background: var(--cv-soft);
+  color: #506680;
+}
+.cvfolder-list {
+  display: grid;
+  gap: 12px;
+}
+.cvfolder-course {
+  border: 1px solid var(--cv-border);
+  border-radius: 8px;
+  background: var(--cv-card);
+  overflow: hidden;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, .04);
+}
+.cvfolder-course > summary {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 58px;
+  padding: 12px 14px;
+  cursor: pointer;
+  background: #f8fbff;
+  border-left: 4px solid #60a5fa;
+  list-style: none;
+}
+.cvfolder-course > summary::-webkit-details-marker {
+  display: none;
+}
+.cvfolder-toggle {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #e8f2ff;
+  color: #24537d;
+}
+.cvfolder-toggle::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-top: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform .16s ease;
+}
+.cvfolder-course[open] .cvfolder-toggle::before {
+  transform: rotate(135deg);
+}
+.cvfolder-title {
+  min-width: 0;
+}
+.cvfolder-title strong {
+  display: block;
+  color: #10233f;
+  font-size: 16px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.cvfolder-title span,
+.cvfolder-meta {
+  color: var(--cv-muted);
+  font-size: 12px;
+}
+.cvfolder-meta {
+  white-space: nowrap;
+}
+.cvfolder-body {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid var(--cv-border);
+  background: #fff;
+}
+.cvfolder-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 190px 86px;
+  gap: 10px;
+  align-items: center;
+  padding: 9px 10px;
+  border: 1px solid #edf2f7;
+  border-radius: 8px;
+  background: #fbfdff;
+}
+.cvfolder-row.is-course {
+  border-color: #dbeafe;
+  background: #fff;
+}
+.cvfolder-name {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+.cvfolder-name strong,
+.cvfolder-name span:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.cvfolder-badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #edf5ff;
+  color: #24537d;
+  font-size: 12px;
+  font-weight: 700;
+}
+.cvfolder-order {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-start;
+  margin: 0;
+}
+.cvfolder-order .textbox {
+  width: 72px !important;
+  min-height: 30px !important;
+  padding: 4px 7px !important;
+  font-size: 13px !important;
+}
+.cvfolder-delete {
+  margin: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+.cvfolder-delete .button {
+  border-color: #f1c9cf !important;
+  background: #fff7f8 !important;
+  color: #9f1239 !important;
+}
+.cvfolder-empty-row {
+  padding: 12px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  color: var(--cv-muted);
+  background: #f8fafc;
+}
+.cvfolder-empty {
+  padding: 26px;
+  text-align: center;
+  color: var(--cv-muted);
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+@media screen and (max-width: 760px) {
+  .cvfolder-head {
+    align-items: flex-start;
+  }
+  .cvfolder-actions {
+    justify-content: flex-start;
+  }
+  .cvfolder-course > summary,
+  .cvfolder-row {
+    grid-template-columns: 1fr;
+  }
+  .cvfolder-toggle {
+    display: none;
+  }
+  .cvfolder-meta,
+  .cvfolder-delete {
+    justify-content: flex-start;
+  }
+}
+</style>
+{% include "course_video_theme.html" %}
+<div class="cvfolder-page">
+  <div class="section">
+    <div class="section__header cvfolder-head">
+      <h1 class="section__title">管理已有课程 / 章</h1>
+      <div class="cvfolder-actions">
+        <a class="rounded button" href="{{ url('course_video_main') }}">返回视频库</a>
+        <a class="rounded button" href="{{ url('course_video_folder_create') }}">新建课程 / 章</a>
+        <a class="rounded button" href="{{ url('course_video_manual_register') }}">登记 VOD FileId</a>
+      </div>
+    </div>
+    <div class="section__body">
+      <p class="cvfolder-note">删除目录只会移除视频库归档关系，不会删除腾讯云 VOD 中的视频文件。</p>
+      {% if folderTree.length %}
+      <div class="cvfolder-list">
+        {% for course in folderTree %}
+        <details class="cvfolder-course" {% if loop.first %}open{% endif %}>
+          <summary>
+            <span class="cvfolder-toggle" aria-hidden="true"></span>
+            <span class="cvfolder-title">
+              <strong>{{ course.name }}</strong>
+              <span>{{ course.chapters.length }} 章</span>
+            </span>
+            <span class="cvfolder-meta">排序 {{ course.order }}</span>
+          </summary>
+          <div class="cvfolder-body">
+            <div class="cvfolder-row is-course">
+              <div class="cvfolder-name">
+                <span class="cvfolder-badge">课程</span>
+                <strong>{{ course.name }}</strong>
+              </div>
+              <form method="post" class="cvfolder-order">
+                <input type="hidden" name="operation" value="update_folder">
+                <input type="hidden" name="folderId" value="{{ course.id }}">
+                <input class="textbox" name="order" value="{{ course.order }}" aria-label="课程排序">
+                <button class="rounded button" type="submit">保存</button>
+              </form>
+              <form method="post" class="cvfolder-delete" onsubmit="return confirm('删除课程会同时移除它下面的章目录归档关系，视频文件不会从 VOD 删除。确定继续吗？')">
+                <input type="hidden" name="operation" value="delete_folder">
+                <input type="hidden" name="folderId" value="{{ course.id }}">
+                <button class="rounded button" type="submit">删除</button>
+              </form>
+            </div>
+            {% if course.chapters.length %}
+              {% for chapter in course.chapters %}
+              <div class="cvfolder-row">
+                <div class="cvfolder-name">
+                  <span class="cvfolder-badge">章</span>
+                  <span>{{ chapter.name }}</span>
+                </div>
+                <form method="post" class="cvfolder-order">
+                  <input type="hidden" name="operation" value="update_folder">
+                  <input type="hidden" name="folderId" value="{{ chapter.id }}">
+                  <input class="textbox" name="order" value="{{ chapter.order }}" aria-label="章排序">
+                  <button class="rounded button" type="submit">保存</button>
+                </form>
+                <form method="post" class="cvfolder-delete" onsubmit="return confirm('删除章目录只会移除归档关系，不会删除 VOD 视频文件。确定继续吗？')">
+                  <input type="hidden" name="operation" value="delete_folder">
+                  <input type="hidden" name="folderId" value="{{ chapter.id }}">
+                  <button class="rounded button" type="submit">删除</button>
+                </form>
+              </div>
+              {% endfor %}
+            {% else %}
+              <div class="cvfolder-empty-row">这个课程还没有章。</div>
+            {% endif %}
+          </div>
+        </details>
+        {% endfor %}
+      </div>
+      {% else %}
+        <div class="cvfolder-empty">还没有自建课程。请先新建课程和章。</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

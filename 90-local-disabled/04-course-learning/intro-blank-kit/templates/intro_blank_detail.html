@@ -1,0 +1,125 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.ibk-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.ibk-title-sub { color: #667085; font-size: 13px; margin-top: 4px; }
+.ibk-panel { border: 1px solid #cfd8e6; border-radius: 8px; overflow: hidden; background: #fff; box-shadow: 0 8px 24px rgba(15, 23, 42, .06); }
+.ibk-panel-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 13px;
+  border-bottom: 1px solid #d9e2ef;
+  background: #f7fafc;
+  color: #344054;
+  font-weight: 600;
+}
+.ibk-code {
+  white-space: pre;
+  line-height: 1.78;
+  padding: 18px 18px;
+  margin: 0;
+  border-radius: 0;
+  overflow-x: auto;
+  color: #1f2937;
+  background: #fbfdff;
+  tab-size: 4;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 14px;
+  min-width: max-content;
+}
+.ibk-blank-slot { display: inline-flex; vertical-align: middle; }
+.ibk-blank {
+  display: inline-flex;
+  width: 14em;
+  min-width: 9em;
+  max-width: 100%;
+  height: 31px;
+  margin: 2px 4px;
+  padding: 3px 8px;
+  vertical-align: baseline;
+  border: 1px solid #2f80ed;
+  border-radius: 5px;
+  background: #eef6ff;
+  color: #0f172a;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  line-height: 1.4;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .55);
+}
+.ibk-blank:focus { outline: 2px solid rgba(47, 128, 237, .24); border-color: #1d4ed8; background: #fff; }
+.ibk-tools { display: flex; gap: 8px; flex-wrap: wrap; }
+.ibk-submit-row { margin-top: 16px; }
+.ibk-hl-keyword { color: #7c3aed; font-weight: 600; }
+.ibk-hl-builtin { color: #0369a1; }
+.ibk-hl-string { color: #047857; }
+.ibk-hl-number { color: #b45309; }
+.ibk-hl-comment { color: #7a8699; font-style: italic; }
+.ibk-hl-meta { color: #be123c; }
+.ibk-hl-operator { color: #475569; }
+.theme--dark .ibk-title-sub { color: #9fb0c6; }
+.theme--dark .ibk-panel {
+  background: rgba(15, 23, 42, .42);
+  border-color: rgba(148, 163, 184, .26);
+  box-shadow: none;
+}
+.theme--dark .ibk-panel-title {
+  background: rgba(15, 23, 42, .36);
+  border-bottom-color: rgba(148, 163, 184, .24);
+  color: #dbe7f5;
+}
+.theme--dark .ibk-code {
+  background: rgba(2, 6, 23, .42);
+  color: #dbe7f5;
+}
+.theme--dark .ibk-blank {
+  background: rgba(59, 130, 246, .20);
+  border-color: rgba(96, 165, 250, .70);
+  color: #e2e8f0;
+  box-shadow: none;
+}
+.theme--dark .ibk-blank:focus {
+  background: rgba(15, 23, 42, .70);
+}
+.theme--dark .ibk-hl-keyword { color: #c4b5fd; }
+.theme--dark .ibk-hl-builtin { color: #7dd3fc; }
+.theme--dark .ibk-hl-string { color: #86efac; }
+.theme--dark .ibk-hl-number { color: #fcd34d; }
+.theme--dark .ibk-hl-comment { color: #94a3b8; }
+.theme--dark .ibk-hl-meta { color: #fda4af; }
+.theme--dark .ibk-hl-operator { color: #cbd5e1; }
+@media (max-width: 700px) {
+  .ibk-head { align-items: flex-start; flex-direction: column; }
+  .ibk-blank { width: 100%; margin: 4px 0; }
+}
+</style>
+<div class="section">
+  <div class="section__header ibk-head">
+    <div>
+      <h1 class="section__title">{{ title }}</h1>
+      <div class="ibk-title-sub">{{ _('程序填空') }} · {{ blanks|length }} {{ _('处填空') }}</div>
+    </div>
+    {% if canEdit %}
+      <div class="ibk-tools">
+        <a class="button rounded" href="{{ editUrl }}">{{ _('配置') }}</a>
+      </div>
+    {% endif %}
+  </div>
+  <div class="section__body">
+    <form method="post" action="{{ submitUrl }}" class="ibk-form">
+      <div class="ibk-panel">
+        <div class="ibk-panel-title">
+          <span>{{ _('代码填空') }}</span>
+          <span>{{ codeFenceLang|default('cpp') }}</span>
+        </div>
+        <div class="ibk-code language-{{ codeFenceLang|default('cpp') }}">{% for part in renderedCode %}{% if part.kind == 'html' %}{{ part.html|safe }}{% else %}<span class="ibk-blank-slot"><input class="textbox ibk-blank" name="blank_{{ part.index }}" aria-label="{{ part.label }}" placeholder="{{ part.label }}" autocomplete="off" required></span>{% endif %}{% endfor %}</div>
+      </div>
+      <div class="row ibk-submit-row"><div class="columns">
+        <button class="button rounded primary" type="submit">
+          <span class="icon icon-send"></span> {{ _('提交') }}
+        </button>
+      </div></div>
+    </form>
+  </div>
+</div>
+{% endblock %}

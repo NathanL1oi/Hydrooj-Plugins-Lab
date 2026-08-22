@@ -1,0 +1,729 @@
+{% extends "layout/basic.html" %}
+
+{% block content %}
+<div class="row">
+  <div class="medium-12 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('User Rating Management') }}</h1>
+      </div>
+      
+      <div class="section__body">
+        <!-- 批量操作区域 -->
+        <div class="manage-section">
+          <h3>{{ _('Batch Operations') }}</h3>
+          <div class="batch-operations">
+            <button type="button" class="primary button" onclick="showInitializeAllModal()">
+              {{ _('Initialize All Users Rating') }}
+            </button>
+            <button type="button" class="secondary button" onclick="exportUserData()">
+              {{ _('Export User Data') }}
+            </button>
+          </div>
+        </div>
+
+        <hr>
+
+        <!-- 搜索和筛选 -->
+        <div class="manage-section">
+          <h3>{{ _('Search Users') }}</h3>
+          <form method="get" action="{{ url('user_rating_manage') }}">
+            <div class="row">
+              <div class="medium-8 columns">
+                <input type="text" name="search" value="{{ search }}" placeholder="{{ _('Search by username, email, or user ID') }}">
+              </div>
+              <div class="medium-4 columns">
+                <button type="submit" class="primary button">{{ _('Search') }}</button>
+                {% if search %}
+                <a href="{{ url('user_rating_manage') }}" class="secondary button">{{ _('Clear') }}</a>
+                {% endif %}
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <hr>
+
+        <!-- 用户列表 -->
+        <div class="manage-section">
+          <h3>{{ _('User List') }} ({{ total }} {{ _('users') }})</h3>
+          
+          {% if users %}
+          <div class="user-table-container">
+            <table class="user-table">
+              <thead>
+                <tr>
+                  <th>{{ _('User ID') }}</th>
+                  <th>{{ _('Username') }}</th>
+                  <th>{{ _('Current Rating') }}</th>
+                  <th>{{ _('Max Rating') }}</th>
+                  <th>{{ _('Contest Count') }}</th>
+                  <th>{{ _('Last Update') }}</th>
+                  <th>{{ _('Actions') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for user_data in users %}
+                <tr>
+                  <td>{{ user_data.uid }}</td>
+                  <td>
+                    {% if user_data.user %}
+                      <a href="{{ url('user_rating', uid=user_data.uid) }}">{{ user_data.user.uname }}</a>
+                    {% else %}
+                      <span class="text-muted">{{ _('Unknown User') }}</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <span class="rating-value" data-rating="{{ user_data.rating }}">{{ user_data.rating }}</span>
+                  </td>
+                  <td>
+                    <span class="rating-value" data-rating="{{ user_data.maxRating }}">{{ user_data.maxRating }}</span>
+                  </td>
+                  <td>{{ user_data.contestCount }}</td>
+                  <td>{{ user_data.lastUpdate.toLocaleDateString() if user_data.lastUpdate else '-' }}</td>
+                  <td>
+                    <div class="action-buttons">
+                      <button type="button" class="small primary button" onclick="showUserHistory({{ user_data.uid }})">
+                        {{ _('History') }}
+                      </button>
+                      <button type="button" class="small secondary button" onclick="showInitializeUserModal({{ user_data.uid }})">
+                        {{ _('Initialize') }}
+                      </button>
+                      <button type="button" class="small alert button" onclick="showManageContestsModal({{ user_data.uid }})">
+                        {{ _('Manage Contests') }}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 分页 -->
+          {% if pages > 1 %}
+          <div class="pagination-container">
+            <div class="pagination">
+              {% if page > 1 %}
+                <a href="{{ url('user_rating_manage', page=page-1, search=search) }}" class="pagination-link">{{ _('Previous') }}</a>
+              {% endif %}
+              
+              {% for p in range(1, pages + 1) %}
+                {% if p == page %}
+                  <span class="pagination-current">{{ p }}</span>
+                {% else %}
+                  <a href="{{ url('user_rating_manage', page=p, search=search) }}" class="pagination-link">{{ p }}</a>
+                {% endif %}
+              {% endfor %}
+              
+              {% if page < pages %}
+                <a href="{{ url('user_rating_manage', page=page+1, search=search) }}" class="pagination-link">{{ _('Next') }}</a>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+
+          {% else %}
+          <div class="no-data">
+            <p>{{ _('No users found.') }}</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 模态框 -->
+<!-- 初始化所有用户模态框 -->
+<div id="initializeAllModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h4>{{ _('Initialize All Users Rating') }}</h4>
+      <span class="close" onclick="closeModal('initializeAllModal')">&times;</span>
+    </div>
+    <div class="modal-body">
+      <form method="post" action="{{ url('user_rating_manage') }}">
+        <input type="hidden" name="operation" value="initialize_all">
+        <div class="form-group">
+          <label>{{ _('Initial Rating') }}</label>
+          <input type="number" name="initialRating" value="1000" min="0" max="5000" required>
+        </div>
+        <div class="alert alert-warning">
+          <strong>{{ _('Warning:') }}</strong> {{ _('This will reset all users\' ratings and delete their history records.') }}
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="secondary button" onclick="closeModal('initializeAllModal')">{{ _('Cancel') }}</button>
+          <button type="submit" class="alert button" onclick="return confirm('{{ _('Are you sure? This cannot be undone.') }}')">{{ _('Initialize All') }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- 初始化单个用户模态框 -->
+<div id="initializeUserModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h4>{{ _('Initialize User Rating') }}</h4>
+      <span class="close" onclick="closeModal('initializeUserModal')">&times;</span>
+    </div>
+    <div class="modal-body">
+      <form method="post" action="{{ url('user_rating_manage') }}">
+        <input type="hidden" name="operation" value="initialize_user">
+        <input type="hidden" name="uid" id="initializeUserId">
+        <div class="form-group">
+          <label>{{ _('Initial Rating') }}</label>
+          <input type="number" name="initialRating" value="1000" min="0" max="5000" required>
+        </div>
+        <div class="alert alert-warning">
+          <strong>{{ _('Warning:') }}</strong> {{ _('This will reset the user\'s rating and delete their history records.') }}
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="secondary button" onclick="closeModal('initializeUserModal')">{{ _('Cancel') }}</button>
+          <button type="submit" class="alert button" onclick="return confirm('{{ _('Are you sure? This cannot be undone.') }}')">{{ _('Initialize') }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- 用户历史记录模态框 -->
+<div id="userHistoryModal" class="modal">
+  <div class="modal-content large">
+    <div class="modal-header">
+      <h4>{{ _('User Contest History') }}</h4>
+      <span class="close" onclick="closeModal('userHistoryModal')">&times;</span>
+    </div>
+    <div class="modal-body">
+      <div id="historyContent">
+        <div class="loading">{{ _('Loading...') }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 管理比赛记录模态框 -->
+<div id="manageContestsModal" class="modal">
+  <div class="modal-content large">
+    <div class="modal-header">
+      <h4>{{ _('Manage Contest Records') }}</h4>
+      <span class="close" onclick="closeModal('manageContestsModal')">&times;</span>
+    </div>
+    <div class="modal-body">
+      <div id="contestsContent">
+        <div class="loading">{{ _('Loading...') }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.manage-section {
+  margin-bottom: 30px;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #f9f9f9;
+}
+
+.manage-section h3 {
+  margin-top: 0;
+  color: #333;
+}
+
+.batch-operations {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.user-table-container {
+  overflow-x: auto;
+  margin: 20px 0;
+}
+
+.user-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.user-table th,
+.user-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.user-table th {
+  background-color: #f8f9fa;
+  font-weight: bold;
+  color: #333;
+}
+
+.user-table tr:hover {
+  background-color: #f5f5f5;
+}
+
+.rating-value {
+  font-weight: bold;
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: white;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.pagination-container {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.pagination {
+  display: inline-flex;
+  gap: 5px;
+}
+
+.pagination-link,
+.pagination-current {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  text-decoration: none;
+  border-radius: 4px;
+}
+
+.pagination-link:hover {
+  background-color: #f5f5f5;
+}
+
+.pagination-current {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.no-data {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+
+/* 模态框样式 */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+  background-color: white;
+  margin: 5% auto;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal-content.large {
+  max-width: 900px;
+}
+
+.modal-header {
+  padding: 20px;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h4 {
+  margin: 0;
+}
+
+.close {
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  color: #aaa;
+}
+
+.close:hover {
+  color: #000;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-actions {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.alert {
+  padding: 15px;
+  margin-bottom: 20px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+
+.alert-warning {
+  color: #856404;
+  background-color: #fff3cd;
+  border-color: #ffeaa7;
+}
+
+.button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+  transition: opacity 0.2s;
+}
+
+.button.small {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.primary.button {
+  background-color: #007bff;
+  color: white;
+}
+
+.secondary.button {
+  background-color: #6c757d;
+  color: white;
+}
+
+.alert.button {
+  background-color: #dc3545;
+  color: white;
+}
+
+.button:hover {
+  opacity: 0.9;
+}
+
+.text-muted {
+  color: #6c757d;
+}
+
+.loading {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 30px 0;
+}
+.theme--dark .manage-section,
+.theme--dark .user-table,
+.theme--dark .modal-content {
+  background: rgba(15, 23, 42, .42);
+  border-color: rgba(148, 163, 184, .26);
+  color: #dbe7f5;
+  box-shadow: none;
+}
+.theme--dark .manage-section h3,
+.theme--dark .user-table th,
+.theme--dark .modal-header h4,
+.theme--dark .form-group label {
+  color: #e2e8f0;
+}
+.theme--dark .user-table th,
+.theme--dark .user-table tr:hover,
+.theme--dark .pagination-link:hover {
+  background-color: rgba(15, 23, 42, .50);
+}
+.theme--dark .user-table th,
+.theme--dark .user-table td,
+.theme--dark .modal-header,
+.theme--dark .pagination-link,
+.theme--dark .pagination-current {
+  border-color: rgba(148, 163, 184, .24);
+}
+.theme--dark .pagination-link,
+.theme--dark .no-data,
+.theme--dark .text-muted,
+.theme--dark .loading {
+  color: #9fb0c6;
+}
+.theme--dark .form-group input {
+  background: rgba(15, 23, 42, .56);
+  border-color: rgba(148, 163, 184, .28);
+  color: #e2e8f0;
+}
+.theme--dark .alert-warning {
+  background-color: rgba(146, 64, 14, .28);
+  border-color: rgba(251, 191, 36, .36);
+  color: #fcd34d;
+}
+.theme--dark .close { color: #9fb0c6; }
+.theme--dark .close:hover { color: #e2e8f0; }
+.theme--dark hr { border-top-color: rgba(148, 163, 184, .24); }
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .batch-operations {
+    flex-direction: column;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .modal-content {
+    width: 95%;
+    margin: 2% auto;
+  }
+  
+  .user-table {
+    font-size: 12px;
+  }
+  
+  .user-table th,
+  .user-table td {
+    padding: 8px;
+  }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // 初始化rating颜色
+  initializeRatingColors();
+});
+
+// Rating颜色函数
+function getRatingColor(rating) {
+  if (rating >= 2400) return '#ff0000'; // 红色
+  if (rating >= 2100) return '#ff8c00'; // 橙色
+  if (rating >= 1900) return '#9932cc'; // 紫色
+  if (rating >= 1600) return '#0000ff'; // 蓝色
+  if (rating >= 1400) return '#00ffff'; // 青色
+  if (rating >= 1200) return '#008000'; // 绿色
+  return '#808080'; // 灰色
+}
+
+function initializeRatingColors() {
+  document.querySelectorAll('.rating-value[data-rating]').forEach(element => {
+    const rating = parseInt(element.getAttribute('data-rating'));
+    element.style.backgroundColor = getRatingColor(rating);
+  });
+}
+
+// 模态框操作
+function showModal(modalId) {
+  document.getElementById(modalId).style.display = 'block';
+}
+
+function closeModal(modalId) {
+  document.getElementById(modalId).style.display = 'none';
+}
+
+function showInitializeAllModal() {
+  showModal('initializeAllModal');
+}
+
+function showInitializeUserModal(uid) {
+  document.getElementById('initializeUserId').value = uid;
+  showModal('initializeUserModal');
+}
+
+async function showUserHistory(uid) {
+  showModal('userHistoryModal');
+  const content = document.getElementById('historyContent');
+  content.innerHTML = '<div class="loading">{{ _("Loading...") }}</div>';
+  
+  try {
+    const response = await fetch(`{{ url('rating_user_api', uid='__UID__') }}`.replace('__UID__', uid));
+    const data = await response.json();
+    
+    if (data.history && data.history.length > 0) {
+      let html = '<table class="user-table"><thead><tr>';
+      html += '<th>{{ _("Contest") }}</th>';
+      html += '<th>{{ _("Old Rating") }}</th>';
+      html += '<th>{{ _("New Rating") }}</th>';
+      html += '<th>{{ _("Rank") }}</th>';
+      html += '<th>{{ _("Date") }}</th>';
+      html += '</tr></thead><tbody>';
+      
+      data.history.forEach(record => {
+        html += '<tr>';
+        html += `<td>${record.contestName}</td>`;
+        html += `<td><span class="rating-value" style="background-color: ${getRatingColor(record.oldRating)}">${record.oldRating}</span></td>`;
+        html += `<td><span class="rating-value" style="background-color: ${getRatingColor(record.newRating)}">${record.newRating}</span></td>`;
+        html += `<td>${record.rank}</td>`;
+        html += `<td>${new Date(record.date).toLocaleDateString()}</td>`;
+        html += '</tr>';
+      });
+      
+      html += '</tbody></table>';
+      content.innerHTML = html;
+    } else {
+      content.innerHTML = '<div class="no-data"><p>{{ _("No contest history found.") }}</p></div>';
+    }
+  } catch (error) {
+    content.innerHTML = '<div class="alert alert-warning">{{ _("Failed to load history data.") }}</div>';
+  }
+}
+
+async function showManageContestsModal(uid) {
+  showModal('manageContestsModal');
+  const content = document.getElementById('contestsContent');
+  content.innerHTML = '<div class="loading">{{ _("Loading...") }}</div>';
+  
+  try {
+    const response = await fetch(`{{ url('rating_user_api', uid='__UID__') }}`.replace('__UID__', uid));
+    const data = await response.json();
+    
+    if (data.history && data.history.length > 0) {
+      let html = '<div class="contest-management">';
+      html += '<p>{{ _("Click on a contest to modify or remove it:") }}</p>';
+      html += '<table class="user-table"><thead><tr>';
+      html += '<th>{{ _("Contest") }}</th>';
+      html += '<th>{{ _("Rating Change") }}</th>';
+      html += '<th>{{ _("Rank") }}</th>';
+      html += '<th>{{ _("Date") }}</th>';
+      html += '<th>{{ _("Actions") }}</th>';
+      html += '</tr></thead><tbody>';
+      
+      data.history.forEach(record => {
+        html += '<tr>';
+        html += `<td>${record.contestName}</td>`;
+        html += `<td>${record.oldRating} → <span class="rating-value" style="background-color: ${getRatingColor(record.newRating)}">${record.newRating}</span></td>`;
+        html += `<td>${record.rank}</td>`;
+        html += `<td>${new Date(record.date).toLocaleDateString()}</td>`;
+        html += '<td>';
+        html += `<button type="button" class="small secondary button" onclick="modifyContest(${uid}, '${record.contestName}', ${record.newRating}, ${record.rank})">{{ _("Modify") }}</button> `;
+        html += `<button type="button" class="small alert button" onclick="removeContest(${uid}, '${record.contestName}')">{{ _("Remove") }}</button>`;
+        html += '</td>';
+        html += '</tr>';
+      });
+      
+      html += '</tbody></table></div>';
+      content.innerHTML = html;
+    } else {
+      content.innerHTML = '<div class="no-data"><p>{{ _("No contest records found.") }}</p></div>';
+    }
+  } catch (error) {
+    content.innerHTML = '<div class="alert alert-warning">{{ _("Failed to load contest data.") }}</div>';
+  }
+}
+
+function modifyContest(uid, contestName, currentRating, currentRank) {
+  const newRating = prompt(`{{ _("Enter new rating for contest") }} "${contestName}":`, currentRating);
+  if (newRating === null) return;
+  
+  const newRank = prompt(`{{ _("Enter new rank for contest") }} "${contestName}":`, currentRank);
+  if (newRank === null) return;
+  
+  if (confirm(`{{ _("Modify contest") }} "${contestName}" {{ _("rating to") }} ${newRating}?`)) {
+    const form = document.createElement('form');
+    form.method = 'post';
+    form.action = '{{ url("user_rating_manage") }}';
+    
+    const fields = {
+      operation: 'modify_contest',
+      uid: uid,
+      contestName: contestName,
+      newRating: newRating,
+      newRank: newRank
+    };
+    
+    Object.keys(fields).forEach(key => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = key;
+      input.value = fields[key];
+      form.appendChild(input);
+    });
+    
+    document.body.appendChild(form);
+    form.submit();
+  }
+}
+
+function removeContest(uid, contestName) {
+  if (confirm(`{{ _("Remove contest") }} "${contestName}" {{ _("from user's history?") }}`)) {
+    const form = document.createElement('form');
+    form.method = 'post';
+    form.action = '{{ url("user_rating_manage") }}';
+    
+    const fields = {
+      operation: 'remove_contest',
+      uid: uid,
+      contestName: contestName
+    };
+    
+    Object.keys(fields).forEach(key => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = key;
+      input.value = fields[key];
+      form.appendChild(input);
+    });
+    
+    document.body.appendChild(form);
+    form.submit();
+  }
+}
+
+function exportUserData() {
+  // 导出用户数据功能
+  alert('{{ _("Export functionality will be implemented soon.") }}');
+}
+
+// 点击模态框外部关闭
+window.onclick = function(event) {
+  const modals = document.querySelectorAll('.modal');
+  modals.forEach(modal => {
+    if (event.target === modal) {
+      modal.style.display = 'none';
+    }
+  });
+}
+</script>
+{% endblock %}

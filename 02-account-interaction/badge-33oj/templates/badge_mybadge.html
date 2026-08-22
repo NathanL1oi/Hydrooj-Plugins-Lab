@@ -1,0 +1,77 @@
+{% extends "badge_base.html" %}
+{% block badge_content %}
+<div class="section">
+    <div class="section__header">
+        <h1 class="section__title">{{ _('badge_mybadge') }}</h1>
+    </div>
+    {% if not ddocs.length %}
+    {{ nothing.render('对不起，你没有徽章。') }}
+    {% else %}
+    <div class="section__body">
+        <blockquote class="note typo">
+            <ul>
+                <li>{{ _('鼠标悬停至徽章可查看徽章标题，单击徽章可打开徽章介绍页。') }}</li>
+                <li>{{ _('对徽章存续等有任何问题的，请联系站点管理员。') }}</li>
+            </ul>
+        </blockquote>
+        <div class="row">
+            <div class="medium-9 columns">
+                <h3>
+                    {{ _('当前徽章：') }}
+                    {% if udoc.badgeId %}
+                    {{user.render_inline(udoc,modbadge=false,levelbadge=false)}}
+                    {% else %}
+                    {{ _('您暂未启用任何徽章') }}
+                    {% endif %}
+                </h3>
+            </div>
+            <div class="medium-3 columns" style="display: flex;">
+                {{ _('重置徽章：') }}
+                <form method="post">
+                    <button class="typo-a contest-tag" name="operation" value="reset" type="submit">{{ _('Reset') }}</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="section__body no-padding">
+        <table class="data-table section__table-heade">
+            <colgroup>
+                <col class="col--id" style="width:5rem">
+                <col class="col--title">
+                <col class="col--preview">
+                <col class="col--getat">
+                <col class="col--actions">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>{{ _('徽章ID') }}</th>
+                    <th>{{ _('徽章标题') }}</th>
+                    <th>{{ _('徽章预览') }}</th>
+                    <th>{{ _('获取时间') }}</th>
+                    <th>{{ _('Actions') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {%- for ddoc in ddocs -%}
+                <tr>
+                    <td>{{ ddoc.badgeId }}</td>
+                    <td>{{ ddoc.badge.title }}</td>
+                    <td>
+                        <a href="{{ url('badge_detail', id=ddoc.badgeId) }}" class="user-profile-badge v-center" style="background-color:{{ ddoc.badge.backgroundColor }};color:{{ ddoc.badge.fontColor }};" data-tooltip="{{ ddoc.badge.title }}">{{ ddoc.badge.short }}</a>
+                    </td>
+                    <td>{{ datetimeSpan(ddoc.getAt, false, 'YYYY-M-D')|safe}}</td>
+                    <td>
+                        <form method="post">
+                            <input type="hidden" name="badgeId" value="{{ ddoc.badgeId }}">
+                            <button class="typo-a contest-tag" name="operation" value="enable" type="submit">{{ _('启用') }}</button>
+                        </form>
+                    </td>
+                </tr>
+                {%- endfor -%}
+            </tbody>
+        </table>
+        {{ paginator.render(page, dpcount) }}
+    </div>
+    {% endif %}
+</div>
+{% endblock%}

@@ -1,0 +1,8 @@
+{
+  "name": "hydrooj-domainUserData",
+  "main": "index.js",
+  "devDependencies": {
+    "@hydrooj/ui-default": "^4.58.0-beta.17",
+    "hydrooj": "^5.0.0-beta.15"
+  }
+}

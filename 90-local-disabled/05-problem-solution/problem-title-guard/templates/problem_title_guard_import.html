@@ -1,0 +1,293 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.ptg-page .section__body { padding-bottom: 28px; }
+.ptg-upload-note { margin: 0 0 18px; color: #777; line-height: 1.7; }
+.ptg-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px 120px;
+  gap: 12px;
+  align-items: center;
+  margin: 2px 0 20px;
+  padding: 14px 16px;
+  border-left: 4px solid #5fa8dc;
+  background: #f7fbff;
+}
+.ptg-summary__label {
+  display: block;
+  color: #888;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.ptg-summary__value {
+  display: block;
+  margin-top: 2px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  word-break: break-word;
+}
+.ptg-list {
+  border-top: 1px solid #e5e5e5;
+}
+.ptg-row {
+  display: grid;
+  grid-template-columns: minmax(80px, 110px) minmax(220px, 1fr) minmax(260px, 380px) minmax(88px, 120px);
+  gap: 18px;
+  align-items: start;
+  padding: 18px 0;
+  border-bottom: 1px solid #e5e5e5;
+}
+.ptg-row--warning {
+  background: linear-gradient(90deg, rgba(255, 96, 96, 0.06), rgba(255, 255, 255, 0));
+}
+.ptg-label {
+  display: block;
+  margin-bottom: 6px;
+  color: #999;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.ptg-pid {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  word-break: break-word;
+}
+.ptg-title {
+  min-width: 0;
+}
+.ptg-title__main {
+  font-size: 16px;
+  font-weight: 600;
+  color: #222;
+  line-height: 1.5;
+  word-break: break-word;
+}
+.ptg-reason {
+  margin-top: 6px;
+  color: #888;
+  line-height: 1.5;
+  word-break: break-word;
+}
+.ptg-match-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.ptg-match {
+  display: inline-flex;
+  max-width: 100%;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #eef4fb;
+  color: #3f7fb8;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.ptg-new-title .textbox {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.ptg-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ptg-status--warning {
+  background: #fff1f0;
+  color: #e53935;
+}
+.ptg-status--ok {
+  background: #edf7ed;
+  color: #2e7d32;
+}
+.ptg-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: 18px;
+}
+.theme--dark .ptg-upload-note,
+.theme--dark .ptg-summary__label,
+.theme--dark .ptg-label,
+.theme--dark .ptg-reason {
+  color: #9fb0c6;
+}
+.theme--dark .ptg-summary {
+  background: rgba(15, 23, 42, .42);
+  border-left-color: rgba(96, 165, 250, .74);
+}
+.theme--dark .ptg-list,
+.theme--dark .ptg-row {
+  border-color: rgba(148, 163, 184, .22);
+}
+.theme--dark .ptg-summary__value,
+.theme--dark .ptg-pid,
+.theme--dark .ptg-title__main {
+  color: #e2e8f0;
+}
+.theme--dark .ptg-row--warning {
+  background: linear-gradient(90deg, rgba(127, 29, 29, .18), rgba(15, 23, 42, 0));
+}
+.theme--dark .ptg-match {
+  background: rgba(59, 130, 246, .22);
+  color: #bfdbfe;
+}
+.theme--dark .ptg-status--warning {
+  background: rgba(127, 29, 29, .34);
+  color: #fca5a5;
+}
+.theme--dark .ptg-status--ok {
+  background: rgba(22, 101, 52, .32);
+  color: #86efac;
+}
+@media screen and (max-width: 900px) {
+  .ptg-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+  .ptg-summary > :first-child {
+    grid-column: 1 / -1;
+  }
+  .ptg-row {
+    grid-template-columns: minmax(70px, 96px) minmax(0, 1fr);
+  }
+  .ptg-new-title,
+  .ptg-state {
+    grid-column: 1 / -1;
+  }
+}
+@media screen and (max-width: 560px) {
+  .ptg-summary,
+  .ptg-row {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+<div class="row ptg-page">
+  <div class="medium-12 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('Import With Title Guard') }}</h1>
+      </div>
+      <div class="section__body">
+        {% if not rows.length %}
+        <form method="post" enctype="multipart/form-data">
+          <input type="hidden" name="operation" value="preview">
+          <p class="ptg-upload-note">上传 Hydro ZIP 包后，会先读取每道题的标题并检查当前题库中的同名题。</p>
+          <div class="row">
+            <div class="medium-12 columns">
+              <p>{{ _('Upload zipfile') }}: <input type="file" name="file" required></p>
+              <br>
+            </div>
+          </div>
+          <div class="row">
+            {{ form.form_text({
+              label:'preferredPrefix',
+              columns:6,
+              name:'preferredPrefix',
+              row:false,
+              help_text:_('The preferred problem ID prefix.'),
+              placeholder:_('Leave empty for default')
+            }) }}
+            {{ form.form_checkbox({
+              label:'Hidden',
+              columns:6,
+              name:'hidden',
+              placeholder:_('Make the problem hidden.'),
+              row:false
+            }) }}
+            {% if handler.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM) %}
+              {{ form.form_checkbox({
+                label:'Keep original user',
+                columns:6,
+                name:'keepUser',
+                placeholder:_('Keep original problem owner. Only used if this problemset is exported from current system.'),
+                row:false
+              }) }}
+            {% endif %}
+          </div>
+          <div class="ptg-actions">
+            <button type="submit" class="rounded primary button">
+              <span class="icon icon-search"></span> 预览重名
+            </button>
+          </div>
+        </form>
+        {% else %}
+        <form method="post">
+          <input type="hidden" name="operation" value="confirm">
+          <input type="hidden" name="stage" value="{{ stage }}">
+          <input type="hidden" name="preferredPrefix" value="{{ preferredPrefix }}">
+          {% if hidden %}<input type="hidden" name="hidden" value="on">{% endif %}
+          {% if keepUser %}<input type="hidden" name="keepUser" value="on">{% endif %}
+          <div class="ptg-summary">
+            <div>
+              <span class="ptg-summary__label">导入包</span>
+              <span class="ptg-summary__value">{{ uploadedName }}</span>
+            </div>
+            <div>
+              <span class="ptg-summary__label">题目数</span>
+              <span class="ptg-summary__value">{{ rows.length }}</span>
+            </div>
+            <div>
+              <span class="ptg-summary__label">需改名</span>
+              <span class="ptg-summary__value">{{ conflictCount }}</span>
+            </div>
+          </div>
+          <div class="ptg-list">
+            {% for row in rows %}
+            <div class="ptg-row{% if row.duplicate %} ptg-row--warning{% endif %}">
+              <div>
+                <span class="ptg-label">原 PID</span>
+                <div class="ptg-pid">{{ row.pid or row.folder }}</div>
+              </div>
+              <div class="ptg-title">
+                <span class="ptg-label">原题名 / 同名题</span>
+                <div class="ptg-title__main">{{ row.title }}</div>
+                {% if row.matches.length %}
+                <div class="ptg-match-list">
+                  {% for item in row.matches %}
+                  <a class="ptg-match" href="{{ url('problem_detail', pid=item.pid or item.docId) }}" target="_blank">{{ item.pid }} {{ item.title }}</a>
+                  {% endfor %}
+                </div>
+                {% endif %}
+                {% if row.duplicateReason %}
+                <div class="ptg-reason">{{ row.duplicateReason }}</div>
+                {% endif %}
+              </div>
+              <div class="ptg-new-title">
+                <span class="ptg-label">导入时使用的新题名</span>
+                <input name="title_{{ row.index }}" class="textbox" value="{{ row.suggestedTitle }}">
+              </div>
+              <div class="ptg-state">
+                <span class="ptg-label">状态</span>
+                {% if row.duplicate %}
+                <span class="ptg-status ptg-status--warning">需要改名</span>
+                {% else %}
+                <span class="ptg-status ptg-status--ok">可导入</span>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="ptg-actions">
+            <button type="submit" class="rounded primary button">
+              <span class="icon icon-check"></span> 确认导入
+            </button>
+            <a href="{{ url('problem_title_guard_import') }}" class="rounded button">重新上传</a>
+          </div>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

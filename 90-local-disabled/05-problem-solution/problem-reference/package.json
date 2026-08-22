@@ -1,0 +1,10 @@
+{
+  "name": "problem-reference",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "hydrooj": {
+     "frontend": {
+         "problem_reference.page.ts": "frontend/problem_reference.page.ts"
+     }
+  }
+}

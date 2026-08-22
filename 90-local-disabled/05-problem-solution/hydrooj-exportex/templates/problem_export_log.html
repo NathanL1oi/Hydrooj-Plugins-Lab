@@ -1,0 +1,133 @@
+{% import "components/user.html" as user %}
+{% extends "manage_base.html" %}
+{% block manage_content %}
+<style>
+  .col--operation {
+    width: 50px;
+  }
+
+  .col--domainid {
+    width: 60px;
+  }
+
+  .col--user {
+    width: 120px;
+  }
+
+  .col--createdat {
+    width: 120px;
+  }
+
+  .col--pid {
+    width: 120px;
+  }
+
+  .col--method {
+    width: 100px;
+  }
+</style>
+<div class="section problem-export-log">
+  <div class="section__header">
+    <h1 class="section__title" data-heading>{{ _(page_name) }}</h1>
+  </div>
+  <div class="section__body">
+    <form method="get" name="filter-form">
+      <div class="row">
+      {{ form.form_text({
+          columns:3,
+          label:_('By Domain'),
+          name:'domain',
+          value:filterDomain,
+          row:false
+        }) }}
+      {{ form.form_text({
+          columns:3,
+          label:_('By Problem'),
+          name:'pid',
+          value:filterPid,
+          row:false
+        }) }}
+        {{ form.form_text({
+          columns:3,
+          label:_('By Username / UID'),
+          name:'uidOrName',
+          value:filterUidOrName,
+          row:false,
+          noAutocomplete:true
+        }) }}
+        {{ form.form_select({
+          columns:3,
+          label:_('By Method'),
+          name:'method',
+          value:filterMethod,
+          options:{
+            '':_('All'),
+            'testdata':_('Testdata'),
+            'additional_file':_('Additional Files')
+          },
+          row:false
+        }) }}
+      </div>
+      <button type="submit" class="button primary">
+        {{ _('Filter') }}
+      </button>
+      <a href="{{ url('problem_export_log') }}" class="button">{{ _('Reset') }}</a>
+    </form>
+    <div style="width: 100%; overflow-x: auto;">
+      <table class="data-table">
+        <colgroup>
+          <col class="col--operation">
+          <col class="col--domainid">
+          <col class="col--user">
+          <col class="col--createdat">
+          <col class="col--pid">
+          <col class="col--method">
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="col--operation">{{ _('Operation') }}</th>
+            <th class="col--domainid">{{ _('DomainID') }}</th>
+            <th class="col--user">{{ _('User') }}</th>
+            <th class="col--createdat">{{ _('Created At') }}</th>
+            <th class="col--pid">{{ _('Problem') }}</th>
+            <th class="col--method">{{ _('Method') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {%- for ldoc in ldocs -%}
+          <tr>
+            <td class="col--operation">
+              {{ set(UiContext, 'log-' + ldoc._id, ldoc) }}
+              <a data-id="{{ ldoc._id}}" name="log_detail">
+                {{ _('View') }}
+              </a>
+            </td>
+            <td class="col--domainid" data-tooltip="{{ ldoc.domainId }}">{{ ldoc.domainId }}</td>
+            <td class="col--user" data-tooltip="{{ ldoc.user.uname if ldoc.user else ldoc.username }}">
+              {% if ldoc.user %}  
+                {{ user.render_inline(ldoc.user) }}  
+              {% else %}  
+                <span class="user-profile-link">  
+                  {{ ldoc.username|_('Unknown User') }}  
+                </span>  
+              {% endif %}  
+            </td>            
+            <td class="col--createdat">{{ datetimeSpan(ldoc['time'], false, 'YYYY-MM-DD HH:mm:ss')|safe }}</td>
+            {# for compatibility #}
+            <td class="col--pid"><a href="{{ url('problem_detail', domainId=ldoc.domainId, pid=ldoc.args.pid) }}">{{ ldoc.args.pid }}</a></td>
+            <td class="col--method" data-tooltip="{{ ldoc.args.type }}">
+              {% if ldoc.args.type == 'testdata' %}
+                测试数据
+              {% elif ldoc.args.type == 'additional_file' %}
+                附加文件
+              {% endif %}
+            </td>
+          </tr>
+          {%- endfor -%}
+        </tbody>
+      </table>
+    </div>
+    {{ paginator.render(page, pcount, add_qs=qs) }}
+  </div>
+</div>
+{% endblock %}

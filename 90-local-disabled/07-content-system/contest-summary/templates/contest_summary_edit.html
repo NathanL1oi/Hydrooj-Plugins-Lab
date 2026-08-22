@@ -1,0 +1,109 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.contest-summary-edit { --cse-line: #e5edf7; --cse-soft: #f8fbff; --cse-ink: #17324d; --cse-muted: #64748b; }
+.contest-summary-edit .cse-shell { display: grid; gap: 16px; }
+.contest-summary-edit .cse-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 18px; align-items: start; }
+.contest-summary-edit .cse-panel { overflow: hidden; border-radius: 8px; }
+.contest-summary-edit .cse-panel .section__title { color: var(--cse-ink); }
+.contest-summary-edit .cse-editor { min-height: 460px; line-height: 1.75; }
+.contest-summary-edit .cse-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.contest-summary-edit .cse-muted { color: var(--cse-muted); }
+.contest-summary-edit .cse-field { display: grid; gap: 6px; margin: 0 0 14px; }
+.contest-summary-edit .cse-field label { margin: 0; color: #41546c; font-weight: 700; }
+.contest-summary-edit .textbox:focus,
+.contest-summary-edit .select:focus { border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(37, 99, 235, .12); }
+.contest-summary-edit aside { position: sticky; top: 12px; }
+.contest-summary-edit .cse-guide { border-left: 3px solid #2563eb; padding-left: 12px; }
+.theme--dark .contest-summary-edit .cse-muted { color: #94a3b8; }
+.theme--dark .contest-summary-edit .cse-panel .section__title { color: #e2e8f0; }
+@media screen and (max-width: 960px) {
+  .contest-summary-edit .cse-grid { grid-template-columns: 1fr; }
+  .contest-summary-edit aside { position: static; }
+}
+</style>
+
+<div class="row contest-summary-edit">
+  <div class="medium-12 columns">
+    <div class="cse-shell">
+      <div class="cse-grid">
+        <main>
+          <section class="section cse-panel">
+            <div class="section__header">
+              <h1 class="section__title">{% if submit %}修改比赛总结{% else %}写比赛总结{% endif %}</h1>
+            </div>
+            <div class="section__body">
+              {% if not contests.length %}
+              <blockquote class="note">当前没有可选择的比赛。</blockquote>
+              {% else %}
+              {% if config and not canSubmit %}
+              <blockquote class="note">当前比赛总结暂不可提交或修改。</blockquote>
+              {% endif %}
+              <form method="post">
+                <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+                <p class="cse-field">
+                  <label>比赛</label>
+                    <select class="select" name="tid" required>
+                      <option value="" {% if not selectedTid %}selected{% endif %}>请选择比赛</option>
+                      {% for contest in contests %}
+                      <option value="{{ contest.id }}" data-default-title="{{ contest.defaultTitle }}" {% if contest.id == selectedTid %}selected{% endif %}>{{ contest.title }}</option>
+                      {% endfor %}
+                    </select>
+                </p>
+                <p class="cse-field">
+                  <label>标题</label>
+                    <input class="textbox" name="title" value="{{ submit.title if submit and submit.title else defaultTitle }}" placeholder="{{ defaultTitle or '例如：某某比赛 张三总结' }}" data-default-title="{{ defaultTitle }}" required>
+                </p>
+                <p class="cse-field">
+                  <label>正文</label>
+                    <textarea class="textbox cse-editor" name="content" data-markdown required>{{ submit.content if submit else '' }}</textarea>
+                </p>
+                <div class="cse-actions">
+                  <button class="button rounded primary" type="submit" {% if config and not canSubmit %}disabled{% endif %}>
+                    <span class="icon icon-save"></span> 提交总结
+                  </button>
+                  <a class="button rounded" href="{{ listUrl }}"><span class="icon icon-back"></span> 返回列表</a>
+                </div>
+              </form>
+              {% endif %}
+            </div>
+          </section>
+        </main>
+
+        <aside>
+          <section class="section cse-panel">
+            <div class="section__header">
+              <h1 class="section__title">写作要求</h1>
+            </div>
+            <div class="section__body typo richmedia cse-guide">
+              {% if config %}
+                {{ config.prompt|markdown|safe }}
+                <p class="cse-muted">最低字数：{{ config.minWords }}</p>
+                {% if config.deadline %}<p class="cse-muted">截止时间：{{ datetimeSpan(config.deadline)|safe }}</p>{% endif %}
+              {% else %}
+                <p class="cse-muted">从比赛详情页进入会默认选中该比赛；从总结中心进入时，请先选择一场你有权限查看的比赛。</p>
+              {% endif %}
+            </div>
+          </section>
+        </aside>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(() => {
+  const select = document.querySelector('.contest-summary-edit select[name="tid"]');
+  const title = document.querySelector('.contest-summary-edit input[name="title"]');
+  if (!select || !title) return;
+  let lastDefault = title.getAttribute('data-default-title') || '';
+  select.addEventListener('change', () => {
+    const option = select.options[select.selectedIndex];
+    const nextDefault = option?.getAttribute('data-default-title') || '';
+    if (!nextDefault) return;
+    if (!title.value || title.value === lastDefault) title.value = nextDefault;
+    title.setAttribute('data-default-title', nextDefault);
+    lastDefault = nextDefault;
+  });
+})();
+</script>
+{% endblock %}

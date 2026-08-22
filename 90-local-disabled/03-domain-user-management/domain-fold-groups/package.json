@@ -1,0 +1,11 @@
+{
+  "name": "hydrooj-domain-fold-groups",
+  "version": "0.1.0",
+  "description": "Collapsible personal domain grouping view for HydroOJ.",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "hydrooj": "latest",
+    "@hydrooj/ui-default": "latest"
+  }
+}

@@ -1,0 +1,75 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row" data-sticky-parent>
+    <div class="medium-9 columns">
+        {% block coin_content %}{% endblock %}
+    </div>
+    <div class="medium-3 columns">
+        <div data-sticky="large">
+            <div class="section side">
+                <ol class="menu">
+                    <li class="menu__item">
+                        <div class="menu__link expandable">
+                            <span class="icon icon-bold"></span> {{ _('硬币管理') }}
+                        </div>
+                        <ol class="menu collapsed">
+                            <li class="menu__item" id="menu-item-coin_show">
+                                <a class="menu__link{% if page_name == 'coin_show' %} active{% endif %}" href="{{ url('coin_show') }}">
+                                    {{ _('所有人的硬币余额') }}
+                                </a>
+                            </li>
+                            <li class="menu__item" id="menu-item-coin_bill">
+                                <a class="menu__link{% if page_name == 'coin_bill' and udoc._id==handler.user._id %} active{% endif %}" href="{{ url('coin_bill') }}">
+                                    {{ _('我的硬币发放记录') }}
+                                </a>
+                            </li>
+                            <li class="menu__item" id="menu-item-coin_all">
+                                <a class="menu__link{% if page_name == 'coin_bill' and udoc._id==0 %} active{% endif %}" href="{{ url('coin_bill',query={uid:0}) }}">
+                                    {{ _('所有人的硬币发放记录') }}
+                                </a>
+                            </li>
+                            <li class="menu__item" id="menu-item-coin_mall">
+                                <a class="menu__link{% if page_name == 'coin_mall' %} active{% endif %}" href="{{ url('coin_mall') }}">
+                                    {{ _('coin_mall') }}
+                                </a>
+                            </li>
+                            <li class="menu__item" id="menu-item-coin_myrecord">
+                                <a class="menu__link{% if page_name == 'coin_myrecord' %} active{% endif %}" href="{{ url('coin_myrecord') }}">
+                                    {{ _('coin_myrecord') }}
+                                </a>
+                            </li>
+                            <li class="menu__item" id="menu-item-coin_gift">
+                                <a class="menu__link{% if page_name == 'coin_gift' %} active{% endif %}" href="{{ url('coin_gift') }}">
+                                    {{ _('coin_gift') }}
+                                </a>
+                            </li>
+                            {% if handler.user.hasPriv(PRIV.PRIV_SET_PERM) %}
+                            <li class="menu__item" id="menu-item-coin_inc">
+                                <a class="menu__link{% if page_name == 'coin_inc' %} active{% endif %}" href="{{ url('coin_inc') }}">
+                                    {{ _('coin_inc') }}
+                                </a>
+                            </li>
+                            <li class="menu__item" id="menu-item-coin_import">
+                                <a class="menu__link{% if page_name == 'coin_import' %} active{% endif %}" href="{{ url('coin_import') }}">
+                                    {{ _('coin_import') }}
+                                </a>
+                            </li>
+                            <li class="menu__item" id="menu-item-coin_record">
+                                <a class="menu__link{% if page_name == 'coin_record' %} active{% endif %}" href="{{ url('coin_record') }}">
+                                    {{ _('coin_record') }}
+                                </a>
+                            </li>
+                            <li class="menu__item" id="menu-item-goods_manage">
+                                <a class="menu__link{% if page_name == 'goods_manage' %} active{% endif %}" href="{{ url('goods_manage') }}">
+                                    {{ _('goods_manage') }}
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ol>
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

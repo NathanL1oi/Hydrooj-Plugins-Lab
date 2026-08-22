@@ -1,0 +1,11 @@
+{
+  "name": "@hydrooj/group-batch-manage",
+  "version": "0.2.0-simple-ui",
+  "description": "Simplified batch add/remove users to/from domain groups",
+  "main": "index.ts",
+  "author": "",
+  "license": "AGPL-3.0-or-later",
+  "peerDependencies": {
+    "hydrooj": "*"
+  }
+}

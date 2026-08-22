@@ -1,0 +1,149 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.pzr-batch .section { border-radius: 8px; overflow: hidden; }
+.pzr-panel { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 18px; align-items: start; }
+.pzr-upload { border: 1px dashed #9cc8f1; border-radius: 8px; background: #fbfdff; padding: 16px; }
+.pzr-help { color: #6f7f91; font-size: 13px; line-height: 1.7; margin-top: 8px; }
+.pzr-side { border-left: 3px solid #5aa6e8; background: #f7fbff; border-radius: 8px; padding: 14px 16px; color: #36536f; line-height: 1.7; }
+.pzr-msg { background: #f8fafc; border: 1px solid #d9e2ec; border-radius: 8px; padding: 10px 12px; white-space: pre-wrap; line-height: 1.65; margin-bottom: 16px; }
+.pzr-table { width: 100%; table-layout: fixed; }
+.pzr-table th, .pzr-table td { vertical-align: top; word-break: break-word; }
+.pzr-pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; line-height: 1.6; background: #e5e7eb; color: #374151; }
+.pzr-pill.ok { background: #dcfce7; color: #166534; }
+.pzr-pill.error { background: #fee2e2; color: #991b1b; }
+.pzr-pill.done { background: #dbeafe; color: #1d4ed8; }
+.pzr-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 16px; }
+.theme--dark .pzr-upload,
+.theme--dark .pzr-side,
+.theme--dark .pzr-msg {
+  border-color: rgba(148, 163, 184, .28);
+  background: rgba(31, 41, 55, .72);
+  color: #e2e8f0;
+}
+.theme--dark .pzr-help { color: #94a3b8; }
+.theme--dark .pzr-pill {
+  background: rgba(148, 163, 184, .18);
+  color: #e2e8f0;
+}
+.theme--dark .pzr-pill.ok { background: rgba(34, 197, 94, .16); color: #bbf7d0; }
+.theme--dark .pzr-pill.error { background: rgba(239, 68, 68, .16); color: #fecaca; }
+.theme--dark .pzr-pill.done { background: rgba(59, 130, 246, .18); color: #bfdbfe; }
+@media screen and (max-width: 900px) {
+  .pzr-panel { grid-template-columns: 1fr; }
+}
+</style>
+
+<div class="row pzr-batch">
+  <div class="medium-12 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">
+          <span class="icon icon-upload"></span>
+          批量 ZIP 替换
+        </h1>
+      </div>
+      <div class="section__body">
+        {% if messages and messages|length %}
+        <div class="pzr-msg">{% for m in messages %}{{ m }}
+{% endfor %}</div>
+        {% endif %}
+
+        <div class="pzr-panel">
+          <form method="post" enctype="multipart/form-data" class="pzr-upload">
+            <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+            <input type="hidden" name="action" value="preview">
+            <label class="form__label">Hydro ZIP</label>
+            <input type="file" name="file" accept=".zip" required>
+            <div class="pzr-help">系统会读取每个 <code>problem.yaml</code> 的 <code>pid</code>，并匹配当前题库中同 pid 的题目。</div>
+
+            <label style="display:flex; gap:8px; align-items:center; margin-top:14px;">
+              <input type="hidden" name="replaceSolutions" value="0">
+              <input type="checkbox" name="replaceSolutions" value="1" {% if options.replaceSolutions %}checked{% endif %}>
+              同步替换题解
+            </label>
+
+            <div class="pzr-actions">
+              <button type="submit" class="rounded primary button">
+                <span class="icon icon-search"></span>
+                上传并预览
+              </button>
+              <a href="{{ url('problem_main') }}" class="rounded button">返回题库</a>
+            </div>
+          </form>
+
+          <div class="pzr-side">
+            <strong>替换规则</strong><br>
+            按 ZIP 里的 pid 匹配当前域题库题目。执行后只保留已有题目的 docId 和 pid，其余题面、数据、题解和设置会按 ZIP 覆盖。
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% if rows and rows|length %}
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">预览映射</h1>
+      </div>
+      <div class="section__body no-padding">
+        <table class="data-table pzr-table">
+          <thead>
+            <tr>
+              <th style="width:60px">#</th>
+              <th style="width:160px">ZIP 源题</th>
+              <th>源题标题</th>
+              <th style="width:160px">匹配题目</th>
+              <th>当前标题</th>
+              <th style="width:130px">文件</th>
+              <th style="width:90px">状态</th>
+              <th>说明</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+            <tr>
+              <td>{{ row.index }}</td>
+              <td>
+                <code>{{ row.sourcePid|default('-') }}</code>
+                <br><small>{{ row.sourceFolder }}</small>
+              </td>
+              <td>{{ row.sourceTitle|default('-') }}</td>
+              <td>
+                {% if row.targetDocId %}
+                  <code>{{ row.targetPid }}</code>
+                  <br><small>docId={{ row.targetDocId }}</small>
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+              <td>{{ row.targetTitle|default('-') }}</td>
+              <td>
+                数据 {{ row.testdataCount|default(0) }}<br>
+                附件 {{ row.additionalCount|default(0) }}<br>
+                题解 {{ row.solutionCount|default(0) }}
+              </td>
+              <td><span class="pzr-pill {{ row.status }}">{{ row.status }}</span></td>
+              <td>{{ row.message }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if canExecute %}
+      <div class="section__body">
+        <form method="post" onsubmit="return confirm('确认按上方映射批量替换题目？已有 docId 和 pid 会保留。');">
+          <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+          <input type="hidden" name="action" value="execute">
+          <input type="hidden" name="jobId" value="{{ jobId }}">
+          <button type="submit" class="rounded primary button">
+            <span class="icon icon-check"></span>
+            确认执行替换
+          </button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

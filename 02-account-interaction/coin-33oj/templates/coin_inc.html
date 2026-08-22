@@ -1,0 +1,39 @@
+{% extends "coin_base.html" %}
+{% block coin_content %}
+<div class="section">
+    <div class="section__header">
+        <h1 class="section__title">{{ _('coin_inc') }}</h1>
+    </div>
+    <div class="section__body">
+        <form method="post">
+            {{ form.form_text({
+                label:'Username / UID',
+                name:'uidOrName',
+                autofocus:true,
+                required:true,
+                value:uidOrName
+                }) }}
+            {{ form.form_text({
+                label:'发放数量（负数即为扣除）',
+                name:'amount',
+                required:true
+                }) }}
+            {{ form.form_text({
+                label:'发放原因',
+                name:'text',
+                required:true
+                }) }}
+            <div class="row">
+                <div class="columns">
+                    <button type="submit" class="rounded primary button">
+                        {{ _('发放') }}
+                    </button>
+                    <button type="button" class="rounded button" onclick="window.history.go(-1)">
+                        {{ _('Cancel') }}
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

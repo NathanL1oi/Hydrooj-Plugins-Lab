@@ -1,0 +1,9 @@
+type: submit_answer
+checker_type: testlib
+checker: checker.cc
+subtasks:
+  - type: sum
+    cases:
+      - input: meta.in
+        output: meta.ans
+        score: 100

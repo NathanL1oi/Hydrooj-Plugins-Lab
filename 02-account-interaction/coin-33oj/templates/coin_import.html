@@ -1,0 +1,25 @@
+{% extends "coin_base.html" %}
+{% block coin_content %}
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">{{ _('coin_import') }}</h1>
+  </div>
+  <div class="section__body">
+    <blockquote class="note">
+      <p>{{ _('从Excel或csv中复制[用户名],[发放数量],[发放原因]来批量发放硬币。如：student1,10,reward') }}</p>
+    </blockquote>
+    {{ noscript_note.render() }}
+    <p name="messages"></p>
+    {{ form.form_textarea({
+        columns:null,
+        label:'发放硬币',
+        name:'coins',
+        nospellcheck: true
+        }) }}
+    <div class="row"><div class="columns">
+      <button name="preview" class="rounded primary button">{{ _('Preview') }}</button>
+      <button name="submit" class="rounded button">{{ _('Submit') }}</button>
+    </div></div>
+  </div>
+</div>
+{% endblock %}

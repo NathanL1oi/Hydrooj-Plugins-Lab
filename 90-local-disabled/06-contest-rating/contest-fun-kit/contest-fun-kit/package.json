@@ -1,0 +1,12 @@
+{
+  "name": "hydrooj-contest-fun-kit",
+  "version": "0.1.0",
+  "description": "Contest goals, task cards, highlights, group mode, and post-contest review timeline",
+  "main": "index.ts",
+  "license": "AGPL-3.0",
+  "devDependencies": {
+    "@hydrooj/ui-default": "^4.58.0-beta.6",
+    "hydrooj": "^5.0.0-beta.6",
+    "typescript": "^5.8.3"
+  }
+}

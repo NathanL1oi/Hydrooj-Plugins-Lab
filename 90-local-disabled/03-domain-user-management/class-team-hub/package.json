@@ -1,0 +1,11 @@
+{
+  "name": "hydrooj-class-team-hub",
+  "version": "0.1.0",
+  "description": "Domain-scoped 2-3 student class teams for teaching and contest integrations",
+  "main": "index.ts",
+  "license": "AGPL-3.0",
+  "devDependencies": {
+    "hydrooj": "^5.0.0-beta.6",
+    "typescript": "^5.8.3"
+  }
+}

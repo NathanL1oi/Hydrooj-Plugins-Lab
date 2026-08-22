@@ -1,0 +1,370 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.psc-shell { max-width: 1380px; margin: 0 auto; }
+.psc-hero {
+  border: 1px solid #d7e2ef;
+  border-radius: 8px;
+  padding: 18px 20px;
+  margin-bottom: 14px;
+  background: #f8fbff;
+}
+.psc-hero h1 { margin: 0 0 8px; font-size: 24px; color: #172033; letter-spacing: 0; }
+.psc-note { color: #5c6b80; font-size: 13px; line-height: 1.65; }
+.psc-pathline { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; align-items: center; }
+.psc-pathline code { border-radius: 5px; background: #edf3fa; padding: 2px 7px; color: #24364f; }
+.psc-summary { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin: 14px 0; }
+.psc-metric { border: 1px solid #dfe7f1; border-radius: 8px; padding: 12px; background: #fff; }
+.psc-metric strong { display: block; font-size: 24px; line-height: 1.15; color: #1f2a3d; }
+.psc-metric span { color: #6b778c; font-size: 12px; }
+.psc-toolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 220px auto;
+  gap: 10px;
+  align-items: center;
+  margin: 14px 0;
+}
+.psc-input, .psc-select {
+  width: 100%;
+  height: 38px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 0 10px;
+  background: #fff;
+}
+.psc-cats { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+.psc-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-size: 12px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #334155;
+}
+.psc-pill.on { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+.psc-pill.off { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+.psc-pill.locked { background: #e0f2fe; color: #075985; border-color: #bae6fd; }
+.psc-pill.cat { background: #fff; }
+.psc-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.psc-card {
+  border: 1px solid #dfe7f1;
+  border-radius: 8px;
+  background: #fff;
+  padding: 14px;
+}
+.psc-card.psc-off { opacity: .66; }
+.psc-card-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.psc-title { font-weight: 700; color: #182235; font-size: 16px; line-height: 1.35; }
+.psc-muted { color: #6b778c; font-size: 12px; }
+.psc-desc { color: #314057; font-size: 13px; line-height: 1.6; margin-top: 8px; min-height: 40px; }
+.psc-meta { display: grid; grid-template-columns: 92px 1fr; gap: 6px 10px; margin-top: 10px; font-size: 12px; }
+.psc-meta dt { color: #7b8797; }
+.psc-meta dd { margin: 0; color: #344256; word-break: break-all; }
+.psc-switch { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.psc-switch input { margin: 0; }
+.psc-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.psc-help { margin-top: 8px; color: #7b8797; font-size: 12px; line-height: 1.5; }
+.psc-alert {
+  border: 1px solid #fed7aa;
+  background: #fff7ed;
+  color: #9a3412;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+.theme--dark .psc-hero,
+.theme--dark .psc-metric,
+.theme--dark .psc-card {
+  border-color: rgba(148, 163, 184, .24);
+  background: rgba(30, 41, 59, .72);
+  color: #e2e8f0;
+}
+.theme--dark .psc-hero h1,
+.theme--dark .psc-metric strong,
+.theme--dark .psc-title,
+.theme--dark .psc-switch {
+  color: #e2e8f0;
+}
+.theme--dark .psc-note,
+.theme--dark .psc-muted,
+.theme--dark .psc-metric span,
+.theme--dark .psc-meta dt,
+.theme--dark .psc-help {
+  color: #94a3b8;
+}
+.theme--dark .psc-desc,
+.theme--dark .psc-meta dd {
+  color: #cbd5e1;
+}
+.theme--dark .psc-pathline code,
+.theme--dark .psc-meta code {
+  border: 1px solid rgba(148, 163, 184, .20);
+  background: rgba(15, 23, 42, .42);
+  color: #bfdbfe;
+}
+.theme--dark .psc-input,
+.theme--dark .psc-select {
+  border-color: rgba(148, 163, 184, .24);
+  background: rgba(15, 23, 42, .44);
+  color: #e2e8f0;
+}
+.theme--dark .psc-input::placeholder {
+  color: #94a3b8;
+}
+.theme--dark .psc-input:focus,
+.theme--dark .psc-select:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, .18);
+  outline: none;
+}
+.theme--dark .psc-pill,
+.theme--dark .psc-pill.cat {
+  border-color: rgba(148, 163, 184, .24);
+  background: rgba(30, 41, 59, .62);
+  color: #cbd5e1;
+}
+.theme--dark .psc-pill.on {
+  border-color: rgba(74, 222, 128, .34);
+  background: rgba(34, 197, 94, .18);
+  color: #86efac;
+}
+.theme--dark .psc-pill.off {
+  border-color: rgba(248, 113, 113, .35);
+  background: rgba(239, 68, 68, .18);
+  color: #fca5a5;
+}
+.theme--dark .psc-pill.locked {
+  border-color: rgba(125, 211, 252, .36);
+  background: rgba(14, 165, 233, .16);
+  color: #bae6fd;
+}
+.theme--dark .psc-card.psc-off {
+  opacity: .72;
+}
+.theme--dark .psc-card.psc-off .psc-title {
+  color: #cbd5e1;
+}
+.theme--dark .psc-alert {
+  border-color: rgba(251, 146, 60, .35);
+  background: rgba(120, 53, 15, .24);
+  color: #fdba74;
+}
+.psc-hidden { display: none !important; }
+.theme--dark .psc-hero,
+.theme--dark .psc-metric,
+.theme--dark .psc-card {
+  background: rgba(15, 23, 42, .42);
+  border-color: rgba(148, 163, 184, .26);
+}
+.theme--dark .psc-hero h1,
+.theme--dark .psc-metric strong,
+.theme--dark .psc-title,
+.theme--dark .psc-desc,
+.theme--dark .psc-meta dd {
+  color: #dbe7f5;
+}
+.theme--dark .psc-note,
+.theme--dark .psc-muted,
+.theme--dark .psc-metric span,
+.theme--dark .psc-meta dt,
+.theme--dark .psc-help {
+  color: #9fb0c6;
+}
+.theme--dark .psc-pathline code,
+.theme--dark .psc-card code {
+  background: rgba(15, 23, 42, .55);
+  color: #bfdbfe;
+}
+.theme--dark .psc-input,
+.theme--dark .psc-select {
+  background: rgba(15, 23, 42, .56);
+  border-color: rgba(148, 163, 184, .28);
+  color: #e2e8f0;
+}
+.theme--dark .psc-input::placeholder { color: #94a3b8; }
+.theme--dark .psc-pill {
+  background: rgba(148, 163, 184, .18);
+  border-color: rgba(148, 163, 184, .28);
+  color: #e2e8f0;
+}
+.theme--dark .psc-pill.on { background: rgba(22, 101, 52, .32); color: #86efac; border-color: rgba(74, 222, 128, .32); }
+.theme--dark .psc-pill.off { background: rgba(127, 29, 29, .34); color: #fca5a5; border-color: rgba(248, 113, 113, .34); }
+.theme--dark .psc-pill.locked { background: rgba(7, 89, 133, .35); color: #7dd3fc; border-color: rgba(125, 211, 252, .35); }
+.theme--dark .psc-alert {
+  background: rgba(146, 64, 14, .24);
+  border-color: rgba(251, 146, 60, .34);
+  color: #fdba74;
+}
+html.hydro-user-background-enabled .psc-hero,
+html.hydro-user-background-enabled .psc-metric,
+html.hydro-user-background-enabled .psc-card {
+  background: var(--hub-surface) !important;
+  border-color: var(--hub-border) !important;
+  color: var(--hub-text) !important;
+  box-shadow: var(--hub-shadow) !important;
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+}
+html.hydro-user-background-enabled .psc-pathline code,
+html.hydro-user-background-enabled .psc-card code,
+html.hydro-user-background-enabled .psc-input,
+html.hydro-user-background-enabled .psc-select {
+  background: var(--hub-input-bg) !important;
+  border-color: var(--hub-border) !important;
+  color: var(--hub-text) !important;
+}
+html.hydro-user-background-enabled .psc-pill {
+  background: var(--hub-surface-soft) !important;
+  border-color: var(--hub-border) !important;
+  color: var(--hub-text) !important;
+}
+@media (max-width: 1100px) {
+  .psc-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .psc-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 720px) {
+  .psc-summary, .psc-toolbar { grid-template-columns: 1fr; }
+}
+</style>
+<div class="row">
+  <div class="columns">
+    <div class="section psc-shell">
+      <div class="section__header">
+        <h1 class="section__title">插件主控</h1>
+        <div class="section__tools">
+          <button class="primary rounded button" type="submit" form="plugin-switch-form">
+            <span class="icon icon-save"></span> 保存开关
+          </button>
+        </div>
+      </div>
+      <div class="section__body">
+        {% if manifestError %}
+          <div class="psc-alert">插件清单读取失败：{{ manifestError }}</div>
+        {% endif %}
+        <div class="psc-hero">
+          <h1>Hydro 插件总览与运行时开关</h1>
+          <div class="psc-note">
+            本页按照服务器 addon 清单维护插件说明、路径、入口和运行时开关。插件描述来自 <code>plugins.json</code>，页面会按文件更新时间自动读取；以后新增插件通常只需要补一条清单，不必改主控代码。路由类插件可实时拦截，纯前端/钩子类插件彻底停用仍建议移除 addon 或重启 Hydro。
+          </div>
+          <div class="psc-pathline">
+            <span class="psc-muted">清单文件</span>
+            <code>{{ manifestPath }}</code>
+            {% if manifestUpdatedAt %}
+              <span class="psc-muted">最后更新：{{ datetimeSpan(manifestUpdatedAt)|safe }}</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="psc-summary">
+          <div class="psc-metric"><strong>{{ pluginCount }}</strong><span>清单插件</span></div>
+          <div class="psc-metric"><strong>{{ switchableCount }}</strong><span>可切换</span></div>
+          <div class="psc-metric"><strong>{{ enabledCount }}</strong><span>已启用</span></div>
+          <div class="psc-metric"><strong>{{ disabledCount }}</strong><span>已停用</span></div>
+          <div class="psc-metric"><strong>{{ lockedCount }}</strong><span>核心保护</span></div>
+        </div>
+
+        <div class="psc-cats">
+          {% for cat in categoryStats %}
+            <span class="psc-pill cat">{{ cat.name }} {{ cat.enabled }}/{{ cat.total }}{% if cat.locked %} · {{ cat.locked }} 锁定{% endif %}</span>
+          {% endfor %}
+        </div>
+
+        <div class="psc-toolbar">
+          <input class="psc-input" id="psc-search" type="search" placeholder="搜索插件、路径、功能描述">
+          <select class="psc-select" id="psc-category">
+            <option value="">全部分类</option>
+            {% for category in categories %}
+              <option value="{{ category }}">{{ category }}</option>
+            {% endfor %}
+          </select>
+          <label class="psc-switch">
+            <input id="psc-hide-locked" type="checkbox">
+            <span class="psc-muted">隐藏核心保护项</span>
+          </label>
+        </div>
+
+        <form method="post" id="plugin-switch-form">
+          <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+          <div class="psc-grid" id="psc-grid">
+            {% for plugin in plugins %}
+              <div class="psc-card {% if not plugin.enabled and not plugin.locked %}psc-off{% endif %}"
+                   data-plugin-card
+                   data-category="{{ plugin.category }}"
+                   data-locked="{{ '1' if plugin.locked else '0' }}"
+                   data-search="{{ (plugin.title + ' ' + plugin.packageName + ' ' + plugin.id + ' ' + plugin.description + ' ' + plugin.serverPath + ' ' + plugin.category + ' ' + plugin.type)|lower }}">
+                <div class="psc-card-head">
+                  <div>
+                    <div class="psc-title">{{ plugin.title }}</div>
+                    <div class="psc-muted">{{ plugin.packageName }} / {{ plugin.id }}</div>
+                  </div>
+                  <label class="psc-switch">
+                    {% if plugin.locked %}
+                      <input type="checkbox" checked disabled>
+                      <span class="psc-pill locked">{{ plugin.statusText }}</span>
+                    {% else %}
+                      <input type="checkbox" name="enabled" value="{{ plugin.id }}" {% if plugin.enabled %}checked{% endif %}>
+                      <span class="psc-pill {{ plugin.statusClass }}">{{ plugin.statusText }}</span>
+                    {% endif %}
+                  </label>
+                </div>
+                <div class="psc-desc">{{ plugin.description }}</div>
+                <div class="psc-tags">
+                  <span class="psc-pill cat">{{ plugin.category }}</span>
+                  <span class="psc-pill cat">{{ plugin.type }}</span>
+                  {% for tag in plugin.tags %}
+                    <span class="psc-pill cat">{{ tag }}</span>
+                  {% endfor %}
+                </div>
+                <dl class="psc-meta">
+                  <dt>影响方式</dt><dd>{{ plugin.effectText }}</dd>
+                  <dt>服务器路径</dt><dd>{{ plugin.serverPath }}</dd>
+                  <dt>本地目录</dt><dd>{{ plugin.localText }}</dd>
+                  <dt>路由规则</dt><dd>{{ plugin.routeText }}</dd>
+                  <dt>UI 节点</dt><dd>{{ plugin.uiText }}</dd>
+                  <dt>最近调整</dt>
+                  <dd>
+                    {% if plugin.updatedAt %}
+                      {{ datetimeSpan(plugin.updatedAt)|safe }}{% if plugin.updatedBy %} · UID {{ plugin.updatedBy }}{% endif %}
+                    {% else %}
+                      <span class="psc-muted">尚未调整</span>
+                    {% endif %}
+                  </dd>
+                </dl>
+                {% if plugin.note %}
+                  <div class="psc-help">{{ plugin.note }}</div>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var search = document.getElementById('psc-search');
+  var category = document.getElementById('psc-category');
+  var hideLocked = document.getElementById('psc-hide-locked');
+  var cards = Array.prototype.slice.call(document.querySelectorAll('[data-plugin-card]'));
+  function applyFilter() {
+    var q = (search.value || '').trim().toLowerCase();
+    var cat = category.value || '';
+    var lockedHidden = hideLocked.checked;
+    cards.forEach(function (card) {
+      var ok = true;
+      if (q && (card.getAttribute('data-search') || '').indexOf(q) < 0) ok = false;
+      if (cat && card.getAttribute('data-category') !== cat) ok = false;
+      if (lockedHidden && card.getAttribute('data-locked') === '1') ok = false;
+      card.classList.toggle('psc-hidden', !ok);
+    });
+  }
+  [search, category, hideLocked].forEach(function (el) {
+    el && el.addEventListener('input', applyFilter);
+    el && el.addEventListener('change', applyFilter);
+  });
+})();
+</script>
+{% endblock %}

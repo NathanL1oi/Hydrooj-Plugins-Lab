@@ -1,0 +1,21 @@
+{% import "components/user.html" as user with context %}
+<tbody data-fragment-id="article_main_admin-tbody">
+  {%- for ddoc in ddocs -%}
+  <tr>
+    <td class="col--title"><a href="{{ url('blog_detail', uid=ddoc.owner, did=ddoc._id) }}" data-emoji-enabled>{{
+        ddoc['title'] }}</a></td>
+    <td class="col--content">{{ ddoc.content|default('')|truncate(64, true)|markdownInline|safe }}</td>
+    <td class="col--owner">{{ user.render_inline(udict[ddoc.owner], badge=false) }}</td>
+    <td class="col--update_at">{{ datetimeSpan(ddoc.updateAt)|safe }}</td>
+    <td class="col--nice" name="show_domainName" data-domain_name="{{ ddoc.showedDomain }}">
+      {% if ddoc.nice %}<a>已推荐</a>{% else %}未推荐{% endif %} </td>
+    <td class="col--hidden">{% if ddoc.hidden %}隐藏{% else %}显示{% endif %}</td>
+    <td class="col--lock">{% if ddoc.lock %}已禁用{% else %}已启用{% endif %}</td>
+    <td class="col--actions">
+      <a name="set_nice" data-did="{{ ddoc._id }}">{% if ddoc.nice %}撤下{% else %}推荐{% endif %}</a>
+      <a name="set_hidden" data-did="{{ ddoc._id }}">{% if ddoc.hidden %}显示{% else %}隐藏{% endif %}</a>
+      <a name="set_lock" data-did="{{ ddoc._id }}">{% if ddoc.lock %}启用{% else %}禁用{% endif %}</a>
+    </td>
+  </tr>
+  {%- endfor -%}
+</tbody>

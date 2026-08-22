@@ -1,0 +1,24 @@
+{% import "components/paginator.html" as paginator with context %}
+{% extends "layout/basic.html" %}
+{{ set(UiContext, 'csdoc', csdoc) }}
+{% block content %}
+{% include "course_ui_style.html" %}
+<div class="row"><div class="medium-12 columns scoreboard--homework">
+  <div class="section visible">
+    <div class="section__header">
+      <a href="{{ url('course_subsec_detail', cid=cdoc.docId, csid=csdoc.docId, ssid=ssid) }}">
+        <h1 class="section__title">{{ _('Article Score') }} : {{ ssdoc.title }}</h1>
+      </a>
+      <div class="section__tools">
+        <select class="select filter" name="list">
+          <option value="all">{{ _('All Users') }}</option>
+          {% for group in groups %}
+            <option value="{{ group.uids.join(',') }}">{{ group.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    {% include "partials/course_subsec_article.html" %}
+  </div>
+</div></div>
+{% endblock %}

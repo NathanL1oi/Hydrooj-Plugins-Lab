@@ -1,0 +1,120 @@
+{% import "components/nothing.html" as nothing with context %}
+{% import "components/paginator.html" as paginator with context %}
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row" data-sticky-parent>
+<div class="medium-12 columns">
+<div class="section">
+    <div class="section__header">
+        <h1 class="section__title">{{ _('users_manage') }}</h1>
+            <div class="section__tools">
+            {% if handler.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM) %}
+             <a class="primary rounded button" href="{{ url('users_unamechange') }}">{{ _('users_unamechange') }}</a>
+            {% endif %}
+             <a class="primary rounded button" href="{{ url('users_resetpwd') }}">{{ _('users_resetpwd') }}</a>
+             <a class="primary rounded button" href="{{ url('realname_set') }}">{{ _('realname_set') }}</a>
+             <a class="primary rounded button" href="{{ url('realname_import') }}">{{ _('realname_import') }}</a>
+           </div>
+    </div>
+    <div class="section__body no-padding">
+        <table class="data-table">
+            <colgroup>
+                <col class="col--uid" style="width:5rem">
+                <col class="col--user" style="width:20rem">
+                <col class="col--displayName" style="width:8rem">
+                <col class="col--school" style="width:8rem">
+                <col class="col--groups" style="width:8rem">
+                <col class="col--bio">
+                <col class="col--status" style="width:7rem">
+                <col class="col--actions" style="width:10rem">
+            </colgroup>
+            <thead>
+                <tr>
+                    <form method="get" class="inline">
+                        <th>{{ _('User ID') }}</th>
+                      <th>
+                        <select name="realname" class="compact select" onchange="this.form.submit()">
+                          <option value="">{{ _('所有人') }}</option>
+                          <option value="set" {% if realname == 'set' %}selected{% endif %}>{{ _('已实名') }}</option>
+                          <option value="notset" {% if realname == 'notset' %}selected{% endif %}>{{ _('未实名') }}</option>
+                        </select>
+                      </th>
+                        <th>{{ _('Display Name') }}</th>
+                        <th>{{ _('School') }}</th>
+                      <th>
+                        <select name="groupName" class="compact select" onchange="this.form.submit()">
+                          <option value="">{{ _('所有小组') }}</option>
+                          {% for group in groups %}
+                            <option value="{{ group.name }}" {% if groupName == group.name %}selected{% endif %}>
+                              {{ group.name }} ({{ group.uids.length }} {{ _('users') }})
+                            </option>
+                          {% endfor %}
+                          <option value="ungrouped" {% if groupName == "ungrouped" %}selected{% endif %}>{{ _('未分组') }}</option>
+                        </select>
+                      </th>
+                      <th>
+                        <select name="loginTime" class="compact select" onchange="this.form.submit()">
+                          <option value="">{{ _('全部') }}</option>
+                          <option value="recent_day" {% if loginTime == 'recent_day' %}selected{% endif %}>{{ _('最近一天') }}</option>
+                          <option value="recent_week" {% if loginTime == 'recent_week' %}selected{% endif %}>{{ _('最近一周') }}</option>
+                          <option value="recent_month" {% if loginTime == 'recent_month' %}selected{% endif %}>{{ _('最近一月') }}</option>
+                          <option value="recent_half_year" {% if loginTime == 'recent_half_year' %}selected{% endif %}>{{ _('最近半年') }}</option>
+                          <option value="not_login_day" {% if loginTime == 'not_login_day' %}selected{% endif %}>{{ _('一天未登录') }}</option>
+                          <option value="not_login_week" {% if loginTime == 'not_login_week' %}selected{% endif %}>{{ _('一周未登录') }}</option>
+                          <option value="not_login_month" {% if loginTime == 'not_login_month' %}selected{% endif %}>{{ _('一月未登录') }}</option>
+                          <option value="not_login_half_year" {% if loginTime == 'not_login_half_year' %}selected{% endif %}>{{ _('半年未登录') }}</option>
+                        </select>
+                      </th>
+                      <th>
+                        <select name="banStatus" class="compact select" onchange="this.form.submit()">
+                          <option value="">{{ _('所有状态') }}</option>
+                          <option value="active" {% if banStatus == 'active' %}selected{% endif %}>{{ _('未封禁') }}</option>
+                          <option value="banned" {% if banStatus == 'banned' %}selected{% endif %}>{{ _('已封禁') }}</option>
+                        </select>
+                      </th>
+                      <th class="col--actions">{{ _('Actions') }}</th>
+                    </form> 
+                </tr>
+            </thead>
+            <tbody>
+                {%- for udoc in udocs -%}
+                <tr>
+                    <td>{{ udoc._id }}</td>
+                    <td>{{ user.render_inline(udoc) }}</td>
+                    <td>{{ udoc.displayName }}</td>
+                    <td>{{ udoc.school }}</td>
+                    <td>
+                        {%- for group in groups -%}
+                        {%- if udoc._id in group.uids -%}
+                        {{ group.name }}{{ ' ' }}
+                        {%- endif -%}
+                        {%- endfor -%}
+                    </td>
+                    <td>{{ udoc.bio|default('')|truncate(64, true)|markdownInline|safe }}</td>
+                    <td>
+                    {% if udoc.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+                        <div>{{ _('未封禁') }}</div>
+                    {% else %}
+                        <div class="typo text-red">{{ _('已封禁') }}</div>
+                    {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url('user_edit',uid=udoc._id) }}" class="typo-a contest-tag" data-tooltip="{{ _('Edit') }}"><i class="icon icon-edit"></i></a>
+                        <a href="{{ url('users_resetpwd',query={uidOrName:udoc.uname}) }}" class="typo-a contest-tag" data-tooltip="{{ _('Reset Password') }}">🔑</a>
+                        <a href="{{ url('realname_set',query={uidOrName:udoc.uname}) }}" class="typo-a contest-tag" data-tooltip="{{ _('实名认证') }}"><i class="icon icon-user"></i></a>
+                    </td>
+                </tr>
+                {%- endfor -%}
+            </tbody>
+        </table>
+        {{ paginator.render(page, upcount,add_qs=(
+            ('realname=' + realname if realname else '') + 
+            ('groupName=' + groupName if groupName else '') + 
+            ('banStatus=' + banStatus if banStatus else '') +
+            ('loginTime=' + loginTime if loginTime else '')
+        )) }}
+    </div>
+</div>
+</div>
+</div>
+{% endblock %}

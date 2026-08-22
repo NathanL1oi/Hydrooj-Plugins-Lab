@@ -1,0 +1,50 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row" data-sticky-parent>
+    <div class="medium-9 columns">
+        {% block users_content %}{% endblock %}
+    </div>
+    <div class="medium-3 columns">
+        <div data-sticky="large">
+            <div class="section side">
+                <ol class="menu">
+                    <li class="menu__item">
+                        <div class="menu__link expandable">
+                            <span class="icon icon-user--multiple"></span> {{ _('users_manage') }}
+                        </div>
+                        <ol class="menu collapsed">
+                            <li class="menu__item" id="menu-item-users_manage">
+                                <a class="menu__link{% if page_name == 'users_manage' %} active{% endif %}" href="{{ url('users_manage') }}">
+                                    {{ _('users_manage') }}
+                                </a>
+                            </li>
+                            {% if handler.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM) %}
+                            <li class="menu__item" id="menu-item-realname_quick">
+                                <a class="menu__link{% if page_name == 'users_unamechange' %} active{% endif %}" href="{{ url('users_unamechange') }}">
+                                    {{ _('users_unamechange') }}
+                                </a>
+                            </li>
+                            {% endif %}
+                            <li class="menu__item" id="menu-item-users_resetpwd">
+                                <a class="menu__link{% if page_name == 'users_resetpwd' %} active{% endif %}" href="{{ url('users_resetpwd') }}">
+                                    {{ _('Reset Password') }}
+                                </a>
+                            </li>
+                            <li class="menu__item" id="menu-item-realname_set">
+                                <a class="menu__link{% if page_name == 'realname_set' %} active{% endif %}" href="{{ url('realname_set') }}">
+                                    {{ _('realname_set') }}
+                                </a>
+                            </li>
+                            <li class="menu__item" id="menu-item-realname_import">
+                                <a class="menu__link{% if page_name == 'realname_import' %} active{% endif %}" href="{{ url('realname_import') }}">
+                                    {{ _('realname_import') }}
+                                </a>
+                            </li>
+                        </ol>
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

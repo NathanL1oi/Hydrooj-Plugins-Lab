@@ -1,0 +1,32 @@
+{% if badges and badges.length %}
+<li class="section__tab-item">
+  <h1 class="section__tab-title">{{ _('获得的徽章') }}</h1>
+  <div class="section__tab-main">
+    <div class="typo section__body no-media">
+      <div class="typo section__body">
+        {% set _mark = Math.ceil(badges.length/4) %}
+        {% macro col(badges) %}
+          <div class="medium-3 columns"><ul>
+            {% for ddoc in badges %}
+              <li>
+                <a href="{{ url('badge_detail', id=ddoc.badgeId) }}"
+                   class="user-profile-badge v-center"
+                   style="background-color:{{ ddoc.badge.backgroundColor }};color:{{ ddoc.badge.fontColor }};"
+                   data-tooltip="{{ ddoc.badge.title }}">
+                  {{ ddoc.badge.short }}
+                </a>
+              </li>
+            {% endfor %}
+          </ul></div>
+        {% endmacro %}
+        <div class="row">
+          {{ col(badges.slice(0, _mark)) }}
+          {{ col(badges.slice(_mark, _mark*2)) }}
+          {{ col(badges.slice(_mark*2, _mark*3)) }}
+          {{ col(badges.slice(_mark*3)) }}
+        </div>
+      </div>
+    </div>
+  </div>
+</li>
+{% endif %}

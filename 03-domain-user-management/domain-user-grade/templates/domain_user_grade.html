@@ -1,0 +1,108 @@
+{% extends "domain_base.html" %}
+{% import "components/user.html" as user with context %}
+{% block domain_content %}
+<style>
+.domain-user-grade .dug-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.domain-user-grade .dug-metric { padding: 14px; border: 1px solid #e5edf7; border-radius: 8px; background: #f8fbff; }
+.domain-user-grade .dug-metric strong { display: block; margin-top: 4px; color: #17324d; font-size: 26px; line-height: 1; }
+.domain-user-grade .dug-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.domain-user-grade .dug-muted { color: #64748b; }
+@media screen and (max-width: 720px) {
+  .domain-user-grade .dug-metrics { grid-template-columns: 1fr; }
+}
+</style>
+
+<div class="domain-user-grade">
+  <div class="section">
+    <div class="section__header">
+      <h1 class="section__title">{{ domain.name }}: User Grade</h1>
+      <div class="section__tools">
+        <a class="rounded button" href="{{ exportUrl }}">
+          <span class="icon icon-download"></span> Export CSV
+        </a>
+      </div>
+    </div>
+    <div class="section__body">
+      <div class="dug-metrics">
+        <div class="dug-metric">
+          <span class="dug-muted">Domain users</span>
+          <strong>{{ total }}</strong>
+        </div>
+        <div class="dug-metric">
+          <span class="dug-muted">Filled</span>
+          <strong>{{ filled }}</strong>
+        </div>
+        <div class="dug-metric">
+          <span class="dug-muted">Not filled</span>
+          <strong>{{ empty }}</strong>
+        </div>
+      </div>
+      <p class="dug-muted">
+        Students fill this field from <code>/home/settings/domain</code>. The stored field is
+        <code>domain.user.{{ fieldKey }}</code>.
+      </p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section__header">
+      <h1 class="section__title">Grade Statistics</h1>
+    </div>
+    <div class="section__body no-padding">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Grade</th>
+            <th>Users</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in stats %}
+          <tr>
+            <td>{{ row.grade }}</td>
+            <td>{{ row.count }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section__header">
+      <h1 class="section__title">Invalid Grade Values</h1>
+    </div>
+    <div class="section__body">
+      {% if invalidRows.length %}
+      <p class="dug-muted">
+        These values are already in the database but are not in the configured grade options.
+      </p>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Invalid value</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in invalidRows %}
+          <tr>
+            <td>{{ user.render_inline(row.user, badge=false) }}</td>
+            <td>{{ row.grade }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <form method="post" onsubmit="return confirm('Clear all invalid grade values?');">
+        <div class="dug-actions">
+          <button class="rounded primary button" type="submit">Clear invalid values</button>
+          <span class="dug-muted">This only clears invalid non-empty values. Empty grades are kept.</span>
+        </div>
+      </form>
+      {% else %}
+      <p class="dug-muted">No invalid grade values.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

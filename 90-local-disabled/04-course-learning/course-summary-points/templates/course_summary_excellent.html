@@ -1,0 +1,73 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.csp-excellent .csp-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.csp-excellent .csp-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.csp-excellent .csp-muted { color: #64748b; }
+.csp-excellent .csp-list { display: grid; gap: 12px; }
+.csp-excellent .csp-card { border-radius: 8px; background: #f8fafc; padding: 14px; }
+.csp-excellent .csp-card-title { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; justify-content: space-between; }
+.theme--dark .csp-excellent .csp-muted {
+  color: #94a3b8;
+}
+.theme--dark .csp-excellent .csp-card {
+  background: rgba(15, 23, 42, .42);
+  color: #e2e8f0;
+}
+</style>
+<div class="row csp-excellent">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <div class="csp-head">
+          <h1 class="section__title">{{ _('优秀小结展示') }}</h1>
+          <div class="csp-actions">
+            {% if centerUrl %}<a class="button rounded" href="{{ centerUrl }}"><span class="icon icon-back"></span> {{ _('返回积分管理') }}</a>{% endif %}
+            <a class="button rounded primary" href="{{ exportUrl }}"><span class="icon icon-download"></span> {{ _('导出 CSV') }}</a>
+          </div>
+        </div>
+      </div>
+      <div class="section__body">
+        <div class="csp-list">
+          {% for submit in submits %}
+          {% set task = taskDict[submit.taskId.toString()] %}
+          <div class="csp-card typo richmedia">
+            <div class="csp-card-title">
+              <h2>{% if task %}{{ task.title }}{% else %}{{ submit.taskId }}{% endif %}</h2>
+              <span class="csp-muted">{% if udict[submit.uid] %}{{ user.render_inline(udict[submit.uid], badge=false) }}{% else %}UID {{ submit.uid }}{% endif %}</span>
+            </div>
+            {{ submit.content|markdown|safe }}
+            {% if submit.comment %}
+            <blockquote>{{ submit.comment }}</blockquote>
+            {% endif %}
+          </div>
+          {% else %}
+          <p class="csp-muted">{{ _('暂无优秀小结') }}</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    {% if canFilter %}
+    <div class="section side">
+      <div class="section__header"><h1 class="section__title">{{ _('筛选') }}</h1></div>
+      <div class="section__body">
+        <form method="get">
+          <label>
+            {{ _('小组') }}
+            <select name="groupName" class="select">
+              <option value="all" {% if filterGroupName == 'all' %}selected{% endif %}>{{ _('全部') }}</option>
+              {% for group in groups %}
+              <option value="{{ group.name }}" {% if filterGroupName == group.name %}selected{% endif %}>{{ group.name }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <button class="button rounded" type="submit">{{ _('筛选') }}</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+# Domain Nav Manager
+
+按域管理 Hydro 顶部导航。
+
+## 功能
+
+- 每个域独立保存导航配置。
+- 支持把导航节点放到：
+  - 主导航
+  - 更多
+  - 隐藏
+- 支持上移/下移交换位置和自定义显示名称。
+- 配置入口：`/domain/nav-manager`，也会出现在“管理域”侧栏。
+- 兼容课程插件：`course_main` 默认放在主导航；旧配置中若只是放到“更多”，会自动提升到主导航。如果被明确设置为“隐藏”，仍尊重隐藏配置。
+
+隐藏只影响顶部导航入口，不改变实际路由权限。
+
+## 安装
+
+```bash
+hydrooj addon add C:\Users\kkkw\Desktop\hydro插件-59\02-新插件\domain-nav-manager
+```
+
+安装后重启 Hydro。
+
+## 模板覆盖说明
+
+插件覆盖 `templates/partials/nav.html`。如果同时安装了其他覆盖导航的前端插件，请让本插件在最后加载，或者把这些导航分组逻辑合并到最终生效的 `partials/nav.html`。

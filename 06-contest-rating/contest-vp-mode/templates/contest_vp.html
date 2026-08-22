@@ -1,0 +1,117 @@
+{% extends "layout/basic.html" %}
+{% import "components/user.html" as user with context %}
+{% import "components/contest.html" as contest with context %}
+{% block content %}
+<style>
+.contest-vp .vp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.contest-vp .vp-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+.contest-vp .vp-meta-item {
+  display: block;
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+.contest-vp .vp-muted,
+.contest-vp .button.disabled {
+  color: #64748b;
+}
+.contest-vp .button.disabled {
+  opacity: .65;
+  cursor: not-allowed;
+}
+@media screen and (max-width: 800px) {
+  .contest-vp .vp-meta { grid-template-columns: 1fr; }
+}
+</style>
+<div class="row contest-vp">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('VP 虚拟参赛') }}</h1>
+      </div>
+      <div class="section__body typo">
+        <p>
+          <a href="{{ url('contest_detail', tid=tdoc.docId) }}">{{ tdoc.title }}</a>
+          <span class="bp6-tag bp6-minimal">{{ _(model.contest.RULES[tdoc.rule].TEXT) }}</span>
+        </p>
+        <div class="vp-meta">
+          <div class="vp-meta-item">{{ _('原比赛') }}<br>{{ contest.render_time(tdoc.beginAt) }} - {{ contest.render_time(tdoc.endAt) }}</div>
+          <div class="vp-meta-item">{{ _('VP 时长') }}<br>{{ durationText }} {{ _('小时') }}</div>
+          <div class="vp-meta-item">
+            {{ _('榜单') }}<br>
+            {% if vpState.canViewRanking %}
+              <a href="{{ url('contest_scoreboard_view', tid=tdoc.docId, view='vp') }}" target="_blank">{{ _('VP 排名') }}</a>
+              ·
+              <a href="{{ url('contest_scoreboard', tid=tdoc.docId) }}" target="_blank">{{ _('比赛排名') }}</a>
+            {% else %}
+              <span class="vp-muted">{{ vpState.rankingLockedReason }}</span>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if vpState.active %}
+          <blockquote class="note">{{ _('VP 正在进行中。') }} {{ _('结束时间') }}: {{ contest.render_time(vpState.endAt) }}</blockquote>
+          <div class="vp-actions">
+            <a class="button rounded primary" href="{{ url('contest_problemlist', tid=tdoc.docId) }}">
+              <span class="icon icon-play"></span> {{ _('继续 VP') }}
+            </a>
+            <span class="button rounded disabled" aria-disabled="true">
+              <span class="icon icon-statistics"></span> {{ _('VP 完成后看榜') }}
+            </span>
+          </div>
+        {% elif vpState.ended %}
+          <blockquote class="note">{{ _('VP 已结束，可以查看榜单。') }}</blockquote>
+          <div class="vp-actions">
+            <a class="button rounded primary" href="{{ url('contest_scoreboard_view', tid=tdoc.docId, view='vp') }}" target="_blank">
+              <span class="icon icon-statistics"></span> {{ _('VP 排名') }}
+            </a>
+            <a class="button rounded" href="{{ url('contest_scoreboard', tid=tdoc.docId) }}" target="_blank">
+              <span class="icon icon-list"></span> {{ _('比赛排名') }}
+            </a>
+            <a class="button rounded" href="{{ url('record_main', query={tid:tdoc.docId}) }}">
+              <span class="icon icon-flag"></span> {{ _('All Submissions') }}
+            </a>
+          </div>
+        {% elif eligibility.ok %}
+          <blockquote class="note">{{ _('开始后会立即进入你的个人 VP 时间窗。完成 VP 前不能查看 VP 排名和比赛排名。') }}</blockquote>
+          <form method="post" class="vp-actions">
+            <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+            <input type="hidden" name="operation" value="start">
+            <button class="button rounded primary" type="submit">
+              <span class="icon icon-play"></span> {{ _('开始 VP') }}
+            </button>
+            <span class="button rounded disabled" aria-disabled="true">
+              <span class="icon icon-statistics"></span> {{ _('VP 完成后看榜') }}
+            </span>
+          </form>
+        {% else %}
+          <blockquote class="warn">{{ eligibility.reason }}</blockquote>
+          <div class="vp-actions">
+            <a class="button rounded" href="{{ url('contest_detail', tid=tdoc.docId) }}">{{ _('返回比赛') }}</a>
+            {% if vpState.canViewRanking %}
+              <a class="button rounded" href="{{ url('contest_scoreboard_view', tid=tdoc.docId, view='vp') }}" target="_blank">{{ _('VP 排名') }}</a>
+              <a class="button rounded" href="{{ url('contest_scoreboard', tid=tdoc.docId) }}" target="_blank">{{ _('比赛排名') }}</a>
+            {% else %}
+              <span class="button rounded disabled" aria-disabled="true">{{ _('VP 完成后看榜') }}</span>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    {% include "partials/contest_sidebar.html" %}
+  </div>
+</div>
+{% endblock %}

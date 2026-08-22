@@ -1,0 +1,242 @@
+{% extends "layout/basic.html" %}
+{% macro action(tooltip, operation, type, data, icon) %}
+<a href="javascript:;" {% if tooltip %} data-tooltip="{{ tooltip }}" {% endif %} data-op="{{ operation }}"
+  data-type="{{ type }}" {% if data %} data-form="{{ data|json }}" {% endif %}>
+  <span class="icon icon-{{ icon }}"></span>
+</a>
+{% endmacro %}
+{% block content %}
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__body">
+        <ul class="supplementary list">
+          <li>
+            <a class="discussion-node-tag" href="{{ url('blog_main', uid=udoc._id) }}">
+              <span class="v-center icon icon-flag"></span>
+              {{ _("{0}'s blog").format(udoc.uname) }}
+            </a>
+          </li>
+          <li>
+            <h2>{{ ddoc.title }}</h2>
+          </li>
+          <li>
+            {{ user.render_inline(udoc) }}
+            @
+            {{ datetimeSpan(ddoc._id)|safe }}
+          </li>
+        </ul>
+        <div class="typo richmedia topic__content" data-emoji-enabled>
+          {{ ddoc['content']|markdown|safe }}
+        </div>
+      </div>
+      <ul class="section__footer supplementary dot list">
+        {% if handler.user.hasPerm(perm.PERM_EDIT_DOMAIN) or handler.user.own(ddoc) %}
+        <li><a href="{{ url('blog_edit', uid=udoc._id, did=ddoc.docId) }}">
+            <span class="icon icon-edit"></span> {{ _('Edit') }}
+          </a></li>
+        {% endif %}
+        <li>{{ _('{0} views').format(ddoc.views) }}</li>
+      </ul>
+    </div>
+    {% if not ddoc.lock %}
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('{0} comments').format(drcount) }}</h1>
+      </div>
+      <div class="section__body">
+        <ul class="dczcomments__list view--discussion">
+          {% if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+          <li class="dczcomments__item">
+            <div class="media">
+              <div class="media__left top">
+                <img src="{{ avatarUrl(handler.user.avatar, 60) }}" width="60" height="60"
+                  class="medium user-profile-avatar">
+              </div>
+              <div class="media__body top">
+                {% if ddoc.lock %}
+                <textarea class="textbox" name="dczcomments__dummy-box" readonly
+                  placeholder="{{ _('The discussion is locked, you can not reply anymore.') }}"></textarea>
+                {% else %}
+                <div class="hasjs--hide">
+                  <form method="post" class="dczcomments__box" name="dczcomments__box__form"
+                    data-hotkey="ctrl+enter:submit,esc:vjCommentBoxCancel">
+                    <div>
+                      <textarea name="content" class="textbox" data-markdown required></textarea>
+                    </div>
+                    <div>
+                      <input type="submit" class="rounded primary button dczcomments__box__submit"
+                        value="{{ _('Comment') }} (Ctrl+Enter)" data-value-reply="{{ _('Reply') }} (Ctrl+Enter)"
+                        data-value-comment="{{ _('Comment') }} (Ctrl+Enter)"
+                        data-value-comment-update="{{ _('Update') }} (Ctrl+Enter)"
+                        data-value-reply-update="{{ _('Update') }} (Ctrl+Enter)">
+                      <input type="button" class="rounded button nojs--hide" name="dczcomments__box__cancel"
+                        value="{{ _('Cancel') }} (Esc)">
+                    </div>
+                    <input type="hidden" name="operation" value="reply">
+                  </form>
+                </div>
+                <div class="nojs--hide">
+                  {% set comment_post_op = 'reply'%}
+                  <textarea class="textbox" name="dczcomments__dummy-box" readonly
+                    data-form="{{ {operation: comment_post_op}|json }}"
+                    placeholder="{{ _('Write Your Comment') }}"></textarea>
+                </div>
+                <div class="commentbox-placeholder"></div>
+                <ul style="display:none">
+                  <li class="dczcomments__reply commentbox-container">
+                    <div class="media">
+                      <div class="media__left top">
+                        <img src="{{ avatarUrl(handler.user.avatar, 50) }}" width="50" height="50"
+                          class="medium user-profile-avatar">
+                      </div>
+                      <div class="media__body top">
+                        <div class="commentbox-placeholder"></div>
+                      </div>
+                    </div>
+                  </li>
+                </ul>
+                {% endif %}
+              </div>
+            </div>
+          </li>
+          {% endif %}
+          {% if not ddoc.lock %}
+          {%- for doc in drdocs -%}
+          {% set udoc = udict[doc.owner] %}
+          <li class="dczcomments__item">
+            <div class="media">
+              <div class="media__left top">
+                <img src="{{ avatarUrl(udoc.avatar, 60) }}" width="60" height="60" class="medium user-profile-avatar">
+              </div>
+              <div class="media__body top" id="comment-{{ doc.docId }}">
+                <div class="clearfix">
+                  <div class="supplementary dczcomments__supplementary">
+                    {{ user.render_inline(udoc, avatar=false) }}
+                    @ {{ datetimeSpan(doc['_id'])|safe }}
+                  </div>
+                  {% set reply_edit_op = 'edit_reply' %}
+                  {% set comment_delete_op = 'delete_reply' %}
+                  <div class="dczcomments__operations nojs--hide">
+                    {{ action(_('Reply'), 'reply_comment', 'comment', {}, 'reply') }}
+                    {% if handler.user.hasPerm(perm.PERM_EDIT_DOMAIN) or handler.user.own(doc) %}
+                    {{ action(_('Edit'), 'edit', 'comment', {operation: reply_edit_op, drid:
+                    doc._id}, 'edit') }}
+                    {% endif %}
+                    {% if handler.user.hasPerm(perm.PERM_EDIT_DOMAIN) or handler.user.own(doc) or
+                    handler.user.own(ddoc)
+                    %}
+                    {{ action(_('Delete'), 'delete', 'comment', {operation: comment_delete_op, drid:
+                    doc._id},
+                    'delete')}}
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="typo richmedia" data-emoji-enabled data-drid="{{ doc.docId }}"
+                  data-raw-url="{{ url('blog_reply_raw', did=doc.parentId, drid=doc._id) }}">
+                  {{ doc['content']|markdown|safe }}
+                </div>
+                <div class=" commentbox-edit-target"></div>
+              </div>
+            </div>
+          </li>
+          {%- endfor -%}
+          {% endif %}
+        </ul>
+        {{ paginator.render(page, pcount) }}
+        {% if drcount == 0 %}
+        {{ nothing.render('No comments so far...') }}
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="section">
+    {{ nothing.render('blog reply banned') }}
+    </div>
+    {% endif %}
+  </div>
+  <div class="medium-3 columns">
+    <div class="section side">
+      <div class="profile__bg user-profile-bg--1"></div>
+      <div class="section__body">
+        <div class="media sidebar-user-profile">
+          <div class="media__left">
+            <img src="{{ avatarUrl(udoc.avatar, 80) }}" width="80" height="80" class="medium user-profile-avatar">
+          </div>
+          <div class="media__body">
+            <p>
+              {{ user.render_inline(udoc, avatar=false, modbadge=false) }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% if handler.user.hasPerm(perm.PERM_EDIT_DOMAIN) %}
+    <div class="section side">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('Score') }}</h1>
+      </div>   
+      <div class="section__body">
+        <form method="post">
+          <div class="row">
+            <div class="columns">
+              <label>
+                <input name="score" placeholder="{{ _('Score') }}" value="{{ ddoc.score|default(0) }}" class="textbox">
+              </label>
+            </div>
+          </div>
+          <div class="row">
+            <div class="columns">
+              <button name="operation" value="score" data-default-submit type="submit"
+                class="primary button">
+                {{ _('Submit') }}
+              </button>
+              <button name="operation" value="delete_score" type="submit" class="button">
+                {{ _('Delete') }}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="section__body typo">
+        <p><strong>评分说明：</strong></p>
+        <ul>
+          <li>分数范围为 0 到 100 的正整数</li>
+          <li>点击删除将删除本文章的评分</li>
+          <li>大于等于 60 分为绿色，小于 20 分为红色，其余为橙色</li>
+        </ul>
+      </div>
+    </div>
+    {% endif %}
+    {% if ddoc.score %}
+    {% set score = ddoc.score|int %}
+    {% set color = 'red' if score < 20 else ('green' if score >= 60 else 'orange') %}
+    <div class="section side">
+      <div class="section__header">
+        <h2 class="section__title">本篇文章被评分为：</h2>
+      </div>   
+      <div class="section__body typo">
+        <span style="display:block;text-align:center;font-size:3.0em;font-weight:700;color:{{ color }};">
+          {{ ddoc.score }}
+        </span>
+      </div>
+    </div>
+    {% endif %}
+    {% if ddoc.courseRef and handler.user.hasPerm(perm.PERM_EDIT_DOMAIN) %}
+    <div class="section side">
+      <div class="section__header">
+        <h2 class="section__title">文章关联信息</h2>
+      </div>   
+      <div class="section__body typo">
+        <ul>
+          <li>课程: <a href="{{ url('course_detail', domainId=courseDomain, cid=courseRef.courseId) }}">{{ cdoc }}</a></li>
+          <li>章节: {{ csdoc }}</li>
+          <li>小节: {{ ssdoc }}</li>
+          <li>所在域: {{ courseDomain }}</li>
+        </ul>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

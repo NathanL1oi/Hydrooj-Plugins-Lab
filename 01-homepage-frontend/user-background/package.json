@@ -1,0 +1,11 @@
+{
+  "name": "user-background",
+  "version": "0.2.2",
+  "description": "User configurable page background for Hydro",
+  "main": "index.ts",
+  "author": "BlackPanda",
+  "license": "AGPL-3.0",
+  "devDependencies": {
+    "@hydrooj/ui-default": "^4.58.0-beta.10"
+  }
+}

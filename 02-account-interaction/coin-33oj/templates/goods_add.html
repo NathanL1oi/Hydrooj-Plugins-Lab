@@ -1,0 +1,38 @@
+{% extends "coin_base.html" %}
+{% block coin_content %}
+<div class="section">
+    <div class="section__header">
+        <h1 class="section__title">{{ _('goods_add') }}</h1>
+    </div>
+    <div class="section__body">
+        <form method="post">
+            {{ form.form_text({
+                label:'商品名称',
+                name:'name',
+                autofocus:true,
+                required:true
+                }) }}
+            {{ form.form_text({
+                label:'商品价格',
+                name:'price',
+                required:true
+                }) }}
+            {{ form.form_text({
+                label:'商品数量',
+                name:'num',
+                required:true
+                }) }}
+            <div class="row">
+                <div class="columns">
+                    <button type="submit" class="rounded primary button">
+                        {{ _('Add') }}
+                    </button>
+                    <button type="button" class="rounded button" onclick="window.history.go(-1)">
+                        {{ _('Cancel') }}
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

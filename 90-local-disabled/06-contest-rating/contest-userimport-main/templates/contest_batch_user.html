@@ -1,0 +1,125 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row">
+  <div class="medium-9 columns">
+
+    {# ── Page Header ──────────────────────────────────────────────────────── #}
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">
+          {{ _('Batch Add Users to Contest') }}
+          {% if tdoc %}— <a href="{{ url('contest_detail', tid=tid) }}">{{ tdoc.title }}</a>{% endif %}
+        </h1>
+      </div>
+
+      <div class="section__body">
+
+        {# ── Instructions ──────────────────────────────────────────────────── #}
+        <blockquote class="note">
+          <p>{{ _('One entry per line. Accepts any of the following per line:') }}</p>
+          <ul style="margin:.3em 0 .3em 1.5em">
+            <li><code>username</code></li>
+            <li><code>email@example.com</code></li>
+            <li><code>uid</code> (numeric user ID)</li>
+          </ul>
+          <p>{{ _('Comma or tab separated — only the first column is used.') }}</p>
+          <p>{{ _('Users already enrolled in the contest are silently skipped.') }}</p>
+        </blockquote>
+
+        {# ── Result messages ───────────────────────────────────────────────── #}
+        {% if messages and messages|length %}
+        <pre style="
+          background: var(--panel-alt-bg, #f5f5f5);
+          border: 1px solid var(--border-color, #ddd);
+          border-radius: 4px;
+          padding: 12px 14px;
+          margin: 0 0 1.2em;
+          font-size: .86em;
+          line-height: 1.7;
+          overflow-x: auto;
+          max-height: 320px;
+          overflow-y: auto;
+        ">{% for m in messages %}{{ m }}
+{% endfor %}</pre>
+        {% endif %}
+
+        {# ── Import result summary ─────────────────────────────────────────── #}
+        {% if stats %}
+        <div class="callout {% if stats.failed %}warning{% else %}success{% endif %}" style="margin-bottom:1em">
+          {% if stats.failed == 0 %}
+            ✅ {{ _('Import complete.') }} {{ stats.added }} {{ _('user(s) added.') }}
+          {% else %}
+            ⚠️ {{ stats.added }} {{ _('added') }}, {{ stats.failed }} {{ _('failed') }}.
+            {{ _('See log above for details.') }}
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {# ── Form ─────────────────────────────────────────────────────────── #}
+        <form method="post">
+          <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+          <input type="hidden" name="tid" value="{{ tid }}">
+
+          <div class="form__item" style="margin-bottom:1em">
+            <label class="form__label--fixed" style="vertical-align:top;padding-top:6px">
+              {{ _('Users') }}
+            </label>
+            <div class="form__input">
+              <textarea
+                name="users"
+                class="textbox"
+                rows="12"
+                style="font-family:monospace;width:100%;resize:vertical"
+                placeholder="alice&#10;bob@example.com&#10;12345&#10;charlie"
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="form__item">
+            <div class="form__input" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+              <button type="submit" name="draft" value="1" class="button rounded">
+                🔍 {{ _('Preview') }}
+              </button>
+              <button type="submit" class="button rounded primary">
+                ✅ {{ _('Import') }}
+              </button>
+              <a href="{{ url('contest_detail', tid=tid) }}" class="button rounded">
+                ← {{ _('Back to Contest') }}
+              </a>
+            </div>
+          </div>
+        </form>
+
+      </div>{# /section__body #}
+    </div>{# /section #}
+
+  </div>{# /medium-9 #}
+
+  {# ── Sidebar ──────────────────────────────────────────────────────────── #}
+  <div class="medium-3 columns">
+    <div class="section side">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('Tips') }}</h1>
+      </div>
+      <div class="section__body typo">
+        <p>
+          {{ _('Use <strong>Preview</strong> first to validate the list without actually enrolling anyone.') | safe }}
+        </p>
+        <p>
+          {{ _('Then click <strong>Import</strong> to commit.') | safe }}
+        </p>
+        <p>
+          {{ _('Already-enrolled users and blank lines are automatically skipped.') }}
+        </p>
+        <hr>
+        <p>
+          <a href="{{ url('contest_user', tid=tid) }}">
+            👥 {{ _('Manage individual users') }}
+          </a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

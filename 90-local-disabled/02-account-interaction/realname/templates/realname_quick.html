@@ -1,0 +1,55 @@
+{% set page_name = "快速实名认证" %}
+{% import "components/nothing.html" as nothing with context %}
+{% import "components/paginator.html" as paginator with context %}
+{% extends "realname_base.html" %}
+{% block realname_content %}
+<div class="section">
+    <div class="section__header">
+        <h1 class="section__title">{{ _('快速实名认证') }}</h1>
+        <div class="section__tools">
+        </div>
+    </div>
+    <div class="section__body no-padding">
+        {% if not udocs.length %}
+        {{ nothing.render('没有用户！') }}
+        {% else %}
+        <table class="data-table">
+            <colgroup>
+                <col class="col--uid" style="width:5rem">
+                <col class="col--flag" style="width:6rem">
+                <col class="col--name" style="width:5rem">
+                <col class="col--user">
+                <col class="col--displayName" style="width:8rem">
+                <col class="col--school" style="width:8rem">
+                <col class="col--actions" style="width:6rem">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>{{ _('User ID') }}</th>
+                    <th>{{ _('标记') }}</th>
+                    <th>{{ _('姓名') }}</th>
+                    <th>{{ _('Username') }}</th>
+                    <th>{{ _('Display Name') }}</th>
+                    <th>{{ _('School') }}</th>
+                    <th>{{ _('Actions') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {%- for udoc in udocs -%}
+                <tr>
+                    <td>{{ udoc._id }}</td>
+                    <td>{% if udoc.realname_flag == 1 %}{{ _('学生') }}{% elif udoc.realname_flag == 2 %}{{ _('老师') }}{% else %}{{ _('未设置身份') }}{% endif %}</td>
+                    <td>{{ udoc.realname_name }}</td>
+                    <td>{{ user.render_inline(udoc) }}</td>
+                    <td>{{ udoc.displayName }}</td>
+                    <td>{{ udoc.school }}</td>
+                    <td><a href="{{ url('realname_set') }}?uidOrName={{ udoc.uname }}&name={{ udoc.displayName }}" class="typo-a">{{ _('实名认证') }}</a></td>
+                </tr>
+                {%- endfor -%}
+            </tbody>
+        </table>
+        {{ paginator.render(page, upcount) }}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

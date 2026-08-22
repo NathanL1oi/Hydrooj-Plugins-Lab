@@ -1,0 +1,153 @@
+<style>
+.course-package-ui.cp-sort,
+.course-package-ui.cp-tree-sort,
+.course-package-ui.cp-problem-sort {
+  --cp-glass-border: var(--hub-border, rgba(15, 23, 42, .10));
+  --cp-glass-border-soft: var(--hub-border-soft, rgba(15, 23, 42, .06));
+  --cp-glass-pane: rgba(255, 255, 255, .07);
+  --cp-glass-pane-soft: rgba(255, 255, 255, .035);
+  --cp-glass-control: rgba(255, 255, 255, .08);
+  --cp-glass-hover: rgba(255, 255, 255, .12);
+  --cp-glass-text: var(--hub-text, var(--cp-ink));
+  --cp-glass-muted: var(--hub-muted, var(--cp-muted));
+  --cp-glass-shadow: var(--hub-shadow, 0 18px 42px rgba(15, 23, 42, .08));
+}
+.theme--dark .course-package-ui.cp-sort,
+.theme--dark .course-package-ui.cp-tree-sort,
+.theme--dark .course-package-ui.cp-problem-sort {
+  --cp-glass-border: var(--hub-border, rgba(255, 255, 255, .12));
+  --cp-glass-border-soft: var(--hub-border-soft, rgba(255, 255, 255, .08));
+  --cp-glass-pane: rgba(255, 255, 255, .055);
+  --cp-glass-pane-soft: rgba(255, 255, 255, .028);
+  --cp-glass-control: rgba(255, 255, 255, .065);
+  --cp-glass-hover: rgba(255, 255, 255, .095);
+}
+.course-package-ui.cp-sort .section,
+.course-package-ui.cp-tree-sort .section,
+.course-package-ui.cp-problem-sort .section {
+  border-color: var(--cp-glass-border) !important;
+  background: var(--cp-glass-pane-soft) !important;
+  box-shadow: var(--cp-glass-shadow) !important;
+  backdrop-filter: blur(18px) saturate(155%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(155%) !important;
+}
+.course-package-ui.cp-sort .section__header,
+.course-package-ui.cp-tree-sort .section__header,
+.course-package-ui.cp-problem-sort .section__header,
+.course-package-ui.cp-sort .section__body,
+.course-package-ui.cp-tree-sort .section__body,
+.course-package-ui.cp-problem-sort .section__body,
+.course-package-ui.cp-tree-sort .cp-sort-head {
+  border-color: var(--cp-glass-border-soft) !important;
+  background: transparent !important;
+}
+.course-package-ui.cp-sort .cp-sort-row,
+.course-package-ui.cp-tree-sort .cp-chapter-sort,
+.course-package-ui.cp-tree-sort .cp-lesson-sort,
+.course-package-ui.cp-problem-sort .cp-sort-row,
+.course-package-ui.cp-problem-sort .cp-problem-empty {
+  border-color: var(--cp-glass-border) !important;
+  border-left-width: 1px !important;
+  border-left-color: var(--cp-glass-border) !important;
+  background: var(--cp-glass-pane) !important;
+  color: var(--cp-glass-text) !important;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, .04) !important;
+  backdrop-filter: blur(14px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(150%) !important;
+}
+.course-package-ui.cp-sort .cp-sort-row:hover,
+.course-package-ui.cp-tree-sort .cp-chapter-sort:hover,
+.course-package-ui.cp-tree-sort .cp-lesson-sort:hover,
+.course-package-ui.cp-problem-sort .cp-sort-row:hover {
+  background: var(--cp-glass-hover) !important;
+}
+.course-package-ui.cp-sort .cp-sort-index,
+.course-package-ui.cp-tree-sort .cp-sort-index,
+.course-package-ui.cp-problem-sort .cp-sort-index,
+.course-package-ui.cp-problem-sort .cp-problem-sort__context span,
+.course-package-ui.cp-sort .cp-sort-actions .button,
+.course-package-ui.cp-tree-sort .cp-sort-actions .button,
+.course-package-ui.cp-problem-sort .cp-sort-actions .button,
+.course-package-ui.cp-sort .section__tools .button:not(.primary),
+.course-package-ui.cp-tree-sort .section__tools .button:not(.primary),
+.course-package-ui.cp-problem-sort .section__tools .button:not(.primary),
+.course-package-ui.cp-sort .cp-sort-footer .button:not(.primary),
+.course-package-ui.cp-tree-sort .cp-sort-footer .button:not(.primary),
+.course-package-ui.cp-problem-sort .cp-sort-footer .button:not(.primary) {
+  border-color: var(--cp-glass-border) !important;
+  background: var(--cp-glass-control) !important;
+  color: var(--cp-glass-text) !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(10px) saturate(145%) !important;
+  -webkit-backdrop-filter: blur(10px) saturate(145%) !important;
+}
+.course-package-ui.cp-sort .cp-sort-actions .button:hover,
+.course-package-ui.cp-tree-sort .cp-sort-actions .button:hover,
+.course-package-ui.cp-problem-sort .cp-sort-actions .button:hover,
+.course-package-ui.cp-sort .section__tools .button:not(.primary):hover,
+.course-package-ui.cp-tree-sort .section__tools .button:not(.primary):hover,
+.course-package-ui.cp-problem-sort .section__tools .button:not(.primary):hover,
+.course-package-ui.cp-sort .cp-sort-footer .button:not(.primary):hover,
+.course-package-ui.cp-tree-sort .cp-sort-footer .button:not(.primary):hover,
+.course-package-ui.cp-problem-sort .cp-sort-footer .button:not(.primary):hover {
+  background: var(--cp-glass-hover) !important;
+  color: var(--cp-accent) !important;
+}
+.course-package-ui.cp-sort .section__tools .primary,
+.course-package-ui.cp-tree-sort .section__tools .primary,
+.course-package-ui.cp-problem-sort .section__tools .primary,
+.course-package-ui.cp-sort .cp-sort-footer .primary,
+.course-package-ui.cp-tree-sort .cp-sort-footer .primary,
+.course-package-ui.cp-problem-sort .cp-sort-footer .primary {
+  border-color: rgba(37, 99, 235, .28) !important;
+  background: rgba(37, 99, 235, .38) !important;
+  color: #fff !important;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, .10) !important;
+  backdrop-filter: blur(10px) saturate(145%) !important;
+  -webkit-backdrop-filter: blur(10px) saturate(145%) !important;
+}
+.course-package-ui.cp-sort .cp-sort-row.is-swap-main,
+.course-package-ui.cp-tree-sort .cp-chapter-sort.is-swap-main,
+.course-package-ui.cp-tree-sort .cp-lesson-sort.is-swap-main,
+.course-package-ui.cp-problem-sort .cp-sort-row.is-swap-main {
+  border-color: rgba(251, 146, 60, .55) !important;
+  border-left-width: 1px !important;
+  border-left-color: rgba(251, 146, 60, .55) !important;
+  background: rgba(251, 146, 60, .08) !important;
+  box-shadow: 0 0 0 4px rgba(251, 146, 60, .08) !important;
+}
+.course-package-ui.cp-sort .cp-sort-row.is-swap-peer,
+.course-package-ui.cp-tree-sort .cp-chapter-sort.is-swap-peer,
+.course-package-ui.cp-tree-sort .cp-lesson-sort.is-swap-peer,
+.course-package-ui.cp-problem-sort .cp-sort-row.is-swap-peer {
+  border-color: var(--cp-glass-border) !important;
+  border-left-width: 1px !important;
+  border-left-color: var(--cp-glass-border) !important;
+  background: rgba(148, 163, 184, .06) !important;
+  box-shadow: 0 0 0 4px rgba(148, 163, 184, .06) !important;
+}
+.course-package-ui.cp-sort .cp-hidden-row,
+.course-package-ui.cp-tree-sort .cp-hidden-row,
+.course-package-ui.cp-problem-sort .cp-hidden-row,
+.course-package-ui.cp-tree-sort .cp-hidden-row > .cp-sort-head {
+  border-color: rgba(245, 158, 11, .30) !important;
+  border-left-width: 1px !important;
+  background: rgba(245, 158, 11, .06) !important;
+  box-shadow: none !important;
+}
+.course-package-ui.cp-sort .cp-sort-title,
+.course-package-ui.cp-sort .cp-sort-name,
+.course-package-ui.cp-tree-sort .cp-sort-title,
+.course-package-ui.cp-tree-sort .cp-sort-name,
+.course-package-ui.cp-problem-sort .cp-sort-title,
+.course-package-ui.cp-problem-sort .cp-sort-name {
+  color: var(--cp-glass-text) !important;
+}
+.course-package-ui.cp-sort .cp-sort-meta,
+.course-package-ui.cp-tree-sort .cp-sort-meta,
+.course-package-ui.cp-problem-sort .cp-sort-meta,
+.course-package-ui.cp-problem-sort .cp-problem-sort__context,
+.course-package-ui.cp-problem-sort .cp-problem-empty {
+  color: var(--cp-glass-muted) !important;
+}
+</style>

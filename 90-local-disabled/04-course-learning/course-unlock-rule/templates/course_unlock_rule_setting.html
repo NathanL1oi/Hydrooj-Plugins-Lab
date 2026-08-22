@@ -1,0 +1,68 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">课程解锁设置 - {{ cdoc.title }}</h1>
+  </div>
+  <form method="post" class="section__body">
+    {% if saved %}
+      <p>设置已保存。</p>
+    {% endif %}
+    <label>
+      <input type="checkbox" name="enabled" value="1" {% if rule.enabled %}checked{% endif %}>
+      开启本课程的小节解锁规则
+    </label>
+    <div class="row">
+      <div class="medium-4 columns">
+        <label>完成比例
+          <input type="number" name="requiredRate" min="0" max="100" value="{{ rule.requiredRate }}">
+        </label>
+      </div>
+      <div class="medium-5 columns">
+        <label>前置范围
+          <select name="mode" class="select">
+            <option value="previous-node" {% if rule.mode != 'previous-section' %}selected{% endif %}>上一小节</option>
+            <option value="previous-section" {% if rule.mode == 'previous-section' %}selected{% endif %}>跨章节取上一章节最后小节</option>
+          </select>
+        </label>
+      </div>
+      <div class="medium-3 columns">
+        <label>&nbsp;</label>
+        <button class="primary rounded button expanded" type="submit">保存</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<div class="section">
+  <div class="section__header">
+    <h2 class="section__title">解锁顺序预览</h2>
+  </div>
+  <div class="section__body no-padding">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>顺序</th>
+          <th>章节</th>
+          <th>小节</th>
+          <th>题目</th>
+          <th>前置小节</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td>{{ row.order }}</td>
+          <td>{{ row.sectionTitle }}</td>
+          <td><a href="{{ url('course_subsec_detail', cid=cidText, csid=row.csidText, ssid=row.ssidText) }}">{{ row.title }}</a></td>
+          <td>{{ row.pids | join(', ') if row.pids.length else '-' }}</td>
+          <td>{{ row.prereqTitle }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5">暂无课程小节。</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

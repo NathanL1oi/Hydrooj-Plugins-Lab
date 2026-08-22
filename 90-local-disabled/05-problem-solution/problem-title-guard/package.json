@@ -1,0 +1,11 @@
+{
+  "name": "hydrooj-problem-title-guard",
+  "version": "0.1.0",
+  "description": "Preview and prevent duplicate problem titles when creating or importing Hydro problems.",
+  "main": "index.ts",
+  "license": "MIT",
+  "devDependencies": {
+    "@hydrooj/ui-default": "latest",
+    "hydrooj": "latest"
+  }
+}

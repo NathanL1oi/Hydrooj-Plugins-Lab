@@ -1,0 +1,561 @@
+{% extends "layout/basic.html" %}
+{% import "components/user.html" as user with context %}
+{% import "components/form.html" as form with context %}
+
+{% block content %}
+
+<style>
+.question-header {
+    margin-bottom: 24px;
+    border-bottom: 1px solid #d0d7de;
+    padding-bottom: 8px;
+}
+
+.question-title {
+    font-size: 32px;
+    font-weight: 400;
+    margin: 0;
+    color: #1f2328;
+}
+
+.question-id {
+    font-weight: 300;
+    color: #656d76;
+    margin-right: 8px;
+}
+
+.section__title {
+    color: #262626;
+    font-weight: 600;
+}
+
+/* Sidebar styling */
+.question-sidebar {
+    padding: 4px;
+}
+
+.question-sidebar .sidebar-item {
+    margin-bottom: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.question-sidebar .sidebar-label {
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+.question-sidebar .sidebar-value {
+    text-align: right;
+}
+
+.status-1 {
+    color: rgb(19, 194, 194);
+    font-weight: bold;
+}
+
+/* Open */
+.status-2 {
+    color: rgb(255, 193, 22);
+    font-weight: bold;
+}
+
+/* Processing */
+.status-3 {
+    color: rgb(243, 156, 17);
+    font-weight: bold;
+}
+
+/* Waiting for User */
+.status-4 {
+    color: rgb(191, 191, 191);
+    font-weight: bold;
+}
+
+/* Suspended */
+.status-5 {
+    color: rgb(82, 196, 26);
+    font-weight: bold;
+}
+
+/* Resolved */
+.status-6 {
+    color: rgb(231, 76, 60);
+    font-weight: bold;
+}
+
+/* Closed */
+
+.timeline {
+    margin-left: 16px;
+    padding-left: 16px;
+    border-left: 2px solid #d0d7de;
+    position: relative;
+    padding-bottom: 24px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 24px;
+}
+
+/* User Reply Card */
+.user-reply-card {
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    position: relative;
+    background-color: #ffffff;
+}
+
+.user-reply-card::before,
+.user-reply-card::after {
+    content: ' ';
+    position: absolute;
+    top: 11px;
+    right: 100%;
+    left: -8px;
+    height: 0;
+    width: 0;
+    pointer-events: none;
+    border: solid transparent;
+    border-right-color: #d0d7de;
+    border-width: 8px;
+    margin-top: -8px;
+}
+
+.user-reply-card::after {
+    border-right-color: #f6f8fa;
+    border-width: 7px;
+    margin-top: -7px;
+    left: -7px;
+}
+
+.reply-card-header {
+    background-color: #f6f8fa;
+    border-bottom: 1px solid #d0d7de;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    color: #57606a;
+    font-size: 14px;
+}
+
+.reply-user {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: #24292f;
+}
+
+.reply-time {
+    color: #57606a;
+    font-weight: 400;
+    font-size: 0.9em;
+}
+
+.reply-card-body {
+    padding: 16px;
+    background-color: #ffffff;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+    color: #1f2328;
+}
+
+/* System Event */
+.timeline-item.system-event {
+    margin: 16px 0 16px 0;
+    padding-left: 24px;
+    position: relative;
+    min-height: 24px;
+    display: flex;
+    align-items: center;
+}
+
+.system-event-icon {
+    position: absolute;
+    left: -25px;
+    width: 16px;
+    height: 16px;
+    background-color: #d0d7de;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #57606a;
+    border: 4px solid #fff;
+    box-sizing: content-box;
+}
+
+.system-event-icon .icon {
+    font-size: 10px;
+}
+
+.system-event-content {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    flex-wrap: wrap;
+    color: #57606a;
+    font-size: 13px;
+}
+
+.system-event-content .action-text,
+.system-event-content .old-title,
+.system-event-content .new-title {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.system-event-content .time {
+    white-space: nowrap;
+    font-size: 12px;
+}
+
+/* Editor Form */
+.reply-form-container {
+    margin-top: 24px;
+    border-top: 1px solid #d0d7de;
+    padding-top: 24px;
+}
+
+.reply-form-title {
+    font-size: 18px;
+    margin-bottom: 15px;
+    font-weight: 400;
+    color: #24292e;
+}
+
+.section--transparent {
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    border: none !important;
+}
+
+.section--transparent .section__body {
+    padding: 0 !important;
+}
+
+.question-content-box {
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    margin-bottom: 24px;
+    background-color: #fff;
+}
+
+.question-content-header {
+    background-color: #f6f8fa;
+    border-bottom: 1px solid #d0d7de;
+    padding: 8px 16px;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.text-gray {
+    color: #ccc;
+}
+
+.theme--dark .question-header,
+.theme--dark .reply-form-container {
+    border-color: #303a48;
+}
+
+.theme--dark .question-title,
+.theme--dark .section__title,
+.theme--dark .reply-form-title {
+    color: #e2e8f0;
+}
+
+.theme--dark .question-id,
+.theme--dark .reply-card-header,
+.theme--dark .reply-time,
+.theme--dark .system-event-content,
+.theme--dark .question-sidebar .sidebar-label,
+.theme--dark .text-gray {
+    color: #94a3b8;
+}
+
+.theme--dark .timeline {
+    border-left-color: #3a4656;
+}
+
+.theme--dark .user-reply-card,
+.theme--dark .question-content-box {
+    border-color: #3a4656;
+    background-color: #1f242c;
+}
+
+.theme--dark .user-reply-card::before {
+    border-right-color: #3a4656;
+}
+
+.theme--dark .user-reply-card::after {
+    border-right-color: #242b35;
+}
+
+.theme--dark .reply-card-header,
+.theme--dark .question-content-header {
+    border-bottom-color: #3a4656;
+    background-color: #242b35;
+}
+
+.theme--dark .reply-user,
+.theme--dark .reply-card-body,
+.theme--dark .question-content {
+    color: #cbd5e1;
+}
+
+.theme--dark .reply-card-body {
+    background-color: #1f242c;
+}
+
+.theme--dark .system-event-icon {
+    border-color: #151a21;
+    background-color: #3a4656;
+    color: #cbd5e1;
+}
+</style>
+
+<div class="row">
+  <div class="medium-12 columns">
+    <div class="question-header">
+       <h1 class="question-title">
+        <span class="question-id">#{{ qdoc._id }}</span>- {{ qdoc.title }}
+       </h1>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section question-content-box">
+      <div class="section__header question-content-header">
+        <h2 class="section__title">{{ _('Question Content') }}</h2>
+      </div>
+      <div class="section__body">
+        <div class="typo">
+          <div class="question-content markdown-body">
+            {{ qdoc.content|markdown|safe }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section section--transparent">
+      <div class="section__body">
+        <div class="timeline">
+          {% for qpdoc in qpdocs %}
+            {% if qpdoc.isSystem %}
+              <div class="timeline-item system-event">
+                <div class="system-event-icon">
+                  <span class="icon icon-info"></span>
+                </div>
+                <div class="system-event-content">
+                  {{ user.render_inline(udict[qpdoc.operator]) }}
+                  {% if qpdoc.operation == 'assigned' %}
+                    {% if qpdoc.target == qpdoc.operator %}
+                      <span class="action-text">{{ _('self-assigned this question') }}</span>
+                    {% else %}
+                      <span class="action-text">{{ _('assigned this question to') }}</span>
+                      {{ user.render_inline(udict[qpdoc.target]) }}
+                    {% endif %}
+                  {% elif qpdoc.operation == 'status_changed' %}
+                      {% set statusMap = {
+                        '1': _("Open"), '2': _("Processing"), '3': _("Waiting for User"),
+                        '4': _("Suspended"), '5': _("Resolved"), '6': _("Closed")
+                      } %}
+                      <span class="action-text">{{ _('changed question status to') }}</span>
+                      <span class="status-{{ qpdoc.data.to }}">{{ statusMap[qpdoc.data.to] }}</span>
+                  {% elif qpdoc.operation == 'title_changed' %}
+                      <span class="action-text">
+                        {{ _('changed question title from') }}
+                        <b class="old-title">{{ qpdoc.data.from }}</b>
+                        {{ _('changed question title to') }}
+                        <b class="new-title">{{ qpdoc.data.to }}</b>
+                      </span>
+                  {% elif qpdoc.operation == 'question_changed' %}
+                      <span class="action-text">{{ _('changed question') }}</span>
+                  {% elif qpdoc.operation == 'question_reopened' %}
+                      <span class="action-text status-5">{{ _('reopened question') }}</span>
+                  {% elif qpdoc.operation == 'question_closed' %}
+                      <span class="action-text status-6">{{ _('closed question') }}</span>
+                  {% endif %}
+                  <span class="time">{{ datetimeSpan(qpdoc['_id'])|safe }}</span>
+                </div>
+              </div>
+            {% else %}
+              <div class="timeline-item user-reply-card">
+                <div class="reply-card-header">
+                  <div class="reply-user">
+                    {{ user.render_inline(udict[qpdoc.owner]) }}
+                    <span class="reply-time">{{ _('Replied at') }} {{ datetimeSpan(qpdoc['_id'])|safe }}</span>
+                  </div>
+                  {% if handler.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM)%}
+                  <div class="reply-tools">
+                    <form method="post" action="{{ url('question_detail', { qid: qdoc._id }) }}" onsubmit="return confirm('{{ _('Confirm Delete?') }}')" style="display:inline">
+                      <input type="hidden" name="tpid" value="{{ qpdoc._id }}">
+                      <button type="submit" name="operation" value="delete_reply" class="text-button text-red">
+                        <span class="icon icon-delete">删除</span>
+                      </button>
+                    </form>
+                  </div>
+                  {% endif %}
+                </div>
+                <div class="reply-card-body markdown-body">
+                  {{ qpdoc.content|markdown|safe }}
+                </div>
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+        
+        <div class="reply-form-container" style="border:none; padding: 0;">
+          <h3 class="reply-form-title">{{ _('Reply') }}</h3>
+          <form method="post" action="{{ url('question_detail', { qid: qdoc._id }) }}">
+            {{ form.form_textarea({
+              columns:12,
+              name:'content',
+              markdown:true,
+              extra_style:'height: 200px',
+              placeholder:_('Leave a comment')
+            }) }}
+            <input type="hidden" name="operation" value="reply">  
+            <button type="submit" class="primary rounded button" style="margin-top: 10px">{{ _('Comment') }}</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+<div class="medium-3 columns">
+    <div class="section question-sidebar">
+      <div class="section__header">
+        <h2 class="section__title">{{ _('Question Info') }}</h2>
+      </div>
+      <div class="section__body">
+        <div class="sidebar-item">
+           <div class="sidebar-label">{{ _('Question Status') }}</div>
+           <div class="sidebar-value">
+              <span class="status-{{ qdoc.status }}">
+                 {% if qdoc.status == 1 %}{{ _('Open') }}{% endif %}
+                 {% if qdoc.status == 2 %}{{ _('Processing') }}{% endif %}
+                 {% if qdoc.status == 3 %}{{ _('Waiting for User') }}{% endif %}
+                 {% if qdoc.status == 4 %}{{ _('Suspended') }}{% endif %}
+                 {% if qdoc.status == 5 %}{{ _('Resolved') }}{% endif %}
+                 {% if qdoc.status == 6 %}{{ _('Closed') }}{% endif %}
+              </span>
+           </div>
+        </div>
+        
+        <div class="sidebar-item">
+           <div class="sidebar-label">{{ _('Creator') }}</div>
+           <div class="sidebar-value">
+             {{ user.render_inline(udoc) }}
+           </div>
+        </div>
+
+        <div class="sidebar-item">
+            <div class="sidebar-label">{{ _('Assignee') }}</div>
+            <div class="sidebar-value">
+              {% if qdoc.assignee %}
+                {{ user.render_inline(udict[qdoc.assignee]) }}
+              {% else %}
+                <span class="text-gray">{{ _('None') }}</span>
+              {% endif %}
+            </div>
+        </div>
+        
+        <div class="sidebar-item">
+            <div class="sidebar-label">{{ _('Related Problem') }}</div>
+            <div class="sidebar-value"><a href="{{ url('problem_detail', { domainId: qdoc.domainId, pid: pdoc.docId }) }}" style="font-weight: bold; color: #5f9fd6;" >{{ pdoc.title|truncate(20, true) }}</a></div>
+        </div>
+
+        <div class="sidebar-item">
+            <div class="sidebar-label">{{ _('Created At') }}</div>
+            <div class="sidebar-value">{{ datetimeSpan(qdoc['_id'])|safe }}</div>
+        </div>
+        
+         <div class="sidebar-item">
+            <div class="sidebar-label">{{ _('Updated At') }}</div>
+            <div class="sidebar-value">{{ datetimeSpan(qdoc['updateAt'])|safe }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section question-sidebar">
+      <div class="section__header">
+        <h2 class="section__title">{{ _('Question Action') }}</h2>
+      </div>
+      <div class="section__body">
+        <div class="sidebar-actions">
+          {% if handler.user.hasPerm(perm.PERM_EDIT_DOMAIN) or qdoc.assignee == handler.user._id or handler.user.own(qdoc) %}
+            <a class="question-button info-button" style="color: #fff; text-decoration: none;" href="{{ url('question_edit', { qid: qdoc._id }) }}">{{ _('Edit Question') }}</a>
+            <form method="post" action="{{ url('question_detail', { qid: qdoc._id }) }}">
+              <input type="hidden" name="operation" value="set_status">
+              <button type="submit" name="status" value="6" class="question-button warning-button">{{ _('Close Question') }}</button>
+            </form>
+          {% endif %}
+          {% if handler.user.hasPerm(perm.PERM_EDIT_DOMAIN) and not qdoc.assignee or handler.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM) %}
+            <form method="post" action="{{ url('question_detail', { qid: qdoc._id }) }}">
+              <button type="submit" name="operation" value="claim" class="question-button success-button">{{ _('Claim Question') }}</button>
+            </form>
+          {% endif %}
+
+          {% if handler.user.hasPerm(perm.PERM_EDIT_DOMAIN) or qdoc.assignee == handler.user._id %}
+            <hr>
+            <h3 class="section__title">{{ _('set question status') }}</h3>
+            {% if qdoc.status != 6 %}
+              <form method="post" action="{{ url('question_detail', { qid: qdoc._id }) }}">
+                <input type="hidden" name="operation" value="set_status">
+                <button type="submit" name="status" value="4" class="question-button info-button">{{ _('Suspend') }}</button>
+              </form>
+              <form method="post" action="{{ url('question_detail', { qid: qdoc._id }) }}">
+                <input type="hidden" name="operation" value="set_status">
+                <button type="submit" name="status" value="3" class="question-button info-button">{{ _('Waiting') }}</button>
+              </form>
+              <form method="post" action="{{ url('question_detail', { qid: qdoc._id }) }}">
+                <input type="hidden" name="operation" value="set_status">
+                <button type="submit" name="status" value="1" class="question-button info-button">{{ _('Open') }}</button>
+              </form>
+              <form method="post" action="{{ url('question_detail', { qid: qdoc._id }) }}">
+                <input type="hidden" name="operation" value="set_status">
+                <button type="submit" name="status" value="2" class="question-button process-button">{{ _('Processing') }}</button>
+              </form>
+              <form method="post" action="{{ url('question_detail', { qid: qdoc._id }) }}">
+                <input type="hidden" name="operation" value="set_status">
+                <button type="submit" name="status" value="5" class="question-button success-button">{{ _('Resolved') }}</button>
+              </form>
+            {% else %}
+              <form method="post" action="{{ url('question_detail', { qid: qdoc._id }) }}">
+                <input type="hidden" name="operation" value="set_status">
+                <button type="submit" name="status" value="2" class="question-button success-button">{{ _('Reopen Question') }}</button>
+              </form>          
+            {% endif %}
+          {% endif %}
+          {% if handler.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM) %}
+            <hr>
+            <form method="post" action="{{ url('question_detail', { qid: qdoc._id }) }}" style="margin-top: 10px;">
+              <div class="input-group">
+                <input type="text" name="uidOrName" class="textbox" placeholder="UID/Name" autocomplete="off">
+                <button type="submit" name="operation" value="assign" class="question-button info-button">{{ _('Assign to') }}</button>
+              </div>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,8 @@
+{
+    "name": "extension",
+    "version": "0.0.1",
+    "description": "Hydro plus module",
+    "main": "index.ts",
+    "author": "cqzym1985",
+    "license": "AGPL-3.0"
+}

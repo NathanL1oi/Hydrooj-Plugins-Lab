@@ -1,0 +1,207 @@
+{% import "components/problem.html" as problem with context %}
+{% extends "layout/basic.html" %}
+{% block content %}
+{% include "course_ui_style.html" %}
+{% set subsecUrl = url('course_subsec_detail', cid=cdoc.docId, csid=csdoc.docId, ssid=ssdoc._id) %}
+<style>
+.course-exam-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: .75rem;
+  margin: 0 0 1rem;
+}
+.course-exam-summary__item {
+  padding: .75rem;
+  border: 1px solid #d8e4f2;
+  border-radius: 6px;
+  background: #fbfdff;
+}
+.course-exam-summary__label {
+  color: #6b7280;
+  font-size: .8125rem;
+}
+.course-exam-summary__value {
+  color: #172033;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+.course-exam-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-top: 1rem;
+}
+.course-exam-result--pass { color: #15803d; font-weight: 700; }
+.course-exam-result--fail { color: #b91c1c; font-weight: 700; }
+.course-exam-problem-score { white-space: nowrap; }
+.theme--dark .course-exam-summary__item {
+  background: rgba(15, 23, 42, .42);
+  border-color: rgba(148, 163, 184, .26);
+}
+.theme--dark .course-exam-summary__label {
+  color: #9fb0c6;
+}
+.theme--dark .course-exam-summary__value {
+  color: #e2e8f0;
+}
+.theme--dark .course-exam-result--pass { color: #4ade80; }
+.theme--dark .course-exam-result--fail { color: #f87171; }
+</style>
+<div class="row" data-sticky-parent>
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ exam.title }}</h1>
+      </div>
+      <div class="section__body typo">
+        {% if exam.content %}
+          {{ exam.content|markdown|safe }}
+        {% endif %}
+        {% if not exam.enabled %}
+          <blockquote>考试尚未启用。</blockquote>
+        {% endif %}
+        <div class="course-exam-summary">
+          <div class="course-exam-summary__item">
+            <div class="course-exam-summary__label">题目数</div>
+            <div class="course-exam-summary__value">{{ exam.pids.length }}</div>
+          </div>
+          <div class="course-exam-summary__item">
+            <div class="course-exam-summary__label">比赛赛制</div>
+            <div class="course-exam-summary__value">{{ exam.ruleLabel }}</div>
+          </div>
+          <div class="course-exam-summary__item">
+            <div class="course-exam-summary__label">考试时长</div>
+            <div class="course-exam-summary__value">{{ exam.duration }} 分钟</div>
+          </div>
+        </div>
+        {% if session %}
+          <p>
+            开始：{{ startedAtText }}
+            {% if deadlineAtText %}<br>截止：{{ deadlineAtText }}{% endif %}
+            {% if endedAtText %}<br>结束：{{ endedAtText }}{% endif %}
+          </p>
+          {% if not session.finished and session.deadlineAt %}
+            <p>剩余时间：<strong data-course-exam-countdown="{{ remainingSeconds }}">{{ remainingText }}</strong></p>
+          {% endif %}
+        {% endif %}
+        {% if hideLiveResult %}
+          <p><strong>OI 赛制赛时不显示成绩，比赛结束后公布。</strong></p>
+        {% elif result %}
+          <p>
+            {% if result.rule == 'acm' %}
+              当前结果：通过 {{ result.solved }} / {{ result.total }} 题，罚时 {{ result.penalty }} 分钟。
+            {% else %}
+              当前成绩：{{ result.score }} / {{ result.maxScore }}。
+            {% endif %}
+          </p>
+        {% endif %}
+        <div class="course-exam-actions">
+          {% if not session %}
+            <form method="post">
+              <button class="rounded primary button" name="operation" value="start" type="submit">参赛</button>
+            </form>
+          {% elif session.finished %}
+            <form method="post">
+              <button class="rounded button" name="operation" value="restart" type="submit">重新参赛</button>
+            </form>
+          {% else %}
+            <span class="rounded button disabled">比赛进行中</span>
+          {% endif %}
+          {% if scoreboardAvailable %}
+            <a class="rounded button" href="{{ subsecUrl }}/exam/scoreboard">比赛排名</a>
+          {% else %}
+            <span class="rounded button disabled">排名赛后开放</span>
+          {% endif %}
+          <a class="rounded button" href="{{ subsecUrl }}">返回小节</a>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">考试题目</h1>
+      </div>
+      <div class="section__body no-padding">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>题目</th>
+              <th>赛时反馈</th>
+              <th>记录</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in pitems %}
+              <tr>
+                <td>{{ item.index }}</td>
+                <td>{{ problem.render_problem_title(item.pdoc, show_tags=false) }}</td>
+                <td class="course-exam-problem-score">
+                  {% if hideLiveResult %}
+                    赛后公布
+                  {% elif exam.rule == 'acm' %}
+                    {% if item.best and item.best.accepted %}
+                      已通过
+                      {% if item.best.penalty %}<br><small>罚时 {{ item.best.penalty }} 分钟</small>{% endif %}
+                    {% else %}
+                      未通过
+                    {% endif %}
+                  {% elif item.best %}
+                    {{ item.best.score }} / {{ exam.scorePerProblem }}
+                  {% else %}
+                    0 / {{ exam.scorePerProblem }}
+                  {% endif %}
+                </td>
+                <td>
+                  {% if item.best and item.best.rid %}
+                    <a href="{{ url('record_detail', rid=item.best.rid) }}">查看提交</a>
+                  {% else %}
+                    -
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns" data-sticky="large">
+    <div class="section side">
+      <ol class="menu">
+        <li class="menu__item"><a class="menu__link" href="{{ subsecUrl }}">
+          <span class="icon icon-award"></span> 小节
+        </a></li>
+        {% if scoreboardAvailable %}
+          <li class="menu__item"><a class="menu__link" href="{{ subsecUrl }}/exam/scoreboard">
+            <span class="icon icon-statistics"></span> 比赛排名
+          </a></li>
+        {% endif %}
+        {% if canManage %}
+          <li class="menu__item"><a class="menu__link" href="{{ subsecUrl }}/exam/edit">
+            <span class="icon icon-edit"></span> 考试设置
+          </a></li>
+          <li class="menu__item"><a class="menu__link" href="{{ subsecUrl }}/exam/results">
+            <span class="icon icon-statistics"></span> 考试记录
+          </a></li>
+        {% endif %}
+      </ol>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var node = document.querySelector('[data-course-exam-countdown]');
+  if (!node) return;
+  var left = Number(node.getAttribute('data-course-exam-countdown')) || 0;
+  function render() {
+    left = Math.max(0, left - 1);
+    var h = Math.floor(left / 3600);
+    var m = Math.floor((left % 3600) / 60);
+    var s = left % 60;
+    var pad = function (n) { return String(n).padStart(2, '0'); };
+    node.textContent = h ? (h + ':' + pad(m) + ':' + pad(s)) : (m + ':' + pad(s));
+  }
+  setInterval(render, 1000);
+}());
+</script>
+{% endblock %}

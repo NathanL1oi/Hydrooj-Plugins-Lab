@@ -1,0 +1,688 @@
+{% extends "layout/basic.html" %}
+
+{% block content %}
+<div class="row">
+  <div class="medium-12 columns">
+    <h1>{{ _('Contest Rating Compute') }}</h1>
+    
+    <!-- 导入比赛结果 -->
+    <div class="manage-section">
+      <h3>{{ _('Import Contest Results') }}</h3>
+      <p>{{ _('Upload contest ranking CSV file to preview and calculate rating changes using Codeforces formula') }}</p>
+      
+      <!-- 文件上传和预览 -->
+      <div class="upload-section">
+        <div class="row">
+          <div class="medium-6 columns">
+            <label>{{ _('Contest Name') }}</label>
+            <input type="text" id="contestName" placeholder="{{ _('Contest name will be auto-filled from filename') }}" required>
+          </div>
+          <div class="medium-6 columns">
+            <label>{{ _('CSV File') }}</label>
+            <input type="file" id="csvFile" accept=".csv" required>
+            <small style="color: #666;">{{ _('CSV should contain columns: # (rank), 用户 (username). Only users with submissions will be included in rating calculation. Rank 0 will be excluded.') }}</small>
+          </div>
+        </div>
+        
+        <div class="row">
+          <div class="medium-12 columns">
+            <button type="button" id="previewBtn" class="secondary button" disabled>{{ _('Preview CSV Data') }}</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CSV预览区域 -->
+      <div id="csvPreview" class="csv-preview-section" style="display: none;">
+        <h4>{{ _('CSV Preview') }}</h4>
+        <div class="preview-stats">
+          <span class="stat-item">{{ _('Total Users') }}: <span id="totalUsersCount">0</span></span>
+          <span class="stat-item">{{ _('Valid Participants') }}: <span id="validUsersCount">0</span></span>
+          <span class="stat-item">{{ _('Filtered Out') }}: <span id="filteredUsersCount">0</span></span>
+        </div>
+        
+        <div class="preview-table-container">
+          <table id="previewTable" class="preview-table">
+            <thead>
+              <tr>
+                <th>{{ _('Status') }}</th>
+                <th>{{ _('Rank') }}</th>
+                <th>{{ _('Username') }}</th>
+                <th>{{ _('Total Time') }}</th>
+                <th>{{ _('Note') }}</th>
+              </tr>
+            </thead>
+            <tbody id="previewTableBody">
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- 确认导入 -->
+        <form method="post" action="{{ url('contest_rating_compute') }}" enctype="multipart/form-data" id="importForm">
+          <input type="hidden" name="operation" value="import_contest">
+          <input type="hidden" name="contestName" id="hiddenContestName">
+          <input type="hidden" name="csvContent" id="hiddenCsvContent">
+          <input type="file" name="csvFile" id="hiddenCsvFile" style="display: none;">
+          
+          <div class="row">
+            <div class="medium-12 columns">
+              <button type="submit" class="primary button" id="confirmImportBtn" disabled>
+                {{ _('Confirm Import and Calculate Ratings') }}
+              </button>
+              <button type="button" class="secondary button" id="cancelBtn">{{ _('Cancel') }}</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <hr>
+
+    <!-- 撤回操作 -->
+    <div class="manage-section">
+      <h3>{{ _('Revert Operations') }}</h3>
+      <p>{{ _('Revert the most recent rating operation (contest import or manual update)') }}</p>
+      
+      <form method="post" action="{{ url('contest_rating_compute') }}">
+        <input type="hidden" name="operation" value="revert_last">
+        <div class="row">
+          <div class="medium-12 columns">
+            <button type="submit" class="alert button" onclick="return confirm('{{ _('Are you sure you want to revert the last operation? This cannot be undone.') }}')">
+              {{ _('Revert Last Operation') }}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <hr>
+
+    <!-- 操作历史 -->
+    <div class="manage-section">
+      <h3>{{ _('Operation History') }}</h3>
+      
+      {% if archives %}
+        <div class="archive-list">
+          {% for archive in archives %}
+            <div class="archive-item">
+              <div class="archive-header">
+                <h4>{{ archive.contestName }}</h4>
+                <span class="archive-meta">
+                  {{ archive.operationType|title }} - {{ datetimeSpan(archive.operationDate, false, 'YYYY-MM-DD HH:mm:ss')|safe }}
+                  {% if archive.operatorUid %}
+                    by User #{{ archive.operatorUid }}
+                  {% endif %}
+                </span>
+              </div>
+              
+              {% if archive.description %}
+                <p class="archive-description">{{ archive.description }}</p>
+              {% endif %}
+              
+              <div class="participants-summary">
+                <strong>{{ _('Participants') }}:</strong> {{ archive.participants|length }}
+                <button class="toggle-details" onclick="toggleDetails('{{ archive._id }}')">{{ _('Show Details') }}</button>
+              </div>
+              
+              <div id="details-{{ archive._id }}" class="participants-details" style="display: none;">
+                <table class="participants-table">
+                  <thead>
+                    <tr>
+                      <th>{{ _('Username') }}</th>
+                      <th>{{ _('Old Rating') }}</th>
+                      <th>{{ _('New Rating') }}</th>
+                      <th>{{ _('Change') }}</th>
+                      {% if archive.operationType == 'contest' %}
+                        <th>{{ _('Rank') }}</th>
+                      {% endif %}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for participant in archive.participants %}
+                      <tr>
+                        <td>{{ participant.username }}</td>
+                        <td>{{ participant.oldRating }}</td>
+                        <td>{{ participant.newRating }}</td>
+                        <td class="rating-change {% if participant.newRating > participant.oldRating %}positive{% elif participant.newRating < participant.oldRating %}negative{% else %}neutral{% endif %}">
+                          {% set delta = participant.newRating - participant.oldRating %}
+                          {% if delta > 0 %}+{{ delta }}{% elif delta < 0 %}{{ delta }}{% else %}0{% endif %}
+                        </td>
+                        {% if archive.operationType == 'contest' and participant.rank %}
+                          <td>{{ participant.rank }}</td>
+                        {% endif %}
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p>{{ _('No operation history found.') }}</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<style>
+.manage-section {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.manage-section h3 {
+  margin-top: 0;
+  color: #333;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+input[type="text"], input[type="file"], textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box;
+  margin-bottom: 15px;
+}
+
+input[type="file"] {
+  padding: 6px;
+}
+
+input[readonly] {
+  background-color: #f5f5f5;
+  color: #666;
+}
+
+/* CSV预览样式 */
+.csv-preview-section {
+  margin-top: 20px;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.preview-stats {
+  margin-bottom: 15px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.stat-item {
+  display: inline-block;
+  margin-right: 20px;
+  font-weight: bold;
+}
+
+.preview-table-container {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+}
+
+.preview-table th,
+.preview-table td {
+  border: 1px solid #ddd;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.preview-table th {
+  background: #f5f5f5;
+  font-weight: bold;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.preview-table tbody tr:nth-child(even) {
+  background: #f9f9f9;
+}
+
+.status-included {
+  color: #27ae60;
+  font-weight: bold;
+}
+
+.status-excluded {
+  color: #e74c3c;
+  font-weight: bold;
+}
+
+.note-text {
+  font-size: 12px;
+  color: #666;
+  font-style: italic;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 200px;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 30px 0;
+}
+
+.archive-item {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 15px;
+  margin-bottom: 15px;
+}
+
+.archive-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.archive-header h4 {
+  margin: 0;
+  color: #2c3e50;
+}
+
+.archive-meta {
+  color: #666;
+  font-size: 14px;
+}
+
+.archive-description {
+  color: #666;
+  font-style: italic;
+  margin-bottom: 10px;
+}
+
+.participants-summary {
+  margin-bottom: 10px;
+}
+
+.toggle-details {
+  background: #3498db;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+  margin-left: 10px;
+}
+
+.toggle-details:hover {
+  background: #2980b9;
+}
+
+.participants-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.participants-table th,
+.participants-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.participants-table th {
+  background: #f5f5f5;
+  font-weight: bold;
+}
+
+.rating-change.positive {
+  color: #27ae60;
+  font-weight: bold;
+}
+
+.rating-change.negative {
+  color: #e74c3c;
+  font-weight: bold;
+}
+
+.rating-change.neutral {
+  color: #666;
+}
+.theme--dark .manage-section,
+.theme--dark .csv-preview-section,
+.theme--dark .preview-stats,
+.theme--dark .archive-item {
+  background: rgba(15, 23, 42, .42);
+  border-color: rgba(148, 163, 184, .26);
+  color: #dbe7f5;
+}
+.theme--dark .manage-section h3,
+.theme--dark .archive-header h4,
+.theme--dark label {
+  color: #e2e8f0;
+}
+.theme--dark input[type="text"],
+.theme--dark input[type="file"],
+.theme--dark textarea,
+.theme--dark input[readonly] {
+  background: rgba(15, 23, 42, .56);
+  border-color: rgba(148, 163, 184, .28);
+  color: #e2e8f0;
+}
+.theme--dark .preview-table-container,
+.theme--dark .preview-table th,
+.theme--dark .preview-table td,
+.theme--dark .participants-table th,
+.theme--dark .participants-table td {
+  border-color: rgba(148, 163, 184, .24);
+}
+.theme--dark .preview-table th,
+.theme--dark .participants-table th,
+.theme--dark .preview-table tbody tr:nth-child(even) {
+  background: rgba(15, 23, 42, .50);
+}
+.theme--dark .note-text,
+.theme--dark .archive-meta,
+.theme--dark .archive-description,
+.theme--dark .rating-change.neutral {
+  color: #9fb0c6;
+}
+.theme--dark .status-included,
+.theme--dark .rating-change.positive { color: #4ade80; }
+.theme--dark .status-excluded,
+.theme--dark .rating-change.negative { color: #f87171; }
+.theme--dark hr { border-top-color: rgba(148, 163, 184, .24); }
+</style>
+
+<script>
+function toggleDetails(archiveId) {
+  const details = document.getElementById('details-' + archiveId);
+  const button = event.target;
+  
+  if (details.style.display === 'none') {
+    details.style.display = 'block';
+    button.textContent = '{{ _("Hide Details") }}';
+  } else {
+    details.style.display = 'none';
+    button.textContent = '{{ _("Show Details") }}';
+  }
+}
+
+// CSV文件上传和预览功能
+document.addEventListener('DOMContentLoaded', function() {
+  const csvFileInput = document.getElementById('csvFile');
+  const contestNameInput = document.getElementById('contestName');
+  const previewBtn = document.getElementById('previewBtn');
+  const csvPreview = document.getElementById('csvPreview');
+  const confirmImportBtn = document.getElementById('confirmImportBtn');
+  const cancelBtn = document.getElementById('cancelBtn');
+  const hiddenCsvFile = document.getElementById('hiddenCsvFile');
+  const hiddenContestName = document.getElementById('hiddenContestName');
+
+  let csvData = null;
+  let parsedData = null;
+
+  // 文件选择事件
+  csvFileInput.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+      // 从文件名自动填充比赛名称
+      const fileName = file.name.replace(/\.csv$/i, '');
+      contestNameInput.value = fileName;
+      previewBtn.disabled = false;
+      
+      // 重置预览状态
+      csvPreview.style.display = 'none';
+      confirmImportBtn.disabled = true;
+    } else {
+      contestNameInput.value = '';
+      previewBtn.disabled = true;
+      csvPreview.style.display = 'none';
+      confirmImportBtn.disabled = true;
+    }
+  });
+
+  // 预览按钮点击事件
+  previewBtn.addEventListener('click', function() {
+    const file = csvFileInput.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      csvData = e.target.result;
+      try {
+        parsedData = parseCSV(csvData);
+        displayPreview(parsedData);
+        csvPreview.style.display = 'block';
+        confirmImportBtn.disabled = false;
+      } catch (error) {
+        alert('{{ _("Error parsing CSV file") }}: ' + error.message);
+      }
+    };
+    reader.readAsText(file, 'utf-8');
+  });
+
+  // 取消按钮
+  cancelBtn.addEventListener('click', function() {
+    csvPreview.style.display = 'none';
+    confirmImportBtn.disabled = true;
+  });
+
+  // 确认导入前准备数据
+  document.getElementById('importForm').addEventListener('submit', function(e) {
+    if (!csvData || !contestNameInput.value.trim()) {
+      e.preventDefault();
+      alert('{{ _("Please select a CSV file and ensure contest name is filled") }}');
+      return;
+    }
+
+    // 将数据传递给隐藏字段
+    hiddenContestName.value = contestNameInput.value.trim();
+    hiddenCsvContent.value = csvData;
+    
+    // 创建新的文件输入并复制文件
+    const dt = new DataTransfer();
+    dt.items.add(csvFileInput.files[0]);
+    hiddenCsvFile.files = dt.files;
+  });
+
+  // CSV解析函数 - 正确处理引号内的换行符
+  function parseCSV(csvText) {
+    const lines = [];
+    let currentLine = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < csvText.length; i++) {
+      const char = csvText[i];
+      const nextChar = csvText[i + 1];
+      
+      if (char === '"') {
+        if (inQuotes && nextChar === '"') {
+          currentLine += '"';
+          i++; // 跳过下一个引号
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if ((char === '\n' || char === '\r') && !inQuotes) {
+        // 只有在不在引号内时才结束行
+        if (currentLine.trim()) {
+          lines.push(currentLine);
+        }
+        currentLine = '';
+        // 跳过 \r\n 中的 \n
+        if (char === '\r' && nextChar === '\n') {
+          i++;
+        }
+      } else if (char === '\n' && inQuotes) {
+        // 在引号内的换行符保留为空格，避免多行字段问题
+        currentLine += ' ';
+      } else if (char === '\r' && inQuotes) {
+        // 忽略引号内的回车符
+        // 不添加任何内容
+      } else {
+        currentLine += char;
+      }
+    }
+    
+    if (currentLine.trim()) {
+      lines.push(currentLine);
+    }
+
+    if (lines.length < 2) {
+      throw new Error('{{ _("CSV file must contain at least header and one data row") }}');
+    }
+
+    // 解析头部
+    const headers = parseCSVLine(lines[0]);
+    const rankIndex = headers.findIndex(h => h.includes('#') || h.includes('rank') || h.includes('排名'));
+    const usernameIndex = headers.findIndex(h => h.includes('用户') || h.includes('username') || h.includes('user'));
+    const totalTimeIndex = headers.findIndex(h => h.includes('解决总耗时') || h.includes('total'));
+
+    if (rankIndex === -1 || usernameIndex === -1) {
+      throw new Error('{{ _("CSV must contain rank and username columns") }}');
+    }
+
+    const participants = [];
+    let totalUsers = 0;
+    let validUsers = 0;
+    let filteredUsers = 0;
+
+    // 解析数据行
+    for (let i = 1; i < lines.length; i++) {
+      const row = parseCSVLine(lines[i]);
+      if (row.length <= Math.max(rankIndex, usernameIndex)) continue;
+
+      totalUsers++;
+      
+      const rank = parseInt(row[rankIndex]) || 0;
+      const username = row[usernameIndex]?.trim();
+      const totalTime = totalTimeIndex >= 0 ? row[totalTimeIndex] : '';
+
+      if (!username) {
+        filteredUsers++;
+        continue;
+      }
+
+      // 检查是否有提交记录 - 检查所有题目相关列是否都为空
+      let hasSubmissions = false;
+      
+      // 检查所有题目相关列（包括题目列和罚时列）
+      for (let j = 0; j < row.length; j++) {
+        const cellValue = row[j]?.trim();
+        const header = headers[j]?.toLowerCase() || '';
+        
+        // 如果是题目相关列（以#开头的题目列或包含"罚时"的列）
+        if (header.match(/^#\d+/) || header.includes('罚时') || header.includes('penalty')) {
+          // 如果该列有非空且非零的值，说明有提交
+          if (cellValue && cellValue !== '' && cellValue !== '0' && cellValue !== '0.0') {
+            hasSubmissions = true;
+            break;
+          }
+        }
+      }
+
+      let status = 'excluded';
+      let note = '';
+
+      if (!hasSubmissions) {
+        note = '{{ _("No submissions") }}';
+        filteredUsers++;
+      } else if (rank === 0) {
+        note = '{{ _("Rank 0 (excluded)") }}';
+        filteredUsers++;
+      } else {
+        status = 'included';
+        validUsers++;
+        note = '{{ _("Will be included in rating calculation") }}';
+      }
+
+      participants.push({
+        rank: rank,
+        username: username,
+        totalTime: totalTime || '-',
+        status: status,
+        note: note
+      });
+    }
+
+    return {
+      participants: participants,
+      stats: {
+        totalUsers: totalUsers,
+        validUsers: validUsers,
+        filteredUsers: filteredUsers
+      }
+    };
+  }
+
+  // 解析CSV行
+  function parseCSVLine(line) {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      const nextChar = line[i + 1];
+      
+      if (char === '"') {
+        if (inQuotes && nextChar === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    
+    result.push(current.trim());
+    return result;
+  }
+
+  // 显示预览
+  function displayPreview(data) {
+    // 更新统计信息
+    document.getElementById('totalUsersCount').textContent = data.stats.totalUsers;
+    document.getElementById('validUsersCount').textContent = data.stats.validUsers;
+    document.getElementById('filteredUsersCount').textContent = data.stats.filteredUsers;
+
+    // 更新表格
+    const tbody = document.getElementById('previewTableBody');
+    tbody.innerHTML = '';
+
+    data.participants.forEach(participant => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td><span class="status-${participant.status}">${participant.status === 'included' ? '✓ {{ _("Included") }}' : '✗ {{ _("Excluded") }}'}</span></td>
+        <td>${participant.rank}</td>
+        <td>${participant.username}</td>
+        <td>${participant.totalTime}</td>
+        <td><span class="note-text">${participant.note}</span></td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
+});
+</script>
+{% endblock %}

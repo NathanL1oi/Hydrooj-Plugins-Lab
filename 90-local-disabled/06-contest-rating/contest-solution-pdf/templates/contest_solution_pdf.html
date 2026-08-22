@@ -1,0 +1,253 @@
+{% set layout_name = "basic" %}
+{% extends "layout/html5.html" %}
+{% block body %}
+<style>
+@page {
+  size: A4 landscape;
+  margin: 10mm 10mm;
+}
+
+body {
+  background: #fff;
+  color: #1f2937;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.solution-export {
+  max-width: none;
+  margin: 0 auto;
+  padding: 10px 0 24px;
+}
+
+.print-tip {
+  margin: 0 0 22px;
+  padding: 12px 16px;
+  border: 1px solid #d8e4f2;
+  border-radius: 8px;
+  background: #f6f9fd;
+  color: #52647a;
+}
+
+.cover {
+  padding: 0 0 4px;
+  border-bottom: 0;
+}
+
+.cover__title {
+  margin: 0 0 12px;
+  color: #16263a;
+  font-size: 24px;
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+.summary-wrap {
+  margin-top: 0;
+}
+
+.summary-table {
+  width: 100%;
+  margin: 0 0 10px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  color: #4b5563;
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+.summary-table th,
+.summary-table td {
+  border: 1px solid #d9dee7;
+  padding: 6px 8px;
+  text-align: left;
+  vertical-align: middle;
+  word-break: break-word;
+}
+
+.summary-table thead th {
+  background: #f3f4f6;
+  color: #4b5563;
+  font-weight: 600;
+}
+
+.summary-table tbody tr:nth-child(even) td,
+.summary-table tbody tr:nth-child(even) th {
+  background: #f7f7f8;
+}
+
+.summary-table .summary-row-title {
+  width: 12%;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.summary-table .summary-problem-title {
+  color: #4b5563;
+  font-weight: 600;
+}
+
+.solution-block {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid #dbe6f2;
+  break-before: auto;
+  page-break-before: auto;
+}
+
+.problem-title {
+  margin: 0 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #dbe6f2;
+  color: #12233a;
+  font-size: 20px;
+  line-height: 1.35;
+  font-weight: 800;
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+.solution-subtitle {
+  margin: 12px 0 6px;
+  color: #35516f;
+  font-size: 15px;
+  line-height: 1.4;
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+.solution-body {
+  color: #1f2937;
+  font-size: 13px;
+}
+
+.solution-body p,
+.solution-body ul,
+.solution-body ol {
+  margin-top: .45em;
+  margin-bottom: .45em;
+}
+
+.solution-body h1,
+.solution-body h2,
+.solution-body h3 {
+  break-after: avoid;
+  page-break-after: avoid;
+  color: #14243a;
+}
+
+.solution-body img {
+  max-width: 100%;
+}
+
+.solution-body table {
+  width: 100%;
+  border-collapse: collapse;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.solution-body th,
+.solution-body td {
+  border: 1px solid #d8dee8;
+  padding: 4px 6px;
+}
+
+.solution-body pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  border: 1px solid #dde5ef;
+  border-radius: 6px;
+  background: #f7f9fc;
+  padding: 8px 10px;
+  break-inside: auto;
+  page-break-inside: auto;
+}
+
+.solution-body code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+
+@media print {
+  .print-hide {
+    display: none !important;
+  }
+
+  .solution-export {
+    max-width: none;
+    padding: 0;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+}
+</style>
+
+<main class="solution-export">
+  <div class="print-tip print-hide">
+    使用 Ctrl-P 打印为 PDF。导出内容按比赛题目顺序整理；没有题解的题目只保留题目标题。
+  </div>
+
+  <section class="cover">
+    <h1 class="cover__title">{{ tdoc.title }}</h1>
+    <div class="summary-wrap">
+      {% set lines = Math.ceil(items.length / 6) %}
+      {% for i in range(0, lines) %}
+        {% set group = items.slice(6 * i, 6 * (i + 1)) %}
+        <table class="summary-table">
+          <thead>
+            <tr>
+              <th class="summary-row-title">题目</th>
+              {% for item in group %}
+              <th class="summary-problem-title">{{ item.label }}. {{ item.title }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th class="summary-row-title">Time limit</th>
+              {% for item in group %}
+              <td>{{ item.config.timeMax if item.config.timeMax == item.config.timeMin else item.config.timeMin + '~' + item.config.timeMax }}ms</td>
+              {% endfor %}
+            </tr>
+            <tr>
+              <th class="summary-row-title">Memory limit</th>
+              {% for item in group %}
+              <td>{{ item.config.memoryMax if item.config.memoryMax == item.config.memoryMin else item.config.memoryMin + '~' + item.config.memoryMax }}MiB</td>
+              {% endfor %}
+            </tr>
+            <tr>
+              <th class="summary-row-title">输入输出</th>
+              {% for item in group %}
+              <td>
+                {{ _('problem_type.' + item.config.type).format(item.config.subType) }}
+                {% if item.config.type == 'default' and item.config.subType %}
+                  {{ _('File IO: {0}').format(item.config.subType) }}
+                {% endif %}
+              </td>
+              {% endfor %}
+            </tr>
+          </tbody>
+        </table>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% for item in items %}
+  <section class="solution-block">
+    <h1 class="problem-title"># {{ item.label }}. {{ item.title }}</h1>
+    {% for psdoc in item.solutions %}
+      {% if item.solutions.length > 1 %}
+      <h2 class="solution-subtitle">## 题解 {{ psdoc.index }}</h2>
+      {% endif %}
+      <div class="typo richmedia solution-body">
+        {{ psdoc.content|markdown|safe }}
+      </div>
+    {% endfor %}
+  </section>
+  {% endfor %}
+</main>
+{% endblock %}

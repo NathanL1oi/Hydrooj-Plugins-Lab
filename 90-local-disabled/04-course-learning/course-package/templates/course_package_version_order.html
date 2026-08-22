@@ -1,0 +1,160 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+{% include "course_package_style.html" %}
+<style>
+.cp-sort { font-size: 14px; }
+.cp-sort .section { border-radius: 8px; overflow: hidden; }
+.cp-sort .section__header { padding: 14px 16px; border-bottom: 1px solid var(--cp-border); background: var(--cp-accent-soft); }
+.cp-sort .section__title { font-size: 20px; line-height: 1.35; }
+.cp-sort-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.cp-sort-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 14px; border: 1px solid var(--cp-border); border-radius: 8px; background: var(--cp-card); transition: background .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+.cp-sort-row.is-moving { opacity: .72; transform: scale(.995); }
+.cp-sort-row.is-swap-main { border-color: #fb923c; background: var(--cp-hidden-soft); box-shadow: 0 0 0 4px rgba(249, 115, 22, .2); animation: cpMoveMain 1.15s ease; }
+.cp-sort-row.is-swap-peer { border-color: var(--cp-border); background: var(--cp-soft); box-shadow: 0 0 0 4px rgba(148, 163, 184, .14); animation: cpMovePeer 1.15s ease; }
+.cp-sort-row.is-swap-main .cp-sort-index { background: #fed7aa; color: #9a3412; font-weight: 700; }
+.cp-sort-row.is-swap-peer .cp-sort-index { background: var(--cp-soft); color: var(--cp-ink); font-weight: 700; }
+.cp-sort-index { display: inline-flex; width: 30px; height: 30px; align-items: center; justify-content: center; border-radius: 50%; background: var(--cp-accent-soft); color: var(--cp-ink); }
+.cp-sort-title { margin: 0; color: var(--cp-ink); font-size: 16px; line-height: 1.35; }
+.cp-sort-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; color: var(--cp-muted); font-size: 12px; }
+.cp-sort-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.cp-sort-actions .button { margin: 0 !important; height: 30px; padding: 0 10px; border-color: var(--cp-border); background: var(--cp-accent-soft); color: var(--cp-accent); line-height: 28px; font-size: 13px; font-weight: 600; }
+.cp-sort-actions .button:hover { border-color: var(--cp-accent); background: var(--cp-hover); }
+.cp-sort-actions .button[disabled] { border-color: var(--cp-border); background: var(--cp-soft); color: var(--cp-muted); box-shadow: none; }
+.cp-sort .section__tools .primary,
+.cp-sort-footer .primary { border-color: #2563eb !important; background: #2563eb !important; color: #fff !important; font-weight: 600; box-shadow: 0 4px 12px rgba(37, 99, 235, .22); }
+.cp-sort-footer { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+@keyframes cpMoveMain {
+  0% { transform: translateY(-4px); }
+  45% { transform: translateY(2px); }
+  100% { transform: translateY(0); }
+}
+@keyframes cpMovePeer {
+  0% { transform: translateY(4px); }
+  45% { transform: translateY(-2px); }
+  100% { transform: translateY(0); }
+}
+@media screen and (max-width: 720px) {
+  .cp-sort-row { grid-template-columns: 36px minmax(0, 1fr); }
+  .cp-sort-actions { grid-column: 2; justify-content: flex-start; }
+}
+</style>
+{% include "course_order_glass_override.html" %}
+<div class="row cp-sort course-package-ui">
+  <div class="medium-12 columns">
+    <form method="post" data-cp-sort>
+      <input type="hidden" name="order" data-cp-sort-input>
+      <div class="section">
+        <div class="section__header">
+          <h1 class="section__title">{{ _('版本排序') }}: {{ cpdoc.title }}</h1>
+          <div class="section__tools">
+            <button type="submit" class="rounded primary button">{{ _('保存排序') }}</button>
+            <button type="button" class="rounded button" data-cp-reset>{{ _('撤销更改') }}</button>
+            <a class="rounded button" href="{{ url('course_package_detail', cpid=cpdoc.docId) }}">{{ _('返回') }}</a>
+          </div>
+        </div>
+        <div class="section__body">
+          {% if not versions.length %}
+          <p>{{ _('暂无版本') }}</p>
+          {% else %}
+          <ol class="cp-sort-list" data-cp-sort-list>
+            {% for vpdoc in versions %}
+            <li class="cp-sort-row {% if vpdoc.hidden %}cp-hidden-row{% endif %}" data-cp-sort-item data-id="{{ vpdoc.docId }}">
+              <span class="cp-sort-index" data-cp-index>{{ loop.index }}</span>
+              <div>
+                <h2 class="cp-sort-title">
+                  {{ vpdoc.title }}
+                  {% if vpdoc.hidden %}<span class="cp-hidden-badge"><span class="icon icon-security"></span> {{ _('已隐藏') }}</span>{% endif %}
+                </h2>
+                <div class="cp-sort-meta">
+                  <span>{{ vpdoc.version }}</span>
+                  <span>{{ vpdoc.summary.chapterCount }} {{ _('章') }}</span>
+                  <span>{{ vpdoc.summary.lessonCount }} {{ _('节') }}</span>
+                  <span>{{ vpdoc.summary.problemCount }} {{ _('题目') }}</span>
+                </div>
+              </div>
+              <div class="cp-sort-actions">
+                <button type="button" class="rounded button" data-sort-action="top">{{ _('置顶') }}</button>
+                <button type="button" class="rounded button" data-sort-action="up">{{ _('上移') }}</button>
+                <button type="button" class="rounded button" data-sort-action="down">{{ _('下移') }}</button>
+                <button type="button" class="rounded button" data-sort-action="bottom">{{ _('置底') }}</button>
+              </div>
+            </li>
+            {% endfor %}
+          </ol>
+          <div class="cp-sort-footer">
+            <button type="submit" class="rounded primary button">{{ _('保存排序') }}</button>
+            <button type="button" class="rounded button" data-cp-reset>{{ _('撤销更改') }}</button>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+(function() {
+  var root = document.querySelector('[data-cp-sort]');
+  if (!root) return;
+  var list = root.querySelector('[data-cp-sort-list]');
+  var input = root.querySelector('[data-cp-sort-input]');
+  var highlightTimer = null;
+  if (!list || !input) return;
+  function items() {
+    return Array.prototype.slice.call(list.querySelectorAll('[data-cp-sort-item]'));
+  }
+  function refresh() {
+    var rows = items();
+    input.value = rows.map(function(row) { return row.getAttribute('data-id'); }).join(',');
+    rows.forEach(function(row, index) {
+      var indexNode = row.querySelector('[data-cp-index]');
+      if (indexNode) indexNode.textContent = String(index + 1);
+      var top = row.querySelector('[data-sort-action="top"]');
+      var up = row.querySelector('[data-sort-action="up"]');
+      var down = row.querySelector('[data-sort-action="down"]');
+      var bottom = row.querySelector('[data-sort-action="bottom"]');
+      if (top) top.disabled = index === 0;
+      if (up) up.disabled = index === 0;
+      if (down) down.disabled = index === rows.length - 1;
+      if (bottom) bottom.disabled = index === rows.length - 1;
+    });
+  }
+  function swapPeer(row, action) {
+    if (action === 'top') return list.firstElementChild === row ? null : list.firstElementChild;
+    if (action === 'up') return row.previousElementSibling;
+    if (action === 'down') return row.nextElementSibling;
+    if (action === 'bottom') return list.lastElementChild === row ? null : list.lastElementChild;
+    return null;
+  }
+  function showSwap(row, peer) {
+    if (highlightTimer) window.clearTimeout(highlightTimer);
+    items().forEach(function(item) { item.classList.remove('is-moving', 'is-swap-main', 'is-swap-peer'); });
+    row.classList.add('is-swap-main');
+    if (peer && peer !== row) peer.classList.add('is-swap-peer');
+    row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    highlightTimer = window.setTimeout(function() {
+      items().forEach(function(item) { item.classList.remove('is-swap-main', 'is-swap-peer'); });
+    }, 2200);
+  }
+  list.addEventListener('click', function(ev) {
+    var button = ev.target.closest('[data-sort-action]');
+    if (!button) return;
+    var row = button.closest('[data-cp-sort-item]');
+    if (!row) return;
+    var action = button.getAttribute('data-sort-action');
+    var peer = swapPeer(row, action);
+    row.classList.add('is-moving');
+    if (peer) peer.classList.add('is-moving');
+    if (action === 'top') list.insertBefore(row, list.firstElementChild);
+    if (action === 'up' && row.previousElementSibling) list.insertBefore(row, row.previousElementSibling);
+    if (action === 'down' && row.nextElementSibling) list.insertBefore(row.nextElementSibling, row);
+    if (action === 'bottom') list.appendChild(row);
+    refresh();
+    showSwap(row, peer);
+  });
+  root.querySelectorAll('[data-cp-reset]').forEach(function(button) {
+    button.addEventListener('click', function() { window.location.reload(); });
+  });
+  refresh();
+})();
+</script>
+{% endblock %}

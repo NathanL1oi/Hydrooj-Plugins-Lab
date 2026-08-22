@@ -1,0 +1,51 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+{% include "course_ui_style.html" %}
+{{ set(UiContext, 'cdoc', cdoc) }}
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('Files') }}</h1>
+        <div class="section__tools">
+          <button class="primary rounded button" name="upload_file">{{ _('Upload File') }}</button>
+        </div>
+      </div>
+      {{ noscript_note.render() }}
+      {% include "partials/files.html" %}
+      <div class="section__body">
+        <button class="rounded button" name="remove_selected">{{ _('Remove Selected') }}</button>
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    <div class="section side">
+      <div>
+        <ol class="menu">
+          <li class="menu__item"><a class="menu__link" href="{{ url('course_detail', cid=cdoc.docId) }}">
+            <span class="icon icon-award"></span> {{ _('View Course') }}
+          </a></li>
+          <li class="menu__item"><a class="menu__link" href="{{ url('course_section_detail', cid=cdoc.docId, csid=csdoc.docId) }}">
+            <span class="icon icon-award"></span> {{ _('View Section') }}
+          </a></li>
+          <li class="menu__item"><a class="menu__link" href="{{ url('course_subsec_detail', cid=cdoc.docId, csid=csdoc.docId, ssid=ssdoc._id) }}">
+            <span class="icon icon-award"></span> {{ _('View Subsection') }}
+          </a></li>
+        {% if handler.user.hasPerm(perm.PERM_EDIT_TRAINING) %}
+          <li class="menu__item"><a class="menu__link" href="{{ url('course_subsec_edit', cid=cdoc.docId, csid=csdoc.docId, ssid=ssdoc._id) }}">
+            <span class="icon icon-edit"></span>  {{ _('Edit Subsection') }}
+          </a></li>
+        {% endif %}
+          <li class="menu__seperator"></li>
+        </ol>
+      </div>
+      <div class="section__body typo">
+        <dl class="large horizontal">
+          <dt>{{ _('Created By') }}</dt>
+          <dd>{{ user.render_inline(udoc, badge=false) }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

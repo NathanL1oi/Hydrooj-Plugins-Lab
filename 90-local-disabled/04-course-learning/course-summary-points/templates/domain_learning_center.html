@@ -1,0 +1,251 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.csp-domain .csp-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.csp-domain .csp-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.csp-domain .csp-metric { padding: 12px; border-radius: 8px; background: #f8fafc; }
+.csp-domain .csp-metric strong { display: block; font-size: 24px; line-height: 1.2; }
+.csp-domain .csp-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.csp-domain .csp-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.csp-domain .csp-muted { color: #64748b; }
+.csp-domain .csp-plus { color: #15803d; }
+.csp-domain .csp-minus { color: #b91c1c; }
+.csp-domain .csp-table-wrap { overflow-x: auto; }
+.csp-domain table { min-width: 880px; }
+.csp-domain .csp-panel { border-radius: 8px; overflow: hidden; }
+.csp-domain .csp-card-list { display: grid; gap: 10px; }
+.csp-domain .csp-mini-card { padding: 10px; border-radius: 8px; background: #f8fafc; }
+.theme--dark .csp-domain .csp-metric,
+.theme--dark .csp-domain .csp-mini-card {
+  background: rgba(15, 23, 42, .42);
+  border: 1px solid rgba(148, 163, 184, .22);
+  color: #e2e8f0;
+}
+.theme--dark .csp-domain .csp-muted {
+  color: #94a3b8;
+}
+.theme--dark .csp-domain .csp-plus {
+  color: #86efac;
+}
+.theme--dark .csp-domain .csp-minus {
+  color: #fca5a5;
+}
+@media screen and (max-width: 800px) {
+  .csp-domain .csp-metrics,
+  .csp-domain .csp-grid { grid-template-columns: 1fr; }
+}
+</style>
+<div class="row csp-domain">
+  <div class="medium-9 columns">
+    <div class="section csp-panel">
+      <div class="section__header">
+        <div class="csp-head">
+          <h1 class="section__title">{{ _('学习积分') }}</h1>
+          <span class="csp-muted">{{ domainName }} ({{ domainId }})</span>
+        </div>
+      </div>
+      <div class="section__body">
+        {% if messages and messages.length %}
+        <blockquote class="note">
+          {% for message in messages %}<p>{{ message }}</p>{% endfor %}
+        </blockquote>
+        {% endif %}
+        <div class="csp-metrics">
+          <div class="csp-metric"><strong>{{ taskCount }}</strong><span>{{ _('小结任务') }}</span></div>
+          <div class="csp-metric"><strong>{{ submitCount }}</strong><span>{{ _('小结提交') }}</span></div>
+          <div class="csp-metric"><strong>{{ totalPoints }}</strong><span>{{ _('当前总积分') }}</span></div>
+        </div>
+        <div class="csp-actions" style="margin-top: 12px;">
+          <a class="button rounded primary" href="{{ pointTableUrl }}"><span class="icon icon-statistics"></span> {{ _('打开积分榜') }}</a>
+          <a class="button rounded" href="{{ excellentUrl }}"><span class="icon icon-star"></span> {{ _('优秀小结展示') }}</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="section csp-panel">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('积分榜预览') }}</h1>
+      </div>
+      <div class="section__body no-padding csp-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>{{ _('排名') }}</th>
+              <th>{{ _('用户') }}</th>
+              <th>{{ _('小组') }}</th>
+              <th>{{ _('总积分') }}</th>
+              <th>{{ _('小结') }}</th>
+              <th>{{ _('比赛') }}</th>
+              <th>{{ _('近期状态') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in ranking %}
+            <tr>
+              <td>{{ item.rank }}</td>
+              <td>{% if udict[item.uid] %}{{ user.render_inline(udict[item.uid], badge=false) }}{% else %}UID {{ item.uid }}{% endif %}</td>
+              <td>{{ item.groups.join(', ') if item.groups.length else _('无小组') }}</td>
+              <td><strong>{{ item.total }}</strong></td>
+              <td>{{ item.summary }}</td>
+              <td>{{ item.contest }}</td>
+              <td>{{ item.recentStatus }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" class="csp-muted">{{ _('暂无积分记录') }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section csp-panel">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('优秀小结') }}</h1>
+      </div>
+      <div class="section__body">
+        <div class="csp-card-list">
+          {% for submit in excellent %}
+          {% set task = taskDict[submit.taskId.toString()] %}
+          <div class="csp-mini-card typo">
+            <p>
+              <strong>{% if udict[submit.uid] %}{{ user.render_inline(udict[submit.uid], badge=false) }}{% else %}UID {{ submit.uid }}{% endif %}</strong>
+              <span class="csp-muted"> / {{ task.title if task else submit.taskId }}</span>
+            </p>
+            <p>{{ submit.content|striptags|truncate(180) }}</p>
+          </div>
+          {% else %}
+          <p class="csp-muted">{{ _('暂无优秀小结') }}</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="section csp-panel">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('最近流水') }}</h1>
+      </div>
+      <div class="section__body no-padding csp-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>{{ _('时间') }}</th>
+              <th>{{ _('用户') }}</th>
+              <th>{{ _('变动') }}</th>
+              <th>{{ _('来源') }}</th>
+              <th>{{ _('原因') }}</th>
+              <th>{{ _('操作人') }}</th>
+              <th>{{ _('操作') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for bill in ledgers %}
+            <tr>
+              <td>{{ datetimeSpan(bill.createdAt)|safe }}</td>
+              <td>{% if udict[bill.uid] %}{{ user.render_inline(udict[bill.uid], badge=false) }}{% else %}UID {{ bill.uid }}{% endif %}</td>
+              <td class="{% if bill.amount >= 0 %}csp-plus{% else %}csp-minus{% endif %}">{{ bill.amount }}</td>
+              <td>{{ bill.sourceType }}</td>
+              <td>{{ bill.reason }}</td>
+              <td>{% if udict[bill.operator] %}{{ user.render_inline(udict[bill.operator], badge=false) }}{% else %}UID {{ bill.operator }}{% endif %}</td>
+              <td>
+                {% if bill.sourceType == 'summary' %}
+                <span class="csp-muted">{{ _('批改页修改') }}</span>
+                {% else %}
+                <form method="post" style="margin: 0;" onsubmit="return confirm('{{ _('确认删除这条积分记录？') }}');">
+                  <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+                  <input type="hidden" name="operation" value="delete_ledger">
+                  <input type="hidden" name="ledgerId" value="{{ bill._id }}">
+                  <button class="button rounded small" type="submit">{{ _('删除') }}</button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" class="csp-muted">{{ _('暂无流水') }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="medium-3 columns">
+    <div class="section side csp-panel">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('单人加减分') }}</h1>
+      </div>
+      <div class="section__body">
+        <form method="post">
+          <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+          <input type="hidden" name="operation" value="award">
+          <label>{{ _('用户') }}<input class="textbox" name="uidOrName" placeholder="UID / username / email"></label>
+          <label>{{ _('积分变动') }}<input class="textbox" name="amount" type="number" value="1"></label>
+          <label>
+            {{ _('来源') }}
+            <select name="sourceType" class="select">
+              <option value="manual">{{ _('教师手动') }}</option>
+              <option value="contest">{{ _('比赛成绩') }}</option>
+              <option value="recent_status">{{ _('近期状态') }}</option>
+              <option value="adjustment">{{ _('修正调整') }}</option>
+            </select>
+          </label>
+          <label>{{ _('原因') }}<textarea class="textbox" name="reason"></textarea></label>
+          <button class="button rounded primary" type="submit"><span class="icon icon-add"></span> {{ _('确认') }}</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="section side csp-panel">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('比赛成绩加分') }}</h1>
+      </div>
+      <div class="section__body">
+        <form method="post">
+          <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+          <input type="hidden" name="operation" value="contest_award">
+          <label>{{ _('比赛 ID') }}<input class="textbox" name="contestId" placeholder="ObjectId"></label>
+          <label>{{ _('排名奖励') }}<input class="textbox" name="contestRankPoints" value="5,4,3,2,1" placeholder="5,4,3,2,1"></label>
+          <input type="hidden" name="contestRate" value="0">
+          <input type="hidden" name="contestBase" value="0">
+          <label>
+            {{ _('小组') }}
+            <select name="contestGroupName" class="select">
+              <option value="all">{{ _('全部') }}</option>
+              {% for group in groups %}<option value="{{ group.name }}">{{ group.name }}</option>{% endfor %}
+            </select>
+          </label>
+          <label>{{ _('批次号') }}<input class="textbox" name="contestBatchKey" placeholder="{{ _('留空为 default') }}"></label>
+          <button class="button rounded primary" type="submit">{{ _('按比赛发放') }}</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="section side csp-panel">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('近期状态加分') }}</h1>
+      </div>
+      <div class="section__body">
+        <form method="post">
+          <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+          <input type="hidden" name="operation" value="recent_award">
+          <label>{{ _('统计天数') }}<input class="textbox" name="recentDays" type="number" value="1"></label>
+          <label>{{ _('每日活跃') }}<input class="textbox" name="recentDailyPoint" type="number" value="1"></label>
+          <div class="csp-grid">
+            <label>{{ _('每次提交') }}<input class="textbox" name="recentSubmitPoint" type="number" value="0"></label>
+            <label>{{ _('每次通过') }}<input class="textbox" name="recentAcceptPoint" type="number" value="0"></label>
+          </div>
+          <label>
+            {{ _('小组') }}
+            <select name="recentGroupName" class="select">
+              <option value="all">{{ _('全部') }}</option>
+              {% for group in groups %}<option value="{{ group.name }}">{{ group.name }}</option>{% endfor %}
+            </select>
+          </label>
+          <label>{{ _('批次号') }}<input class="textbox" name="recentBatchKey" placeholder="{{ _('留空为今天') }}"></label>
+          <label>{{ _('原因') }}<textarea class="textbox" name="recentReason"></textarea></label>
+          <button class="button rounded primary" type="submit">{{ _('按近期状态发放') }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

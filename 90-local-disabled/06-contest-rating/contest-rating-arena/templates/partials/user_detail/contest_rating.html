@@ -1,0 +1,69 @@
+{% if contestRatingConfig and (contestRatingConfig.enabled or contestRating) %}
+{{ set(UiContext, 'contestRatingHistory', contestRatingHistory or []) }}
+<li class="section__tab-item">
+  <h1 class="section__tab-title">{{ _('竞技 Rating') }}</h1>
+  <div class="section__tab-main">
+    <div class="typo section__body">
+      {% if contestRating %}
+      <div class="cra-user-rating-summary">
+        <div class="cra-user-rating-summary__item">
+          <span>{{ _('当前 Rating') }}</span>
+          <strong style="color: {{ contestRating.color }}">{{ contestRating.rating|round }}</strong>
+        </div>
+        <div class="cra-user-rating-summary__item">
+          <span>{{ _('最高 Rating') }}</span>
+          <strong>{{ contestRating.maxRating|round }}</strong>
+        </div>
+        <div class="cra-user-rating-summary__item">
+          <span>{{ _('Rated 场次') }}</span>
+          <strong>{{ contestRating.ratedCount }}</strong>
+        </div>
+        <div class="cra-user-rating-summary__item">
+          <span>{{ _('段位') }}</span>
+          <strong><span class="user-profile-badge v-center" style="background-color:{{ contestRating.color }};color:#fff" data-tooltip="{{ contestRating.hint }}">{{ contestRating.title }}</span></strong>
+        </div>
+      </div>
+
+      {% if contestRatingHistory and contestRatingHistory.length %}
+      <div id="contest-rating-history-chart" class="cra-user-rating-chart" role="img" aria-label="{{ _('Rating 变化图') }}"></div>
+      {% endif %}
+
+      {% if contestRatingChanges and contestRatingChanges.length %}
+      <table class="data-table cra-user-rating-table">
+        <thead>
+          <tr>
+            <th>{{ _('日期') }}</th>
+            <th>{{ _('比赛') }}</th>
+            <th>{{ _('名次') }}</th>
+            <th>{{ _('Rating') }}</th>
+            <th>{{ _('变化') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in contestRatingChanges %}
+          <tr>
+            <td>{% if row.ratedAt %}{{ datetimeSpan(row.ratedAt)|safe }}{% else %}-{% endif %}</td>
+            <td>{{ row.contestTitle }}</td>
+            <td>{% if row.rank %}#{{ row.rank }}{% else %}-{% endif %}</td>
+            <td><span class="cra-rating-old">{{ row.oldRating }}</span> -&gt; <strong style="color: {{ row.color }}">{{ row.newRating }}</strong></td>
+            <td>
+              {% if row.delta > 0 %}
+              <span class="cra-rating-delta cra-rating-delta--up">+{{ row.delta }}</span>
+              {% elif row.delta < 0 %}
+              <span class="cra-rating-delta cra-rating-delta--down">{{ row.delta }}</span>
+              {% else %}
+              <span class="cra-rating-delta">0</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+      {% else %}
+        <p>{{ _('当前子域已启用竞技 Rating，但该用户还没有 Rated 比赛记录。') }}</p>
+      {% endif %}
+    </div>
+  </div>
+</li>
+{% endif %}

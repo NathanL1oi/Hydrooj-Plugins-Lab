@@ -1,0 +1,246 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+{% include "course_package_style.html" %}
+<style>
+.cp-tree-sort { font-size: 14px; }
+.cp-tree-sort .section { border-radius: 8px; overflow: hidden; }
+.cp-tree-sort .section__header { padding: 14px 16px; border-bottom: 1px solid var(--cp-border); background: var(--cp-accent-soft); }
+.cp-tree-sort .section__title { font-size: 20px; line-height: 1.35; }
+.cp-tree-list, .cp-lesson-sort-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.cp-chapter-sort { border: 1px solid var(--cp-border); border-radius: 8px; background: var(--cp-card); overflow: hidden; transition: background .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+.cp-chapter-sort.is-moving,
+.cp-lesson-sort.is-moving { opacity: .72; transform: scale(.995); }
+.cp-chapter-sort.is-swap-main,
+.cp-lesson-sort.is-swap-main { border-color: #fb923c; background: var(--cp-hidden-soft); box-shadow: 0 0 0 4px rgba(249, 115, 22, .2); animation: cpMoveMain 1.15s ease; }
+.cp-chapter-sort.is-swap-peer,
+.cp-lesson-sort.is-swap-peer { border-color: var(--cp-border); background: var(--cp-soft); box-shadow: 0 0 0 4px rgba(148, 163, 184, .14); animation: cpMovePeer 1.15s ease; }
+.cp-chapter-sort.is-swap-main > .cp-sort-head { background: var(--cp-hidden-soft); }
+.cp-chapter-sort.is-swap-peer > .cp-sort-head { background: var(--cp-soft); }
+.cp-chapter-sort.is-swap-main > .cp-sort-head .cp-sort-index,
+.cp-lesson-sort.is-swap-main .cp-sort-index { background: #fed7aa; color: #9a3412; font-weight: 700; }
+.cp-chapter-sort.is-swap-peer > .cp-sort-head .cp-sort-index,
+.cp-lesson-sort.is-swap-peer .cp-sort-index { background: var(--cp-soft); color: var(--cp-ink); font-weight: 700; }
+.cp-sort-head, .cp-lesson-sort { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 12px; align-items: center; min-height: 58px; padding: 12px 14px; }
+.cp-sort-head { background: var(--cp-card); border-bottom: 1px solid var(--cp-border-soft, var(--cp-border)); }
+.cp-lesson-sort { margin: 8px 12px 8px 56px; border: 1px solid var(--cp-border); border-radius: 8px; background: var(--cp-card); transition: background .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+.cp-sort-index { display: inline-flex; width: 30px; height: 30px; align-items: center; justify-content: center; border-radius: 50%; background: var(--cp-accent-soft); color: var(--cp-ink); }
+.cp-lesson-sort .cp-sort-index { width: 26px; height: 26px; background: var(--cp-soft); font-size: 12px; }
+.cp-sort-title { margin: 0; color: var(--cp-ink); font-size: 16px; line-height: 1.35; }
+.cp-lesson-sort .cp-sort-title { font-size: 14px; }
+.cp-sort-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; color: var(--cp-muted); font-size: 12px; }
+.cp-sort-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.cp-sort-actions .button { margin: 0 !important; height: 30px; padding: 0 10px; border-color: var(--cp-border); background: var(--cp-accent-soft); color: var(--cp-accent); line-height: 28px; font-size: 13px; font-weight: 600; }
+.cp-sort-actions .button:hover { border-color: var(--cp-accent); background: var(--cp-hover); }
+.cp-sort-actions .button[disabled] { border-color: var(--cp-border); background: var(--cp-soft); color: var(--cp-muted); box-shadow: none; }
+.cp-tree-sort .section__tools .primary,
+.cp-sort-footer .primary { border-color: #2563eb !important; background: #2563eb !important; color: #fff !important; font-weight: 600; box-shadow: 0 4px 12px rgba(37, 99, 235, .22); }
+.cp-sort-footer { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.cp-empty { margin: 8px 12px 12px; padding: 12px; border: 1px dashed #cbd5e1; border-radius: 8px; color: var(--cp-muted); }
+@keyframes cpMoveMain {
+  0% { transform: translateY(-4px); }
+  45% { transform: translateY(2px); }
+  100% { transform: translateY(0); }
+}
+@keyframes cpMovePeer {
+  0% { transform: translateY(4px); }
+  45% { transform: translateY(-2px); }
+  100% { transform: translateY(0); }
+}
+@media screen and (max-width: 760px) {
+  .cp-sort-head, .cp-lesson-sort { grid-template-columns: 36px minmax(0, 1fr); }
+  .cp-sort-actions { grid-column: 2; justify-content: flex-start; }
+  .cp-lesson-sort { margin-left: 12px; }
+}
+</style>
+{% include "course_order_glass_override.html" %}
+<div class="row cp-tree-sort course-package-ui">
+  <div class="medium-12 columns">
+    <form method="post" data-cp-tree-sort>
+      <input type="hidden" name="order" data-cp-structure-input>
+      <div class="section">
+        <div class="section__header">
+          <h1 class="section__title">{{ _('结构排序') }}: {{ cpdoc.title }} / {{ vpdoc.version }}</h1>
+          <div class="section__tools">
+            <button type="submit" class="rounded primary button">{{ _('保存排序') }}</button>
+            <button type="button" class="rounded button" data-cp-reset>{{ _('撤销更改') }}</button>
+            <a class="rounded button" href="{{ url('course_package_version_detail', cpid=cpdoc.docId, vid=vpdoc.docId) }}">{{ _('返回') }}</a>
+          </div>
+        </div>
+        <div class="section__body">
+          {% if not chapters.length %}
+          <p>{{ _('这个版本还没有章。') }}</p>
+          {% else %}
+          <ol class="cp-tree-list" data-chapter-list>
+            {% for chapter in chapters %}
+            <li class="cp-chapter-sort {% if chapter.hidden %}cp-hidden-row{% endif %}" data-cp-chapter-item data-id="{{ chapter.id }}">
+              <div class="cp-sort-head">
+                <span class="cp-sort-index" data-cp-chapter-index>{{ loop.index }}</span>
+                <div>
+                  <h2 class="cp-sort-title">
+                    {{ chapter.title }}
+                    {% if chapter.hidden %}<span class="cp-hidden-badge"><span class="icon icon-security"></span> {{ _('已隐藏') }}</span>{% endif %}
+                  </h2>
+                  <div class="cp-sort-meta">
+                    <span>{{ chapter.lessons.length }} {{ _('节') }}</span>
+                  </div>
+                </div>
+                <div class="cp-sort-actions">
+                  <button type="button" class="rounded button" data-sort-scope="chapter" data-sort-action="top">{{ _('置顶') }}</button>
+                  <button type="button" class="rounded button" data-sort-scope="chapter" data-sort-action="up">{{ _('上移') }}</button>
+                  <button type="button" class="rounded button" data-sort-scope="chapter" data-sort-action="down">{{ _('下移') }}</button>
+                  <button type="button" class="rounded button" data-sort-scope="chapter" data-sort-action="bottom">{{ _('置底') }}</button>
+                </div>
+              </div>
+              {% if chapter.lessons.length %}
+              <ol class="cp-lesson-sort-list" data-lesson-list>
+                {% for lesson in chapter.lessons %}
+                <li class="cp-lesson-sort {% if lesson.hidden %}cp-hidden-row{% endif %}" data-cp-lesson-item data-id="{{ lesson.id }}">
+                  <span class="cp-sort-index" data-cp-lesson-index>{{ loop.index }}</span>
+                  <div>
+                    <h3 class="cp-sort-title">
+                      {{ lesson.title }}
+                      {% if lesson.hidden %}<span class="cp-hidden-badge"><span class="icon icon-security"></span> {{ _('已隐藏') }}</span>{% endif %}
+                    </h3>
+                    <div class="cp-sort-meta">
+                      <span>{{ lesson.pids.length }} {{ _('题目') }}</span>
+                    </div>
+                  </div>
+                  <div class="cp-sort-actions">
+                    <button type="button" class="rounded button" data-sort-scope="lesson" data-sort-action="top">{{ _('置顶') }}</button>
+                    <button type="button" class="rounded button" data-sort-scope="lesson" data-sort-action="up">{{ _('上移') }}</button>
+                    <button type="button" class="rounded button" data-sort-scope="lesson" data-sort-action="down">{{ _('下移') }}</button>
+                    <button type="button" class="rounded button" data-sort-scope="lesson" data-sort-action="bottom">{{ _('置底') }}</button>
+                  </div>
+                </li>
+                {% endfor %}
+              </ol>
+              {% else %}
+              <div class="cp-empty">{{ _('本章还没有节。') }}</div>
+              {% endif %}
+            </li>
+            {% endfor %}
+          </ol>
+          <div class="cp-sort-footer">
+            <button type="submit" class="rounded primary button">{{ _('保存排序') }}</button>
+            <button type="button" class="rounded button" data-cp-reset>{{ _('撤销更改') }}</button>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+(function() {
+  var root = document.querySelector('[data-cp-tree-sort]');
+  if (!root) return;
+  var chapterList = root.querySelector('[data-chapter-list]');
+  var input = root.querySelector('[data-cp-structure-input]');
+  var highlightTimer = null;
+  if (!chapterList || !input) return;
+  function directItems(parent, selector) {
+    return Array.prototype.filter.call(parent.children, function(child) {
+      return child.matches(selector);
+    });
+  }
+  function actionButtons(row, scope) {
+    var ownerSelector = scope === 'chapter' ? '[data-cp-chapter-item]' : '[data-cp-lesson-item]';
+    return Array.prototype.filter.call(row.querySelectorAll('[data-sort-scope="' + scope + '"][data-sort-action]'), function(button) {
+      return button.closest(ownerSelector) === row;
+    });
+  }
+  function refreshList(parent, itemSelector, indexSelector, scope) {
+    var rows = directItems(parent, itemSelector);
+    rows.forEach(function(row, index) {
+      var indexNode = row.querySelector(indexSelector);
+      if (indexNode) indexNode.textContent = String(index + 1);
+      actionButtons(row, scope).forEach(function(button) {
+        var action = button.getAttribute('data-sort-action');
+        if (action === 'top' || action === 'up') button.disabled = index === 0;
+        if (action === 'down' || action === 'bottom') button.disabled = index === rows.length - 1;
+      });
+    });
+  }
+  function refresh() {
+    refreshList(chapterList, '[data-cp-chapter-item]', '[data-cp-chapter-index]', 'chapter');
+    directItems(chapterList, '[data-cp-chapter-item]').forEach(function(chapter) {
+      var lessonList = chapter.querySelector('[data-lesson-list]');
+      if (lessonList) refreshList(lessonList, '[data-cp-lesson-item]', '[data-cp-lesson-index]', 'lesson');
+    });
+    input.value = JSON.stringify(directItems(chapterList, '[data-cp-chapter-item]').map(function(chapter) {
+      var lessonList = chapter.querySelector('[data-lesson-list]');
+      return {
+        chapterId: chapter.getAttribute('data-id'),
+        lessonIds: lessonList ? directItems(lessonList, '[data-cp-lesson-item]').map(function(lesson) {
+          return lesson.getAttribute('data-id');
+        }) : [],
+      };
+    }));
+  }
+  function moveItem(row, parent, action) {
+    if (action === 'top') parent.insertBefore(row, parent.firstElementChild);
+    if (action === 'up' && row.previousElementSibling) parent.insertBefore(row, row.previousElementSibling);
+    if (action === 'down' && row.nextElementSibling) parent.insertBefore(row.nextElementSibling, row);
+    if (action === 'bottom') parent.appendChild(row);
+  }
+  function clearMoved() {
+    root.querySelectorAll('.is-moving, .is-swap-main, .is-swap-peer').forEach(function(row) {
+      row.classList.remove('is-moving', 'is-swap-main', 'is-swap-peer');
+    });
+  }
+  function swapPeer(row, parent, action) {
+    if (action === 'top') return parent.firstElementChild === row ? null : parent.firstElementChild;
+    if (action === 'up') return row.previousElementSibling;
+    if (action === 'down') return row.nextElementSibling;
+    if (action === 'bottom') return parent.lastElementChild === row ? null : parent.lastElementChild;
+    return null;
+  }
+  function showSwap(row, peer) {
+    if (highlightTimer) window.clearTimeout(highlightTimer);
+    clearMoved();
+    row.classList.add('is-swap-main');
+    if (peer && peer !== row) peer.classList.add('is-swap-peer');
+    row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    highlightTimer = window.setTimeout(function() {
+      clearMoved();
+    }, 2200);
+  }
+  root.addEventListener('click', function(ev) {
+    var button = ev.target.closest('[data-sort-action]');
+    if (!button) return;
+    var scope = button.getAttribute('data-sort-scope');
+    var action = button.getAttribute('data-sort-action');
+    if (scope === 'chapter') {
+      var chapter = button.closest('[data-cp-chapter-item]');
+      if (chapter) {
+        var chapterPeer = swapPeer(chapter, chapterList, action);
+        chapter.classList.add('is-moving');
+        if (chapterPeer) chapterPeer.classList.add('is-moving');
+        moveItem(chapter, chapterList, action);
+        refresh();
+        showSwap(chapter, chapterPeer);
+        return;
+      }
+    }
+    if (scope === 'lesson') {
+      var lesson = button.closest('[data-cp-lesson-item]');
+      var list = button.closest('[data-lesson-list]');
+      if (lesson && list) {
+        var lessonPeer = swapPeer(lesson, list, action);
+        lesson.classList.add('is-moving');
+        if (lessonPeer) lessonPeer.classList.add('is-moving');
+        moveItem(lesson, list, action);
+        refresh();
+        showSwap(lesson, lessonPeer);
+        return;
+      }
+    }
+    refresh();
+  });
+  root.querySelectorAll('[data-cp-reset]').forEach(function(button) {
+    button.addEventListener('click', function() { window.location.reload(); });
+  });
+  refresh();
+})();
+</script>
+{% endblock %}

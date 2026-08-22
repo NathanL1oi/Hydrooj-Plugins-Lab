@@ -1,0 +1,73 @@
+{% extends "layout/basic.html" %}
+{% import "components/user.html" as user with context %}
+{% import "components/paginator.html" as paginator with context %}
+{% import "components/nothing.html" as nothing with context %}
+{% block content %}
+<style>
+.csf-rank .csf-tabs { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; border-bottom: 1px solid #e5e7eb; }
+.csf-rank .csf-table { overflow-x: auto; }
+.csf-rank table { min-width: 760px; }
+.csf-rank .csf-fire { display: inline-flex; align-items: center; justify-content: center; min-width: 52px; border-radius: 999px; padding: 3px 9px; background: #fff7ed; color: #c2410c; font-weight: 800; }
+.csf-rank .csf-muted { color: #64748b; font-size: 13px; }
+.theme--dark .csf-rank .csf-tabs {
+  border-bottom-color: rgba(148, 163, 184, .24);
+}
+.theme--dark .csf-rank .csf-fire {
+  background: rgba(249, 115, 22, .18);
+  color: #fdba74;
+}
+.theme--dark .csf-rank .csf-muted { color: #94a3b8; }
+</style>
+<div class="row csf-rank">
+  <div class="columns">
+    <div class="section">
+      <div class="csf-tabs">
+        {% if personalUrl %}<a class="button rounded" href="{{ personalUrl }}">{{ _('我的火苗') }}</a>{% endif %}
+        <a class="button rounded primary" href="{{ url('code_streak_ranking') }}">{{ _('火苗榜') }}</a>
+        {% if manageUrl %}<a class="button rounded" href="{{ manageUrl }}">{{ _('火苗设置') }}</a>{% endif %}
+      </div>
+      <div class="section__header">
+        <h1 class="section__title">{{ _('火苗榜') }}</h1>
+        <span class="csf-muted">{% if config.requireAccepted %}{{ _('AC 点亮') }}{% else %}{{ _('提交点亮') }}{% endif %} · {{ _('最近') }} {{ config.windowDays }} {{ _('天') }}</span>
+      </div>
+      <div class="section__body no-padding csf-table table-layout-guard">
+        {% if not config.enabled %}
+          <blockquote class="note">{{ _('当前子域未启用训练火苗。') }}</blockquote>
+        {% elif not rows.length %}
+          {{ nothing.render('还没有训练记录。') }}
+        {% else %}
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>{{ _('排名') }}</th>
+              <th>{{ _('用户') }}</th>
+              <th>{{ _('连续') }}</th>
+              <th>{{ _('最长') }}</th>
+              <th>{{ _('活跃天数') }}</th>
+              <th>{{ _('提交') }}</th>
+              <th>{{ _('AC') }}</th>
+              <th>{{ _('最近点亮') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for row in rows %}
+            <tr>
+              <td>{{ row.rank }}</td>
+              <td>{% if udict[row.uid] %}{{ user.render_inline(udict[row.uid], badge=false) }}{% else %}UID {{ row.uid }}{% endif %}</td>
+              <td><span class="csf-fire">{{ row.current }} 天</span></td>
+              <td>{{ row.best }}</td>
+              <td>{{ row.activeDays }}</td>
+              <td>{{ row.submissions }}</td>
+              <td>{{ row.accepts }}</td>
+              <td>{{ row.lastActiveDate or '-' }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        {{ paginator.render(page, pageCount) }}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

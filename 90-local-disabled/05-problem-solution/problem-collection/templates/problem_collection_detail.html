@@ -1,0 +1,193 @@
+{% extends "layout/basic.html" %}
+
+{% block content %}
+<style>
+.pc-shell { max-width: 980px; margin: 0 auto; }
+.pc-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  border-bottom: 1px solid #edf2f7;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+}
+.pc-titleline { display: flex; gap: 10px; align-items: center; min-width: 0; }
+.pc-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: #fff;
+  background: #2563eb;
+  flex: 0 0 auto;
+}
+.pc-title { color: #172033; font-size: 18px; font-weight: 700; line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pc-muted { color: #718096; font-size: 12px; line-height: 1.55; }
+.pc-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pc-editor {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  margin-bottom: 12px;
+}
+.pc-editor summary {
+  cursor: pointer;
+  padding: 10px 12px;
+  color: #334155;
+  font-weight: 700;
+}
+.pc-editor-body { display: grid; gap: 10px; padding: 0 12px 12px; }
+.pc-input, .pc-textarea {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #fff;
+}
+.pc-input { height: 38px; }
+.pc-textarea { min-height: 72px; resize: vertical; line-height: 1.55; }
+.pc-list { display: grid; gap: 8px; }
+.pc-problem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid #e5edf5;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fff;
+}
+.pc-problem:hover { border-color: #cbd5e1; }
+.pc-problem-main { min-width: 0; }
+.pc-problem-title {
+  display: block;
+  color: #1f2937;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pc-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: #fff7ed;
+  color: #c2410c;
+  padding: 2px 8px;
+  font-size: 12px;
+}
+.pc-empty {
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  padding: 18px;
+  color: #64748b;
+  background: #fbfdff;
+}
+.theme--dark .pc-head {
+  border-bottom-color: #303a48;
+}
+.theme--dark .pc-title,
+.theme--dark .pc-problem-title {
+  color: #e2e8f0;
+}
+.theme--dark .pc-muted,
+.theme--dark .pc-empty {
+  color: #94a3b8;
+}
+.theme--dark .pc-editor,
+.theme--dark .pc-problem {
+  border-color: #3a4656;
+  background: #1f242c;
+}
+.theme--dark .pc-editor summary {
+  color: #cbd5e1;
+}
+.theme--dark .pc-input,
+.theme--dark .pc-textarea {
+  border-color: #3a4656;
+  background: #171c23;
+  color: #e2e8f0;
+}
+.theme--dark .pc-pill {
+  background: #351b1b;
+  color: #fca5a5;
+}
+.theme--dark .pc-empty {
+  border-color: #3a4656;
+  background: #1a1f27;
+}
+@media (max-width: 680px) {
+  .pc-head, .pc-problem { display: grid; grid-template-columns: 1fr; }
+}
+</style>
+<div class="row">
+  <div class="columns">
+    <div class="section pc-shell">
+      <div class="section__header">
+        <h1 class="section__title">{{ collection.title }}</h1>
+        <div class="section__tools">
+          <a class="rounded button" href="{{ url('problem_collection_main') }}"><span class="icon icon-star"></span> 题单</a>
+          <a class="rounded button" href="{{ url('problem_main') }}"><span class="icon icon-file"></span> 题库</a>
+        </div>
+      </div>
+      <div class="section__body">
+        <div class="pc-head">
+          <div class="pc-titleline">
+            <span class="pc-icon"><span class="icon icon-star"></span></span>
+            <div>
+              <div class="pc-title">{{ collection.title }}</div>
+              <div class="pc-muted">{{ collection.items.length }} 道题{% if collection.description %} · {{ collection.description }}{% endif %}</div>
+            </div>
+          </div>
+        </div>
+
+        <details class="pc-editor">
+          <summary><span class="icon icon-settings"></span> 题单设置</summary>
+          <div class="pc-editor-body">
+            <form class="pc-editor-body" method="post">
+              <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+              <input type="hidden" name="operation" value="update">
+              <input class="pc-input" name="title" maxlength="40" value="{{ collection.title }}" placeholder="题单名">
+              <textarea class="pc-textarea" name="description" maxlength="500" placeholder="备注，可选">{{ collection.description }}</textarea>
+              <div class="pc-actions">
+                <button class="primary rounded button" type="submit"><span class="icon icon-save"></span> 保存</button>
+              </div>
+            </form>
+            <form method="post">
+              <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+              <input type="hidden" name="operation" value="delete">
+              <button class="rounded button" type="submit" data-confirm="确定删除这个收藏题单吗？题目本身不会被删除。"><span class="icon icon-delete"></span> 删除题单</button>
+            </form>
+          </div>
+        </details>
+
+        <div class="pc-list">
+          {% for item in collection.items %}
+            <div class="pc-problem">
+              <div class="pc-problem-main">
+                <a class="pc-problem-title" href="{{ item.url }}">{{ item.pidLabel }} {{ item.title }}</a>
+                <div class="pc-muted">
+                  {{ datetimeSpan(item.addedAt)|safe }}
+                  {% if item.hidden %}<span class="pc-pill">隐藏题</span>{% endif %}
+                </div>
+              </div>
+              <form method="post">
+                <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+                <input type="hidden" name="operation" value="remove_problem">
+                <input type="hidden" name="pid" value="{{ item.pid }}">
+                <input type="hidden" name="itemDomainId" value="{{ item.domainId }}">
+                <button class="rounded button" type="submit"><span class="icon icon-delete"></span> 移出</button>
+              </form>
+            </div>
+          {% else %}
+            <div class="pc-empty">这个题单里还没有题。</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

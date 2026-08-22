@@ -1,0 +1,197 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.pzr-wrap .section { border-radius: 8px; overflow: hidden; }
+.pzr-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+.pzr-box { border: 1px solid #e5edf5; border-radius: 8px; background: #fbfdff; padding: 16px; margin-bottom: 16px; }
+.pzr-map { width: 100%; min-height: 170px; box-sizing: border-box; font-family: Consolas, Monaco, monospace; line-height: 1.55; }
+.pzr-options { display: grid; grid-template-columns: repeat(2, minmax(180px, 1fr)); gap: 10px 18px; margin-top: 10px; }
+.pzr-options label { display: flex; gap: 8px; align-items: center; color: #40566f; }
+.pzr-help { color: #6b7280; font-size: 13px; line-height: 1.6; margin-top: 6px; }
+.pzr-msg { background: #f8fafc; border: 1px solid #d9e2ec; border-radius: 8px; padding: 10px 12px; white-space: pre-wrap; line-height: 1.65; margin-bottom: 16px; }
+.pzr-table { width: 100%; table-layout: fixed; }
+.pzr-table th, .pzr-table td { vertical-align: top; word-break: break-word; }
+.pzr-pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; line-height: 1.6; background: #e5e7eb; color: #374151; }
+.pzr-pill.ok { background: #dcfce7; color: #166534; }
+.pzr-pill.error { background: #fee2e2; color: #991b1b; }
+.pzr-pill.done { background: #dbeafe; color: #1d4ed8; }
+.pzr-side-list { margin: 0; padding-left: 18px; line-height: 1.7; }
+.pzr-side-list code { color: #1f4d7a; }
+.theme--dark .pzr-box,
+.theme--dark .pzr-msg {
+  border-color: rgba(148, 163, 184, .28);
+  background: rgba(31, 41, 55, .72);
+  color: #e2e8f0;
+}
+.theme--dark .pzr-options label,
+.theme--dark .pzr-help { color: #94a3b8; }
+.theme--dark .pzr-pill {
+  background: rgba(148, 163, 184, .18);
+  color: #e2e8f0;
+}
+.theme--dark .pzr-pill.ok { background: rgba(34, 197, 94, .16); color: #bbf7d0; }
+.theme--dark .pzr-pill.error { background: rgba(239, 68, 68, .16); color: #fecaca; }
+.theme--dark .pzr-pill.done { background: rgba(59, 130, 246, .18); color: #bfdbfe; }
+.theme--dark .pzr-side-list code { color: #93c5fd; }
+@media screen and (max-width: 900px) {
+  .pzr-grid { grid-template-columns: 1fr; }
+  .pzr-options { grid-template-columns: 1fr; }
+}
+</style>
+
+<div class="row pzr-wrap">
+  <div class="medium-12 columns">
+    <div class="pzr-grid">
+      <div>
+        <div class="section">
+          <div class="section__header">
+            <h1 class="section__title">ZIP 替换题目</h1>
+          </div>
+          <div class="section__body">
+            {% if messages and messages|length %}
+            <div class="pzr-msg">{% for m in messages %}{{ m }}
+{% endfor %}</div>
+            {% endif %}
+
+            <blockquote class="note">
+              <p>此工具保留目标题目的 docId。课程、课程包、训练中已经引用的数字 ID 不需要改；默认也保留原 PID。</p>
+            </blockquote>
+
+            <form method="post" enctype="multipart/form-data">
+              <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+              <input type="hidden" name="action" value="preview">
+              <div class="pzr-box">
+                <label class="form__label">Hydro ZIP</label>
+                <input type="file" name="file" accept=".zip" required>
+                <div class="pzr-help">支持单题 ZIP，也支持包含多个 <code>problem.yaml</code> 的批量 ZIP。</div>
+              </div>
+
+              <div class="pzr-box">
+                <label class="form__label">替换映射</label>
+                <textarea name="mappingText" class="textbox pzr-map" placeholder="888&#10;889 = problem-B02&#10;B10 => B10-new">{{ mappingText|default('') }}</textarea>
+                <div class="pzr-help">
+                  左边写当前要保留的题目 ID / PID；右边可写 ZIP 内文件夹、ZIP 内 PID 或题目标题。右边不写时，若 ZIP 题目数与行数一致，会按顺序自动匹配。
+                </div>
+              </div>
+
+              <div class="pzr-box">
+                <label class="form__label">替换选项</label>
+                <div class="pzr-options">
+                  <label><input type="hidden" name="preservePid" value="0"><input type="checkbox" name="preservePid" value="1" {% if options.preservePid %}checked{% endif %}> 保留原 PID</label>
+                  <label><input type="hidden" name="replaceTestdata" value="0"><input type="checkbox" name="replaceTestdata" value="1" {% if options.replaceTestdata %}checked{% endif %}> 替换测试数据</label>
+                  <label><input type="hidden" name="replaceAdditional" value="0"><input type="checkbox" name="replaceAdditional" value="1" {% if options.replaceAdditional %}checked{% endif %}> 替换附加文件</label>
+                  <label><input type="hidden" name="importSolutions" value="0"><input type="checkbox" name="importSolutions" value="1" {% if options.importSolutions %}checked{% endif %}> 追加 ZIP 题解</label>
+                </div>
+                <div class="pzr-help">题解是追加，不删除旧题解。旧提交记录不会清空，已投入使用的题请谨慎替换。</div>
+              </div>
+
+              <button type="submit" class="rounded primary button">
+                <span class="icon icon-search"></span> 上传并预览
+              </button>
+              <a href="{{ url('problem_main') }}" class="rounded button">返回题库</a>
+            </form>
+          </div>
+        </div>
+
+        {% if rows and rows|length %}
+        <div class="section">
+          <div class="section__header">
+            <h1 class="section__title">映射预览</h1>
+          </div>
+          <div class="section__body no-padding">
+            <table class="data-table pzr-table">
+              <thead>
+                <tr>
+                  <th style="width:60px">行</th>
+                  <th style="width:120px">目标</th>
+                  <th>当前题目</th>
+                  <th style="width:150px">ZIP 源题</th>
+                  <th>新题标题</th>
+                  <th style="width:120px">文件</th>
+                  <th style="width:80px">状态</th>
+                  <th>说明</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in rows %}
+                <tr>
+                  <td>{{ row.lineNo }}</td>
+                  <td>
+                    <code>{{ row.targetInput }}</code>
+                    {% if row.targetDocId %}<br><small>docId={{ row.targetDocId }}</small>{% endif %}
+                    {% if row.targetPid %}<br><small>{{ row.targetPid }}</small>{% endif %}
+                  </td>
+                  <td>{{ row.targetTitle|default('-') }}</td>
+                  <td>
+                    {% if row.sourceFolder %}<code>{{ row.sourceFolder }}</code>{% else %}-{% endif %}
+                    {% if row.sourcePid %}<br><small>{{ row.sourcePid }}</small>{% endif %}
+                  </td>
+                  <td>{{ row.sourceTitle|default('-') }}</td>
+                  <td>
+                    数据 {{ row.testdataCount|default(0) }}<br>
+                    附件 {{ row.additionalCount|default(0) }}<br>
+                    题解 {{ row.solutionCount|default(0) }}
+                  </td>
+                  <td><span class="pzr-pill {{ row.status }}">{{ row.status }}</span></td>
+                  <td>{{ row.message }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% if jobId and canExecute and not executed %}
+          <div class="section__body">
+            <form method="post" onsubmit="return confirm('确认执行替换？这会覆盖题面和数据，但保留 docId。');">
+              <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+              <input type="hidden" name="action" value="execute">
+              <input type="hidden" name="jobId" value="{{ jobId }}">
+              <button class="rounded primary button" type="submit">
+                <span class="icon icon-play"></span> 确认执行替换
+              </button>
+            </form>
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+
+      <div>
+        <div class="section">
+          <div class="section__header">
+            <h1 class="section__title">ZIP 内题目</h1>
+          </div>
+          <div class="section__body">
+            {% if zipProblems and zipProblems|length %}
+            <ol class="pzr-side-list">
+              {% for item in zipProblems %}
+              <li>
+                <code>{{ item.folder }}</code><br>
+                {{ item.title|default('(无标题)') }}
+                {% if item.pid %}<small> / {{ item.pid }}</small>{% endif %}<br>
+                <small>数据 {{ item.testdataCount }}，附件 {{ item.additionalCount }}，题解 {{ item.solutionCount }}</small>
+              </li>
+              {% endfor %}
+            </ol>
+            {% else %}
+            <p class="pzr-help">上传 ZIP 后这里会显示可映射的题目。</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section__header">
+            <h1 class="section__title">示例</h1>
+          </div>
+          <div class="section__body">
+            <pre class="pzr-msg">888
+889 = problem-B02
+B10 => B10-new
+900    图上搜索</pre>
+            <p class="pzr-help">单题替换时只写 <code>888</code> 即可；批量 ZIP 推荐把当前题 ID 与 ZIP 文件夹一一写清楚。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

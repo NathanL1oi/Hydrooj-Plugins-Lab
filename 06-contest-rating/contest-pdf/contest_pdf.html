@@ -1,0 +1,232 @@
+{% set layout_name = "basic" %}
+{% extends "layout/html5.html" %}
+{% block body %}
+<style>
+.problem--acm {
+  page-break-after:always;
+}
+.contest-pdf-objective {
+  margin: 0.5rem 0 1rem;
+  break-inside: avoid;
+}
+.contest-pdf-objective__option {
+  position: relative;
+  display: flex;
+  gap: 0.45rem;
+  align-items: flex-start;
+  margin: 0.35rem 0;
+  padding-left: 1.45rem;
+  line-height: 1.65;
+  break-inside: avoid;
+}
+.contest-pdf-objective__mark {
+  position: absolute;
+  left: 0;
+  top: 0.35em;
+  width: 0.92rem;
+  height: 0.92rem;
+  border: 1.5px solid #222;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+.contest-pdf-objective--multiselect .contest-pdf-objective__mark {
+  border-radius: 3px;
+}
+.contest-pdf-objective__label {
+  min-width: 1.7rem;
+  font-weight: 600;
+}
+.contest-pdf-objective-blank {
+  display: inline-block;
+  min-width: 10rem;
+  border-bottom: 1px solid #222;
+  transform: translateY(-0.08em);
+}
+.contest-pdf-objective-blank--textarea {
+  display: block;
+  min-height: 4rem;
+  margin: 0.45rem 0;
+  border: 1px solid #444;
+}
+.contest-pdf-objective-dropdown {
+  display: inline-block;
+  padding: 0 0.35rem;
+  border-bottom: 1px solid #222;
+}
+@media print {
+  .print-hide {
+    display: none;
+  }
+}
+</style>
+<div class="main"><div class="row"><div class="medium-12 columns">
+  <div class="section__header" style="display:flex;justify-content:center" class="print-hide">
+    <h1 class="print-hide">Use Ctrl-P to print to PDF / 使用 Ctrl-P 打印成 PDF</h1>
+  </div>
+  <div class="section__header" style="display:flex;justify-content:center">
+    <h1>{{ tdoc.title }}</h1>
+  </div>
+  {% if model.system.get('contestpdf.showUrl') %}
+  <div class="section__header" style="display:flex;justify-content:center">
+    <sub><a href="{{ model.system.get('server.url') }}{% if tdoc.domainId !== 'system' %}d/{{ tdoc.domainId }}/{% endif %}contest/{{ tdoc.docId }}">
+      {{ model.system.get('server.url') }}{% if tdoc.domainId !== 'system' %}d/{{ tdoc.domainId }}/{% endif %}contest/{{ tdoc.docId }}
+    </a></sub>
+  </div>
+  {% endif %}
+  <div class="section__body typo">
+    <div style="page-break-after:always">
+      {% set lines = Math.ceil(tdoc.pids.length/4) %}
+      {% macro col(pids) %} 
+      <div style="margin:20px 0">
+      <table class="data-table">
+        <colgroup>
+          <col class="col--index">
+          {% for pid in pids %}
+            <col class="col--problem">
+          {% endfor %}
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="col--index">
+              题目
+            </th>
+            {% for pid in pids %}
+              {% set pdoc = pdict[pid] %}
+              <th class="col--problem" style="word-wrap:break-word;word-break:break-all;overflow: hidden;">
+                {{ String.fromCharCode(65+tdoc.pids.indexOf(pdoc.docId)) }}. {{ pdoc.title }}
+              </th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col--index">{{ _('Time limit') }}</td>
+            {% for pid in pids %}
+              {% set pdoc = pdict[pid] %}
+              <td class="col--problem">{{ pdoc.config.timeMax if pdoc.config.timeMax == pdoc.config.timeMin else pdoc.config.timeMin+'~'+pdoc.config.timeMax }}ms</td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="col--index">{{ _('Memory limit') }}</td>
+            {% for pid in pids %}
+              {% set pdoc = pdict[pid] %}
+              <td class="col--problem">{{ pdoc.config.memoryMax if pdoc.config.memoryMax == pdoc.config.memoryMin else pdoc.config.memoryMin+'~'+pdoc.config.memoryMax }}MiB</td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="col--index">{{ _('IO') }}</td>
+            {% for pid in pids %}
+              {% set pdoc = pdict[pid] %}
+              <td class="col--problem">
+                {{ _('problem_type.' + pdoc.config.type).format(pdoc.config.subType) }}
+                {% if pdoc.config.type == 'default' and pdoc.config.subType %}
+                  {{ _('File IO: {0}').format(pdoc.config.subType) }}
+                {% endif %}
+              </td>
+            {% endfor %}
+          </tr>
+        </tbody>
+      </table>
+      </div>
+      {% endmacro %}
+      {% for i in range(0, lines) %}
+        {{ col(tdoc.pids.slice(4*i, 4*(i+1))) }}
+      {% endfor %}
+    </div>
+    {% for pid in tdoc.pids %}
+      <div class="problem--{{ tdoc.rule }}">
+        {% set pdoc = pdict[pid] %}
+        <div width="100%" style="display:flex;justify-content:center">
+          <h1>{{ String.fromCharCode(65+tdoc.pids.indexOf(pdoc.docId)) }}. {{ pdoc.title }}</h1>
+        </div>
+        <div width="100%" style="display:flex;justify-content:center"><div>
+          <span class="bp5-tag bp5-large bp5-minimal problem__tag-item icon icon-book">{{ _('problem_type.' + pdoc.config.type).format(pdoc.config.subType) }}</span>
+          {% if pdoc.config.type != 'objective' and pdoc.config.type != 'submit_answer' %}
+            <span class="bp5-tag bp5-large bp5-minimal problem__tag-item icon icon-stopwatch">{{ pdoc.config.timeMax if pdoc.config.timeMax == pdoc.config.timeMin else pdoc.config.timeMin+'~'+pdoc.config.timeMax }}ms</span>
+            <span class="bp5-tag bp5-large bp5-minimal problem__tag-item icon icon-comparison">{{ pdoc.config.memoryMax if pdoc.config.memoryMax == pdoc.config.memoryMin else pdoc.config.memoryMin+'~'+pdoc.config.memoryMax }}MiB</span>
+          {% endif %}
+        </div></div>
+        <div class="typo richmedia contest-pdf-problem-content" width="100%" data-problem-type="{{ pdoc.config.type }}">
+          {{ pdoc.content|content(handler.request.query.lang or handler.user.viewLang or handler.session.viewLang, pdoc.html)|safe }}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div></div></div>
+<script>
+(function () {
+  function escapeHtml(value) {
+    var span = document.createElement('span');
+    span.textContent = value == null ? '' : String(value);
+    return span.innerHTML;
+  }
+
+  function renderChoiceList(markerNode, token, type, id) {
+    var list = markerNode.nextElementSibling;
+    if (!list || list.tagName !== 'UL') return false;
+
+    markerNode.innerHTML = markerNode.innerHTML.replace(token, '');
+    if (!markerNode.textContent.trim() && !markerNode.querySelector('img, table, pre, code')) {
+      markerNode.style.display = 'none';
+    }
+
+    var optionHtml = Array.prototype.map.call(list.children, function (item, index) {
+      var label = String.fromCharCode(65 + index);
+      return '<div class="contest-pdf-objective__option">'
+        + '<span class="contest-pdf-objective__mark" aria-hidden="true"></span>'
+        + '<span class="contest-pdf-objective__label">' + label + '.</span>'
+        + '<span class="contest-pdf-objective__text">' + item.innerHTML + '</span>'
+        + '</div>';
+    }).join('');
+
+    var wrapper = document.createElement('div');
+    wrapper.className = 'contest-pdf-objective contest-pdf-objective--' + type;
+    wrapper.id = 'objective-' + id;
+    wrapper.innerHTML = optionHtml;
+    list.parentNode.replaceChild(wrapper, list);
+    return true;
+  }
+
+  function replacementFor(type, id, optionsText) {
+    if (type === 'textarea') return '<span class="contest-pdf-objective-blank contest-pdf-objective-blank--textarea" id="objective-' + id + '"></span>';
+    if (type === 'dropdown') {
+      var options = (optionsText || '').split(',').map(function (item) {
+        return item.trim();
+      }).filter(Boolean);
+      return '<span class="contest-pdf-objective-dropdown" id="objective-' + id + '">'
+        + (options.length ? '可选：' + escapeHtml(options.join(' / ')) : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;')
+        + '</span>';
+    }
+    return '<span class="contest-pdf-objective-blank" id="objective-' + id + '"></span>';
+  }
+
+  function renderObjectiveMarkers(root) {
+    var reg = /\{\{\s*(input|select|multiselect|textarea|dropdown)\((\d+(?:-\d+)?)\)(?:\[([^\]]*)\])?\s*\}\}/g;
+    Array.prototype.slice.call(root.children).forEach(function (node) {
+      if (node.tagName === 'PRE' || node.tagName === 'CODE') return;
+
+      var matches = [];
+      var match;
+      reg.lastIndex = 0;
+      while ((match = reg.exec(node.textContent || ''))) matches.push(match);
+
+      matches.forEach(function (item) {
+        var token = item[0];
+        var type = item[1];
+        var id = item[2];
+        var optionsText = item[3];
+        if ((type === 'select' || type === 'multiselect') && renderChoiceList(node, token, type, id)) return;
+        node.innerHTML = node.innerHTML.replace(token, replacementFor(type, id, optionsText));
+      });
+    });
+  }
+
+  function initContestPdfObjective() {
+    document.querySelectorAll('.contest-pdf-problem-content[data-problem-type="objective"]').forEach(renderObjectiveMarkers);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initContestPdfObjective);
+  else initContestPdfObjective();
+}());
+</script>
+{% endblock %}

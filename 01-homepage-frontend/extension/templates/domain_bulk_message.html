@@ -1,0 +1,28 @@
+{% extends "domain_base.html" %}
+{% block domain_content %}
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">{{ _('domain_bulk_message') }}</h1>
+  </div>
+  <div class="section__body">
+    <form method="post">
+    {{ form.form_text({
+        columns:12,
+        label:'用户或小组',
+        name:'recipients',
+        value:recipients
+        }) }}
+    {{ form.form_textarea({
+        columns:null,
+        label:'消息内容',
+        name:'content',
+        nospellcheck: true
+        }) }}
+      <div class="row"><div class="columns">
+          <button type="submit" class="button rounded primary">{{ _('Send') }}</button>
+          <button type="button" class="rounded button" onclick="window.history.go(-1)">{{ _('Cancel') }}</button>
+      </div></div>
+    </form>
+  </div>
+</div>
+{% endblock %}

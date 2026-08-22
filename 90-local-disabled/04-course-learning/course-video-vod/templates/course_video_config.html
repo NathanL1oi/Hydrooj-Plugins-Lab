@@ -1,0 +1,80 @@
+{% extends "manage_base.html" %}
+{% block manage_content %}
+<style>
+.cvconfig-page .textbox {
+  min-height: 36px;
+}
+:is(.theme--dark, .theme-dark, .theme_dark, [data-theme="dark"], body.dark) .cvconfig-page {
+  color-scheme: dark;
+}
+:is(.theme--dark, .theme-dark, .theme_dark, [data-theme="dark"], body.dark) .cvconfig-page .note {
+  border-color: rgba(96, 165, 250, .30);
+  background: rgba(59, 130, 246, .12);
+  color: #d7e3ef;
+}
+:is(.theme--dark, .theme-dark, .theme_dark, [data-theme="dark"], body.dark) .cvconfig-page label {
+  color: #d7e3ef;
+}
+:is(.theme--dark, .theme-dark, .theme_dark, [data-theme="dark"], body.dark) .cvconfig-page .textbox {
+  border-color: rgba(255, 255, 255, .12);
+  background: rgba(15, 23, 42, .62);
+  color: #f8fafc;
+}
+:is(.theme--dark, .theme-dark, .theme_dark, [data-theme="dark"], body.dark) .cvconfig-page .textbox::placeholder {
+  color: #94a3b8;
+}
+</style>
+<div class="section cvconfig-page">
+  <div class="section__header">
+    <h1 class="section__title">{{ _('VOD 兼容配置') }}</h1>
+  </div>
+  <div class="section__body">
+    <blockquote class="note">本页用于 VOD 上传签名和播放签名。课程视频必须存储在腾讯云 VOD，Hydro 只保存 FileId 和课程绑定信息。</blockquote>
+    <form method="post">
+      <input type="hidden" name="operation" value="save">
+      <div class="row">
+        <div class="medium-6 columns">
+          <label>
+            AppId（可选）
+            <input class="textbox" name="appId" value="{{ config.appId }}" placeholder="主账号 AppId；不知道可留空">
+          </label>
+        </div>
+        <div class="medium-6 columns">
+          <label>
+            VOD AppId / SubAppId
+            <input class="textbox" name="subAppId" value="{{ config.subAppId }}" placeholder="例如 1348856572">
+          </label>
+        </div>
+      </div>
+      <label>
+        SecretId
+        <input class="textbox" name="secretId" value="" placeholder="{% if config.hasSecretId %}已保存；留空则不修改{% else %}腾讯云 API SecretId{% endif %}">
+      </label>
+      <label>
+        SecretKey
+        <input class="textbox" name="secretKey" value="" placeholder="{% if config.hasSecretKey %}已保存；留空则不修改{% else %}腾讯云 API SecretKey{% endif %}">
+      </label>
+      <label>
+        播放密钥 PlayKey（可空）
+        <input class="textbox" name="playKey" value="" placeholder="{% if config.hasPlayKey %}已保存；留空则不修改{% else %}可留空，插件会用 API 密钥自动查询默认分发配置{% endif %}">
+      </label>
+      <div class="row">
+        <div class="medium-6 columns">
+          <label>
+            上传签名有效期（秒）
+            <input class="textbox" name="uploadExpireSeconds" value="{{ config.uploadExpireSeconds or 7200 }}">
+          </label>
+        </div>
+        <div class="medium-6 columns">
+          <label>
+            播放签名有效期（秒）
+            <input class="textbox" name="playExpireSeconds" value="{{ config.playExpireSeconds or 1800 }}">
+          </label>
+        </div>
+      </div>
+      <button class="rounded primary button" type="submit">{{ _('保存配置') }}</button>
+      <a class="rounded button" href="{{ url('course_video_main') }}">{{ _('返回视频库') }}</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,11 @@
+{
+  "name": "@hydrooj/userimport-domain",
+  "version": "0.1.0",
+  "description": "Extends /manage/userimport with domain + role columns",
+  "main": "index.ts",
+  "author": "",
+  "license": "AGPL-3.0-or-later",
+  "peerDependencies": {
+    "hydrooj": "*"
+  }
+}

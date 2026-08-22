@@ -1,0 +1,69 @@
+{% import "components/nothing.html" as nothing with context %}
+{% extends "layout/basic.html" %}  
+{% block content %}  
+<div class="row">  
+  <div class="medium-9 columns">  
+    <div class="section">  
+      <div class="section__header">  
+        <h1 class="section__title">{{ _('Contest Solution') }}</h1>  
+        <div class="section__tools">  
+          {% if handler.user.hasPerm(perm.PERM_EDIT_CONTEST) %}  
+            <button class="primary rounded button" id="edit-solution-btn">  
+              <span class="icon icon-edit"></span> {{ _('Edit') }}  
+            </button>  
+          {% endif %}  
+        </div>  
+      </div>  
+        
+      <div class="section__body" id="solution-display">  
+        <div class="typo richmedia">  
+          {% if tdoc.solContent %}
+          {{ tdoc.solContent|markdown|safe }}  
+          {% else %}
+          {{ nothing.render('no solution yet...') }}
+          {% endif %}
+        </div>  
+      </div>  
+        
+      <div class="section__body" id="solution-edit" style="display: none;">  
+        <form method="post" id="solution-form">  
+          <textarea name="content" class="textbox" data-markdown style="height: 400px;">{{ tdoc.solution_content|default('') }}</textarea>  
+          <div class="row" style="margin-top: 10px;">  
+            <div class="columns">  
+              <button type="submit" class="rounded primary button">{{ _('Submit') }}</button>  
+              <button type="button" class="rounded button" id="cancel-edit-btn">{{ _('Cancel') }}</button>  
+            </div>  
+          </div>  
+        </form>  
+      </div>  
+    </div>  
+      
+    {% if files.length or handler.user.hasPerm(perm.PERM_EDIT_CONTEST) %}  
+    <div class="section">  
+      <div class="section__header">  
+        <h1 class="section__title">{{ files.length|default(0) }} {{ _('Solution Files') }}</h1>  
+        {% if handler.user.hasPerm(perm.PERM_EDIT_CONTEST) %}  
+        <div class="section__tools">  
+          <button class="primary rounded button" name="upload_file">
+            <span class="icon icon-upload"></span> {{ _('Upload') }}
+          </button>
+        </div>  
+        {% endif %}
+        {{ noscript_note.render() }}
+        {% include "partials/files.html" %}
+        <div class="section__body">
+            {% if handler.user.hasPerm(perm.PERM_EDIT_CONTEST) %}
+          <button class="rounded button" name="remove_selected">{{ _('Remove Selected') }}</button>
+            {% endif %}
+        </div>
+      </div>  
+    </div>  
+    {% endif %}  
+  </div>  
+    
+  <div class="medium-3 columns">  
+    {% set owner_udoc = udoc %}
+    {% include "partials/contest_sidebar.html" %}
+  </div>  
+</div>  
+{% endblock %}

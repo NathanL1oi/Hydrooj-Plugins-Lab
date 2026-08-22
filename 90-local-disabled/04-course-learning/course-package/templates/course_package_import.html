@@ -1,0 +1,36 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.course-package-import .section { border-radius: 8px; overflow: hidden; }
+.course-package-import .import-box { border: 1px solid #e8edf3; border-radius: 8px; padding: 18px; margin-bottom: 16px; background: #fbfcfe; }
+</style>
+{% include "course_package_style.html" %}
+<div class="row course-package-import course-package-ui">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('导入课程包') }}</h1>
+      </div>
+      <div class="section__body">
+        <form method="post" enctype="multipart/form-data">
+          <div class="import-box">
+            <label>
+              {{ _('课程包 ZIP') }}
+              <input type="file" name="file" accept=".zip">
+            </label>
+            <p class="help-text">{{ _('优先推荐上传导出的课程包 ZIP，系统会同步导入其中题目并重写节内题号。') }}</p>
+          </div>
+          <div class="import-box">
+          <label>
+            {{ _('课程包 JSON（兼容旧格式）') }}
+            <textarea name="payload" class="textbox" style="height: 320px; font-family: monospace"></textarea>
+          </label>
+          </div>
+          <button type="submit" class="rounded primary button">{{ _('Import') }}</button>
+          <button type="button" class="rounded button" onclick="window.history.go(-1)">{{ _('Cancel') }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

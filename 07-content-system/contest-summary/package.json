@@ -1,0 +1,12 @@
+{
+  "name": "hydrooj-contest-summary",
+  "version": "0.1.2",
+  "description": "Post-contest summary center and AI review for HydroOJ",
+  "main": "index.ts",
+  "license": "AGPL-3.0",
+  "devDependencies": {
+    "@hydrooj/ui-default": "^4.58.0-beta.6",
+    "hydrooj": "^5.0.0-beta.6",
+    "typescript": "^5.8.3"
+  }
+}

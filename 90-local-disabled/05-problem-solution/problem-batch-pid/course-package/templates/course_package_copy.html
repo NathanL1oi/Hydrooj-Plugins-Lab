@@ -1,0 +1,192 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.course-package-copy .section { border-radius: 8px; overflow: hidden; }
+.course-package-copy .copy-step { border: 1px solid #e8edf3; border-radius: 8px; padding: 18px; margin-bottom: 16px; background: #fbfcfe; }
+.course-package-copy .copy-step h2 { font-size: 1.05rem; margin: 0 0 12px; }
+.course-package-copy .copy-muted { color: #6b7280; }
+.course-package-copy .copy-stat { display: inline-block; min-width: 72px; padding: 8px 10px; margin: 0 6px 8px 0; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center; background: #fff; }
+.course-package-copy .copy-stat strong { display: block; font-size: 1.25rem; color: #111827; }
+</style>
+<div class="course-package-copy">
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('复制到课程') }}</h1>
+      </div>
+      <div class="section__body">
+        <p class="help-text">{{ _('复制时会使用 Hydro 原生题目复制功能，目标子域题目会引用当前复制来源域的题面和数据；题解会同步到目标子域题目下，并把小节题号改写为目标子域中的题号。') }}</p>
+        <div class="copy-step">
+        <h2>{{ _('选择目标子域与课程') }}</h2>
+        <form method="get">
+          <input type="hidden" name="mode" value="{{ mode }}">
+          <input type="hidden" name="nodeId" value="{{ nodeId }}">
+          <div class="row">
+            <div class="medium-6 columns">
+              <label>
+                {{ _('目标子域') }}
+                <select name="targetDomainId" class="select">
+                  {% for ddoc in domains %}
+                  <option value="{{ ddoc._id }}" {% if ddoc._id == targetDomainId %}selected{% endif %}>
+                    {{ ddoc._id }}{% if ddoc.name %} - {{ ddoc.name }}{% endif %}
+                  </option>
+                  {% endfor %}
+                </select>
+              </label>
+            </div>
+            <div class="medium-6 columns">
+              <label>
+                {{ _('预览课程') }}
+                <select name="targetCourseId" class="select">
+                  {% for course in courses %}
+                  <option value="{{ course.docId }}" {% if course.docIdText == targetCourseIdText %}selected{% endif %}>
+                    {{ course.title }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </label>
+            </div>
+          </div>
+          <p>
+            <button type="submit" class="rounded button">{{ _('刷新目标位置') }}</button>
+          </p>
+        </form>
+        </div>
+
+        <form method="post">
+          <input type="hidden" name="mode" value="{{ mode }}">
+          <input type="hidden" name="nodeId" value="{{ nodeId }}">
+          <input type="hidden" name="targetDomainId" value="{{ targetDomainId }}">
+
+          <div class="copy-step">
+          <h2>{{ _('选择课程写入方式') }}</h2>
+          {% if courses.length %}
+          <label>
+            <input type="radio" name="targetMode" value="existing" checked>
+            {{ _('复制到目标子域已有课程') }}
+          </label>
+          <label>
+            {{ _('目标课程') }}
+            <select name="targetCourseId" class="select">
+              {% for course in courses %}
+              <option value="{{ course.docId }}" {% if course.docIdText == targetCourseIdText %}selected{% endif %}>
+                {{ course.title }}
+              </option>
+              {% endfor %}
+            </select>
+          </label>
+          <p class="help-text">
+            {{ _('当前子域课程链接') }}:
+            {% for course in courses %}
+            <a href="{{ url('course_detail', domainId=targetDomainId, cid=course.docId) }}">{{ course.title }}</a>{% if not loop.last %}, {% endif %}
+            {% endfor %}
+          </p>
+          <label>
+            <input type="radio" name="targetMode" value="create">
+            {{ _('在目标子域新建课程') }}
+          </label>
+          {% else %}
+          <input type="hidden" name="targetMode" value="create">
+          <p class="help-text">{{ _('目标子域暂无课程，将在该子域新建课程。') }}</p>
+          {% endif %}
+          </div>
+
+          <div class="copy-step">
+          <h2>{{ _('新建课程信息') }}</h2>
+          <div class="row">
+            <div class="medium-8 columns">
+              <label>
+                {{ _('新课程标题') }}
+                <input name="newCourseTitle" value="{{ defaultCourseTitle }}" class="textbox">
+              </label>
+            </div>
+            <div class="medium-4 columns">
+              <label>
+                {{ _('Pin') }}
+                <input name="newCoursePin" value="0" class="textbox">
+              </label>
+            </div>
+          </div>
+          <label>
+            {{ _('新课程说明') }}
+            <textarea name="newCourseContent" class="textbox" data-markdown style="height: 120px">{{ cpdoc.content|default('') }}</textarea>
+          </label>
+          </div>
+
+          <div class="copy-step">
+          <h2>{{ _('复制落点') }}</h2>
+          {% if mode == 'package' %}
+          <input type="hidden" name="targetPosition" value="root">
+          <p class="help-text">{{ _('课程包会复制到课程根部，每个章生成一个课程章，节生成课程章下的小节。') }}</p>
+          {% elif mode == 'chapter' %}
+          <label>
+            <input type="radio" name="targetPosition" value="root" checked>
+            {{ _('在课程根部新建章') }}
+          </label>
+          {% if sections.length %}
+          <label>
+            <input type="radio" name="targetPosition" value="section">
+            {{ _('追加到已有课程章下面') }}
+          </label>
+          <label>
+            {{ _('目标课程章') }}
+            <select name="targetSectionId" class="select">
+              {% for section in sections %}
+              <option value="{{ section.docId }}">{{ section.title }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          {% endif %}
+          {% elif mode == 'lesson' %}
+          {% if sections.length %}
+          <label>
+            <input type="radio" name="targetPosition" value="section" checked>
+            {{ _('放入已有课程章下面') }}
+          </label>
+          <label>
+            {{ _('目标课程章') }}
+            <select name="targetSectionId" class="select">
+              {% for section in sections %}
+              <option value="{{ section.docId }}">{{ section.title }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>
+            <input type="radio" name="targetPosition" value="new_section">
+            {{ _('先新建课程章，再放入本节') }}
+          </label>
+          {% else %}
+          <input type="hidden" name="targetPosition" value="new_section">
+          <p class="help-text">{{ _('所选课程暂无章，会先新建课程章再放入本节。') }}</p>
+          {% endif %}
+          <label>
+            {{ _('新课程章标题') }}
+            <input name="newSectionTitle" value="{{ defaultSectionTitle }}" class="textbox">
+          </label>
+          {% endif %}
+          </div>
+
+          <p class="help-text">{{ _('将当前选择复制到目标子域课程的指定位置。') }}</p>
+          <button type="submit" class="rounded primary button">{{ _('复制') }}</button>
+          <button type="button" class="rounded button" onclick="window.history.go(-1)">{{ _('Cancel') }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    <div class="section side">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('当前选择') }}</h1>
+      </div>
+      <div class="section__body typo">
+        <p>{{ cpdoc.title }} / {{ vpdoc.version }}</p>
+        <p>{{ selectionTitle }}</p>
+        <p class="copy-muted">{{ modeLabel }}</p>
+        <div class="copy-stat"><strong>{{ selectedProblemCount }}</strong>{{ _('Hydro复制题') }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+{% endblock %}

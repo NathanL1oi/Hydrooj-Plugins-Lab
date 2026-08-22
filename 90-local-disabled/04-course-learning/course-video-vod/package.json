@@ -1,0 +1,16 @@
+{
+  "name": "hydrooj-course-video-vod",
+  "version": "0.1.0",
+  "description": "Tencent VOD course video library for HydroOJ courses and course packages",
+  "main": "index.js",
+  "license": "MIT",
+  "hydrooj": {
+    "frontend": {
+      "course_video_vod.page.js": "frontend/course_video_vod.page.js"
+    }
+  },
+  "devDependencies": {
+    "hydrooj": "latest",
+    "@hydrooj/ui-default": "latest"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "hydrooj-intro-blank-kit",
+  "version": "0.1.0",
+  "main": "index.ts",
+  "license": "MIT",
+  "devDependencies": {
+    "@hydrooj/ui-default": "latest",
+    "hydrooj": "latest",
+    "typescript": "latest"
+  }
+}

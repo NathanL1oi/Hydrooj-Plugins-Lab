@@ -1,0 +1,70 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+{% include "course_package_style.html" %}
+<div class="row course-package-form course-package-ui">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{% if cpdoc %}{{ _('编辑课程包') }}{% else %}{{ _('创建课程包') }}{% endif %}</h1>
+      </div>
+      <div class="section__body">
+        <form method="post">
+          <div class="row">
+            <div class="medium-9 columns">
+              <label>
+                {{ _('Title') }}
+                <input name="title" value="{{ cpdoc.title|default('') }}" class="textbox" autofocus>
+              </label>
+            </div>
+            <div class="medium-3 columns">
+              <label>
+                {{ _('Pin') }}
+                <input name="pin" value="{{ cpdoc.pin|default(0) }}" class="textbox">
+              </label>
+            </div>
+          </div>
+          <div class="row">
+            <div class="columns">
+              <label>
+                {{ _('标签') }}
+                <input name="tags" value="{{ cpdoc.tags|join(', ') if cpdoc.tags else '' }}" class="textbox" placeholder="基础, 图论, 提高组">
+              </label>
+            </div>
+          </div>
+          <div class="row">
+            <div class="columns">
+              <label>
+                <input type="checkbox" name="hidden" value="true" {% if cpdoc and cpdoc.hidden %}checked{% endif %}>
+                {{ _('隐藏课程包') }}
+              </label>
+              <p class="help-text">{{ _('隐藏后普通用户不可见，域管理员仍可管理和恢复显示。') }}</p>
+            </div>
+          </div>
+          <div class="row">
+            <div class="columns">
+              <label>
+                {{ _('Description') }}
+                <textarea name="content" class="textbox" data-markdown style="height: 240px">{{ cpdoc.content|default('') }}</textarea>
+              </label>
+            </div>
+          </div>
+          <div class="row">
+            <div class="columns">
+              {% if cpdoc %}
+              <button type="submit" class="rounded primary button">{{ _('Update') }}</button>
+              <button name="operation" value="delete" type="submit" class="rounded button">{{ _('Delete') }}</button>
+              {% else %}
+              <button type="submit" class="rounded primary button">{{ _('Create') }}</button>
+              {% endif %}
+              <button type="button" class="rounded button" onclick="window.history.go(-1)">{{ _('Cancel') }}</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    {% include 'components/md_hint.html' %}
+  </div>
+</div>
+{% endblock %}

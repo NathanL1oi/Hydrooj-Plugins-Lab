@@ -1,0 +1,112 @@
+{% import "components/problem.html" as problem with context %}
+{% extends "layout/basic.html" %}
+{% block content %}
+{% include "course_ui_style.html" %}
+{% set subsecUrl = url('course_subsec_detail', cid=cdoc.docId, csid=csdoc.docId, ssid=ssdoc._id) %}
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">考试设置：{{ ssdoc.title }}</h1>
+      </div>
+      <div class="section__body">
+        <form method="post">
+          <div class="row">
+            <div class="medium-8 columns">
+              <label>
+                考试名称
+                <input class="textbox" name="title" value="{{ exam.title }}">
+              </label>
+            </div>
+            <div class="medium-4 columns">
+              <label>
+                启用
+                <input type="checkbox" name="enabled" value="1"{% if exam.enabled %} checked{% endif %}>
+              </label>
+            </div>
+          </div>
+          <div class="row">
+            <div class="medium-4 columns">
+              <label>
+                比赛赛制
+                <select class="select" name="rule">
+                  {% for option in ruleOptions %}
+                    <option value="{{ option.value }}"{% if exam.rule == option.value %} selected{% endif %}>{{ option.label }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+            </div>
+            <div class="medium-8 columns">
+              <label>
+                赛制说明
+                <input class="textbox" disabled value="{{ exam.ruleDescription }}">
+              </label>
+            </div>
+          </div>
+          <div class="row">
+            <div class="medium-6 columns">
+              <label>
+                时长（分钟）
+                <input class="textbox" name="duration" type="number" min="1" value="{{ exam.duration }}">
+              </label>
+            </div>
+            <div class="medium-6 columns">
+              <label>
+                每题分值
+                <input class="textbox" name="scorePerProblem" type="number" min="1" value="{{ exam.scorePerProblem }}">
+              </label>
+            </div>
+          </div>
+          <div class="row">
+            <div class="columns">
+              <label>
+                考试说明
+                <textarea class="textbox" name="content" data-markdown style="height: 160px">{{ exam.content }}</textarea>
+              </label>
+            </div>
+          </div>
+          <div class="row">
+            <div class="columns">
+              <h2 class="section__title">选择考试题目</h2>
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th style="width: 4rem">选择</th>
+                    <th style="width: 6rem">题号</th>
+                    <th>题目</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for pid in exam.allPids %}
+                    {% set pdoc = pdict[pid] %}
+                    <tr>
+                      <td><input type="checkbox" name="pids" value="{{ pid }}"{% if pid in exam.pids %} checked{% endif %}></td>
+                      <td>{{ pdoc.pid if pdoc else pid }}</td>
+                      <td>
+                        {% if pdoc %}
+                          {{ problem.render_problem_title(pdoc, show_tags=false) }}
+                        {% else %}
+                          P{{ pid }}
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="row">
+            <div class="columns">
+              <button class="rounded primary button" type="submit">保存</button>
+              <a class="rounded button" href="{{ subsecUrl }}">取消</a>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    {% include 'components/md_hint.html' %}
+  </div>
+</div>
+{% endblock %}

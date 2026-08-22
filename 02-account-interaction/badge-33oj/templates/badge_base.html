@@ -1,0 +1,40 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row" data-sticky-parent>
+    <div class="medium-9 columns">
+        {% block badge_content %}{% endblock %}
+    </div>
+    <div class="medium-3 columns">
+        <div data-sticky="large">
+            <div class="section side">
+                <ol class="menu">
+                    <li class="menu__item">
+                        <div class="menu__link expandable">
+                            <span class="icon icon-crown"></span> {{ _('徽章管理') }}
+                        </div>
+                        <ol class="menu collapsed">
+                            <li class="menu__item" id="menu-item-badge_show">
+                                <a class="menu__link{% if page_name == 'badge_show' %} active{% endif %}" href="{{ url('badge_show') }}">
+                                    {{ _('badge_show') }}
+                                </a>
+                            </li>
+                            <li class="menu__item" id="menu-item-badge_mybadge">
+                                <a class="menu__link{% if page_name == 'badge_mybadge' %} active{% endif %}" href="{{ url('badge_mybadge') }}">
+                                    {{ _('badge_mybadge') }}
+                                </a>
+                            </li>
+                            {% if handler.user.hasPriv(PRIV.PRIV_SET_PERM) %}
+                            <li class="menu__item" id="menu-item-badge_manage">
+                                <a class="menu__link{% if page_name == 'badge_manage' %} active{% endif %}" href="{{ url('badge_manage') }}">
+                                    {{ _('badge_manage') }}
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ol>
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,11 @@
+{
+  "name": "hydrooj-problem-duplicate-detector",
+  "version": "0.1.0",
+  "description": "Duplicate and similar problem scanner for HydroOJ",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "@hydrooj/ui-default": "latest",
+    "hydrooj": "latest"
+  }
+}

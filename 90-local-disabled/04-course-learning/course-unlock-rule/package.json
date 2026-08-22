@@ -1,0 +1,10 @@
+{
+  "name": "hydrooj-plugin-course-unlock-rule",
+  "version": "0.1.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "hydrooj": "latest",
+    "@hydrooj/ui-default": "latest"
+  }
+}

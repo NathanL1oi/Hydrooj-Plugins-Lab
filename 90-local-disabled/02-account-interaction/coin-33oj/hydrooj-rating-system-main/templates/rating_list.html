@@ -1,0 +1,156 @@
+{% import "components/nothing.html" as nothing with context %}
+{% import "components/user.html" as user with context %}
+{% import "components/paginator.html" as paginator with context %}
+{% extends "layout/basic.html" %}
+
+{% block content %}
+<div class="row">
+  <div class="medium-12 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('Rating Leaderboard') }}</h1>
+        <div class="section__tools">
+          <span class="section__tools__item">{{ _('Total {0} users').format(total) }}</span>
+        </div>
+      </div>
+      
+      {% if not leaderboard.length %}
+        {{ nothing.render('No rating data available yet...') }}
+      {% else %}
+        <div class="section__body">
+          <table class="data-table">
+            <colgroup>
+              <col class="col--rank">
+              <col class="col--user">
+              <col class="col--rating">
+              <col class="col--max-rating">
+              <col class="col--contests">
+              <col class="col--last-update">
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="col--rank">{{ _('Rank') }}</th>
+                <th class="col--user">{{ _('User') }}</th>
+                <th class="col--rating">{{ _('Current Rating') }}</th>
+                <th class="col--max-rating">{{ _('Max Rating') }}</th>
+                <th class="col--contests">{{ _('Contests') }}</th>
+                <th class="col--last-update">{{ _('Last Update') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {%- for rating in leaderboard -%}
+                <tr class="rating-row">
+                  <td class="col--rank">
+                    <span class="rank-number">{{ rating.rank }}</span>
+                  </td>
+                  <td class="col--user">
+                    <div class="user-info">
+                      {{ user.render_inline(rating.user, badge=false) }}
+                    </div>
+                  </td>
+                  <td class="col--rating">
+                    <span class="rating-value" data-rating="{{ rating.rating }}">
+                      {{ rating.rating }}
+                    </span>
+                  </td>
+                  <td class="col--max-rating">
+                    <span class="rating-value" data-rating="{{ rating.maxRating }}">
+                      {{ rating.maxRating }}
+                    </span>
+                  </td>
+                  <td class="col--contests">
+                    <span class="contest-count">{{ rating.contestCount }}</span>
+                  </td>
+                  <td class="col--last-update">
+                    <span class="last-update">{{ datetimeSpan(rating.lastUpdate)|safe }}</span>
+                  </td>
+                </tr>
+              {%- endfor -%}
+            </tbody>
+          </table>
+        </div>
+        
+        {% if pages > 1 %}
+          <div class="section__footer">
+            {{ paginator.render(page, pages) }}
+          </div>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<style>
+.rating-row:hover {
+  background-color: #f5f5f5;
+}
+
+.rank-number {
+  font-weight: bold;
+  font-size: 1.1em;
+}
+
+.rating-value {
+  font-weight: bold;
+  font-size: 1.1em;
+}
+
+.rating-red { color: #ff0000; }
+.rating-orange { color: #ff8c00; }
+.rating-yellow { color: #ffd700; }
+.rating-blue { color: #0080ff; }
+.rating-purple { color: #8000ff; }
+.rating-green { color: #00ff00; }
+.rating-gray { color: #808080; }
+
+.user-info {
+  display: flex;
+  align-items: center;
+}
+
+.contest-count {
+  color: #666;
+}
+
+.last-update {
+  color: #888;
+  font-size: 0.9em;
+}
+
+.col--rank { width: 80px; text-align: center; }
+.col--user { width: 200px; }
+.col--rating { width: 120px; text-align: center; }
+.col--max-rating { width: 120px; text-align: center; }
+.col--contests { width: 100px; text-align: center; }
+.col--last-update { width: 150px; text-align: center; }
+.theme--dark .rating-row:hover {
+  background-color: rgba(15, 23, 42, .42);
+}
+.theme--dark .contest-count,
+.theme--dark .last-update {
+  color: #9fb0c6;
+}
+</style>
+
+<script>
+function getRatingColor(rating) {
+  if (rating >= 2400) return 'red';
+  if (rating >= 2100) return 'orange';
+  if (rating >= 1900) return 'yellow';
+  if (rating >= 1600) return 'blue';
+  if (rating >= 1400) return 'purple';
+  if (rating >= 1200) return 'green';
+  return 'gray';
+}
+
+// 动态设置Rating颜色
+document.addEventListener('DOMContentLoaded', function() {
+  const ratingElements = document.querySelectorAll('.rating-value[data-rating]');
+  ratingElements.forEach(function(element) {
+    const rating = parseInt(element.getAttribute('data-rating'));
+    const colorClass = 'rating-' + getRatingColor(rating);
+    element.classList.add(colorClass);
+  });
+});
+</script>
+{% endblock %}

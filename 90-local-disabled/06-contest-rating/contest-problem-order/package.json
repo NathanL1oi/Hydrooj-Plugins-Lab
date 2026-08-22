@@ -1,0 +1,16 @@
+{
+  "name": "hydrooj-contest-problem-order",
+  "version": "0.1.1",
+  "description": "Inline problem ordering controls for Hydro contest edit pages",
+  "main": "index.js",
+  "license": "MIT",
+  "hydrooj": {
+    "frontend": {
+      "contest_problem_order.page.js": "frontend/contest_problem_order.page.js"
+    }
+  },
+  "devDependencies": {
+    "hydrooj": "latest",
+    "@hydrooj/ui-default": "latest"
+  }
+}

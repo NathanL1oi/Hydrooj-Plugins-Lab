@@ -1,0 +1,22 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('导入课程包') }}</h1>
+      </div>
+      <div class="section__body">
+        <form method="post">
+          <label>
+            {{ _('课程包 JSON') }}
+            <textarea name="payload" class="textbox" style="height: 520px; font-family: monospace"></textarea>
+          </label>
+          <button type="submit" class="rounded primary button">{{ _('Import') }}</button>
+          <button type="button" class="rounded button" onclick="window.history.go(-1)">{{ _('Cancel') }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

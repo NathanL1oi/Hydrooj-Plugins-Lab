@@ -1,0 +1,75 @@
+{% import "components/nothing.html" as nothing with context %}
+{% import "components/user.html" as user with context %}
+{% import "components/paginator.html" as paginator with context %}
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('Course') }}</h1>
+        <div class="section__tools">
+          <form method="get" name="filter-form">
+            <input type="text" class="inline compact textbox" name="q" value="{{ q }}" placeholder="{{ _('Search courses...') }}">
+            <button type="submit" class="button hasjs--hide">
+              {{ _('Search') }}
+            </button>
+          </form>
+        </div>
+      </div>
+      {% if not cdocs.length %}
+      {{ nothing.render('No course yet...') }}
+      {% else %}
+      <ol class="section__list discussion__list">
+        {%- for cdoc in cdocs -%}
+        <li class="section__list__item discussion__item {% if cstdict[cdoc.docId]['enroll'] %} highlight{% endif %}">
+          <div class="media">
+            <div class="media__left middle">
+              <div class="discussion__replies numbox">
+                <div class="numbox__num large">{{ cdoc.attend|default(0) }}</div>
+                <div class="numbox__text">{{ _('Attended') }}</div>
+              </div>
+            </div>
+            <div class="media__body middle">
+              <h1 class="discussion__title"><a href="{{ url('course_detail', cid=cdoc._id) }}" data-emoji-enabled>{{
+                  cdoc['title'] }}</a></h1>
+              <ul class="supplementary list">
+                <li><div class="training__intro typo">
+                  <p>{{ cdoc['content']|truncate(30, true)|safe }}</p>
+                </div></li>
+                <li>|</li>
+                <li>
+                {% if cstdict[cdoc.docId]['enroll'] %}
+                  <span class="icon training-status--icon done"></span>
+                  <span class="training-status--text done">{{ _('Enrolled') }}</span>
+                {% elif handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+                  <span class="icon training-status--icon outside"></span> <span class="training-status--text outside">{{ _('Not Enrolled') }}</span>
+                {% endif %}
+                </li>
+              </ul>
+            </div>
+          </div>
+        </li>
+        {%- endfor -%}
+      </ol>
+      {% if page and cpcount %}{{ paginator.render(page, cpcount) }}{% endif %}
+      {% endif %}
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    {% if handler.user.hasPerm(perm.PERM_CREATE_TRAINING) %}
+    <div class="section side">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('Create Course') }}</h1>
+      </div>
+      <ol class="menu">
+        <li class="menu__item">
+          <a href="{{ url('course_create') }}" class="menu__link"><span class="icon icon-add"></span> {{ _('New Course')
+            }}</a>
+        </li>
+      </ol>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,124 @@
+{% extends "users_base.html" %}
+{% block users_content %}
+<div class="section">
+    <div class="section__header">
+        <h1 class="section__title">{{ _('用户信息') }}</h1>
+        <div class="section__tools">
+            {% if handler.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM) %}
+            <a class="primary rounded button" href="{{ url('users_unamechange', query={uidOrName: current.uname}) }}">{{ _('users_unamechange') }}</a>
+            {% endif %}
+            <a class="primary rounded button" href="{{ url('users_resetpwd',query={uidOrName:current.uname}) }}">{{ _('Reset Password') }}</a>
+            <form method="post" style="display:inline">
+              <input type="hidden" name="uname" value="{{ current.uname }}">
+              {% if current.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+                <button class="primary rounded button" type="submit" name="operation" value="ban">{{ _('封禁') }}</button>
+              {% else %}
+                <button class="primary rounded button" type="submit" name="operation" value="unban">{{ _('解禁') }}</button>
+              {% endif %}
+            <button class="primary rounded button" type="submit" name="operation" value="logout">{{ _('强制登出') }}</button>
+            </form>
+        </div>
+    </div>
+    <div class="section__body">
+        <div class="media">
+            <div class="media__left">
+              <img src="{{ avatarUrl(current.avatar, 120) }}" width="120" height="120" class="large user-profile-avatar">
+            </div>
+            <div class="media__body profile-header__main typo">
+              <h2>{{ user.render_inline(current,avatar=false,modbadge=false,levelbadge=false,inline=false) }}<small>({{ _('UID') }}: {{ current._id }})</small></h2>
+              <p>
+                {{ _('Registered at') }} {{ datetimeSpan(current['regat'])|safe }},
+                {{ _('last login at') }} {{ datetimeSpan(current['loginat'])|safe }},
+              {% if sdoc and sdoc.updateAt %}
+                {{ _('last active at') }} {{ datetimeSpan(sdoc['updateAt'])|safe if Date.now() - sdoc.updateAt.getTime() > 300000 else _('just now') }}.
+              {% else %}
+                {{ _('currently offline') }}.
+              {% endif %}
+              </p>
+              {% if sdoc and sdoc.updateIp %}
+                <p>{{ _('Location') }}: {{ _(sdoc.updateGeoip.display) }} ({{ sdoc.updateIp }})</p>
+              {% endif %}
+                <div class="profile-header__meta">
+                  <p>{{ _('邮箱') }}：{{ current.mail }}</p>
+                  <p>{{_('Phone')}}：{{ current.phone }}</p>
+                  <p>{{_('Display Name')}}：{{ current.displayName }}</p>
+                  <p>{{_('School')}}：{{ current.school }}</p>
+                  <p>{{_('Student ID')}}：{{ current.studentId }}</p>
+                  <p>{{_('Status')}}：{% if current.hasPriv(PRIV.PRIV_USER_PROFILE) %}{{ _('未封禁') }}{% else %}{{ _('已封禁') }}{% endif %}</p>
+              </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="section">
+    <div class="section__header">
+        <h1 class="section__title">{{ _('Edit Profile') }}</h1>
+    </div>
+  <div class="section__body row">
+    <div class="medium-6 columns">
+      <form method="post">
+        <div class="columns form__item end">
+          <label>
+            {{ _('手机') }}
+            <div name="form_item_phone" class="textbox-container">
+              <input name="phone" type="text" value="{{current.phone}}" class="textbox">
+            </div>
+          </label>
+        </div>
+        <div class="columns form__item end">
+          <label>
+            {{ _('邮箱') }}
+            <div name="form_item_mail" class="textbox-container">
+              <input name="mail" type="text" value="{{current.mail}}" class="textbox">
+            </div>
+          </label>
+        </div>
+        <div class="columns form__item end">
+          <button class="primary rounded button" type="submit" name="operation" value="set_info">{{ _('修改信息') }}</button>
+        </div>
+      </form>
+    </div>
+    <div class="medium-6 columns">
+      <form method="post">
+        <div class="medium-5 columns form__item end">
+          <label>
+            {{ _('显示名') }}({{handler.args.domainId}}) 
+            <div name="form_item_displayname" class="textbox-container">
+              <input name="displayName" type="text" value="{{current.displayName}}" class="textbox">
+            </div>
+          </label>
+          <button class="primary rounded button" type="submit" name="operation" value="set_displayname">{{ _('修改显示名') }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<div class="section">
+  {% include "partials/setting.html" %}
+</div>
+
+<style>
+  .profile-header__meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-gap: 10px;
+  }
+  .profile-header__meta p {
+    padding: 0;
+  }
+  .col--icon {
+    width: 60px;
+    line-height: 1;
+  }
+  .data-table img {
+    border-radius: 50%;
+  }
+  .col--role {
+    width: 160px;
+    border-left: 1px solid #c8c8c8;
+  }
+  .col--action {
+    width: 135px;
+  }
+</style>
+{% endblock %}

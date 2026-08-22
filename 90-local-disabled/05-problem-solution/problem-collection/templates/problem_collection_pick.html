@@ -1,0 +1,176 @@
+{% extends "layout/basic.html" %}
+
+{% block content %}
+<style>
+.pc-shell { max-width: 820px; margin: 0 auto; }
+.pc-problem {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  border-bottom: 1px solid #edf2f7;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+}
+.pc-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: #fff;
+  background: #f97316;
+  flex: 0 0 auto;
+}
+.pc-title { color: #172033; font-size: 18px; font-weight: 700; line-height: 1.35; }
+.pc-muted { color: #718096; font-size: 12px; line-height: 1.55; }
+.pc-form { display: grid; gap: 12px; }
+.pc-list { display: grid; gap: 8px; }
+.pc-option {
+  display: grid;
+  grid-template-columns: auto 30px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fff;
+}
+.pc-option:hover { border-color: #cbd5e1; }
+.pc-option input { margin: 0; }
+.pc-option .pc-icon { width: 28px; height: 28px; background: #2563eb; }
+.pc-option:nth-child(3n + 1) .pc-icon { background: #16a34a; }
+.pc-option:nth-child(3n + 2) .pc-icon { background: #d946ef; }
+.pc-list-title { color: #1f2937; font-weight: 700; line-height: 1.35; }
+.pc-desc { color: #4b5563; font-size: 12px; line-height: 1.45; margin-top: 2px; }
+.pc-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  padding: 2px 8px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.pc-new {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px;
+  background: #fff;
+}
+.pc-input {
+  width: 100%;
+  height: 36px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 0 10px;
+  background: #fff;
+}
+.pc-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pc-empty {
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  padding: 14px;
+  color: #64748b;
+  background: #fbfdff;
+}
+.theme--dark .pc-problem {
+  border-bottom-color: #303a48;
+}
+.theme--dark .pc-title,
+.theme--dark .pc-list-title {
+  color: #e2e8f0;
+}
+.theme--dark .pc-muted,
+.theme--dark .pc-empty {
+  color: #94a3b8;
+}
+.theme--dark .pc-option,
+.theme--dark .pc-new {
+  border-color: #3a4656;
+  background: #1f242c;
+}
+.theme--dark .pc-option:hover {
+  border-color: #526174;
+}
+.theme--dark .pc-desc {
+  color: #cbd5e1;
+}
+.theme--dark .pc-pill {
+  background: #242b35;
+  color: #7ab8ff;
+}
+.theme--dark .pc-input {
+  border-color: #3a4656;
+  background: #171c23;
+  color: #e2e8f0;
+}
+.theme--dark .pc-empty {
+  border-color: #3a4656;
+  background: #1a1f27;
+}
+@media (max-width: 640px) {
+  .pc-option, .pc-new { grid-template-columns: 1fr; }
+}
+</style>
+<div class="row">
+  <div class="columns">
+    <div class="section pc-shell">
+      <div class="section__header">
+        <h1 class="section__title">收藏到题单</h1>
+        <div class="section__tools">
+          <a class="rounded button" href="{{ problemUrl }}"><span class="icon icon-file"></span> 题目</a>
+        </div>
+      </div>
+      <div class="section__body">
+        <div class="pc-problem">
+          <span class="pc-icon"><span class="icon icon-star"></span></span>
+          <div>
+            <div class="pc-title">{{ pdoc.pid or pid }} {{ pdoc.title }}</div>
+            <div class="pc-muted">选择题单</div>
+          </div>
+        </div>
+
+        <form class="pc-form" method="post">
+          <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+          <input type="hidden" name="operation" value="save">
+
+          <div class="pc-list">
+            {% for list in lists %}
+              <label class="pc-option">
+                <input type="checkbox" name="listIds" value="{{ list.id }}" {% if list.selected %}checked{% endif %}>
+                <span class="pc-icon"><span class="icon icon-star"></span></span>
+                <span>
+                  <span class="pc-list-title">{{ list.title }}</span>
+                  {% if list.description %}
+                    <span class="pc-desc">{{ list.description }}</span>
+                  {% endif %}
+                </span>
+                <span class="pc-pill">{{ list.itemCount }} 题</span>
+              </label>
+            {% else %}
+              <div class="pc-empty">暂无题单。</div>
+            {% endfor %}
+          </div>
+
+          <div class="pc-new">
+            <input class="pc-input" name="newTitle" maxlength="40" placeholder="新建题单：搜索">
+            <span class="pc-muted">可选</span>
+          </div>
+
+          <div class="pc-actions">
+            <button class="primary rounded button" type="submit"><span class="icon icon-save"></span> 保存</button>
+            <a class="rounded button" href="{{ url('problem_collection_main') }}"><span class="icon icon-star"></span> 题单</a>
+            <a class="rounded button" href="{{ problemUrl }}"><span class="icon icon-file"></span> 返回</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.contest-summary-settings { --css-line: #e5edf7; --css-soft: #f8fbff; --css-ink: #17324d; --css-muted: #64748b; }
+.contest-summary-settings .css-shell { display: grid; gap: 16px; }
+.contest-summary-settings .css-panel { overflow: hidden; border-radius: 8px; }
+.contest-summary-settings .css-panel .section__title { color: var(--css-ink); }
+.contest-summary-settings .css-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.contest-summary-settings .css-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.contest-summary-settings .css-field { display: grid; gap: 6px; margin: 0; }
+.contest-summary-settings .css-field label { margin: 0; color: #41546c; font-weight: 700; }
+.contest-summary-settings .css-checks { display: flex; flex-wrap: wrap; gap: 14px; padding: 12px; border: 1px solid var(--css-line); border-radius: 8px; background: var(--css-soft); }
+.contest-summary-settings textarea { min-height: 150px; line-height: 1.7; }
+.contest-summary-settings textarea[name="prompt"] { min-height: 190px; }
+.contest-summary-settings .textbox:focus { border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(37, 99, 235, .12); }
+.theme--dark .contest-summary-settings .css-panel .section__title { color: #e2e8f0; }
+.theme--dark .contest-summary-settings .css-checks { border-color: #303a48; background: #1c2430; }
+@media screen and (max-width: 760px) { .contest-summary-settings .css-grid { grid-template-columns: 1fr; } }
+</style>
+
+<div class="row contest-summary-settings">
+  <div class="medium-12 columns">
+    <div class="css-shell">
+      <section class="section css-panel">
+        <div class="section__header">
+          <h1 class="section__title">比赛总结设置</h1>
+        </div>
+        <div class="section__body">
+          <p class="typo">{{ tdoc.title }}</p>
+          <form method="post">
+            <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+            <input type="hidden" name="tid" value="{{ tidText }}">
+            <div class="css-grid">
+              <p class="css-field">
+                <label>标题</label>
+                  <input class="textbox" name="title" value="{{ config.title }}" required>
+              </p>
+              <p class="css-field">
+                <label>截止时间</label>
+                  <input class="textbox" type="datetime-local" name="deadline" value="{{ deadlineText }}">
+              </p>
+              <p class="css-field">
+                <label>最低字数</label>
+                  <input class="textbox" type="number" name="minWords" min="0" value="{{ config.minWords }}">
+              </p>
+              <p class="css-field">
+                <label>评测 Problem ID</label>
+                  <input class="textbox" name="evaluationProblemId" value="{{ config.evaluationProblemId }}" placeholder="留空则自动生成">
+              </p>
+            </div>
+            <div class="css-checks">
+              <label><input type="checkbox" name="enabled" value="true" {% if config.enabled %}checked{% endif %}> 开放这场比赛的总结</label>
+              <label><input type="checkbox" name="allowEdit" value="true" {% if config.allowEdit %}checked{% endif %}> 允许提交后继续修改</label>
+            </div>
+            <p class="css-field">
+              <label>写作要求</label>
+                <textarea class="textbox" name="prompt" data-markdown>{{ config.prompt }}</textarea>
+            </p>
+            <p class="css-field">
+              <label>评测参考资料</label>
+                <textarea class="textbox" name="referenceText" data-markdown>{{ config.referenceText }}</textarea>
+            </p>
+            <p class="css-field">
+              <label>高质量参考总结</label>
+                <textarea class="textbox" name="referenceSummary" data-markdown>{{ config.referenceSummary }}</textarea>
+            </p>
+            <div class="css-actions">
+              <button class="button rounded primary" type="submit"><span class="icon icon-save"></span> 保存设置</button>
+              <a class="button rounded" href="{{ listUrl }}"><span class="icon icon-back"></span> 返回总结</a>
+              <a class="button rounded" href="{{ writeUrl }}"><span class="icon icon-edit"></span> 写总结</a>
+            </div>
+          </form>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+{% endblock %}

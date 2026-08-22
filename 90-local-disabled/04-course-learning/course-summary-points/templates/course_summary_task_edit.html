@@ -1,0 +1,217 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.csp-page .csp-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.csp-page .csp-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.csp-page .csp-muted { color: #64748b; }
+.csp-page .csp-field-title { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
+.csp-page .csp-field-help { color: #64748b; font-size: 12px; font-weight: 400; }
+.csp-page .csp-panel { border-radius: 8px; overflow: hidden; }
+.csp-page textarea.csp-editor { min-height: 220px; }
+.csp-page textarea.csp-ai-editor { min-height: 160px; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+.csp-page .csp-danger { color: #b91c1c; }
+.csp-page .csp-danger-panel { border-left: 3px solid #dc2626; }
+.csp-page .csp-danger-panel .section__header { background: #fff7f7; border-bottom-color: #fee2e2; }
+.csp-page .csp-danger-panel .section__title { color: #991b1b; }
+.csp-page .csp-danger-copy { margin: 0 0 12px; color: #7f1d1d; line-height: 1.55; }
+.csp-page .csp-danger-meta { margin: 0 0 12px; color: #64748b; font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; }
+.csp-page .csp-danger-button { background: #b91c1c !important; border-color: #991b1b !important; color: #fff !important; }
+.csp-page .csp-danger-button:hover { background: #991b1b !important; }
+.csp-page .md-editor { border-radius: 8px; overflow: hidden; }
+.csp-page .md-editor .cm-editor,
+.csp-page .md-editor .cm-scroller,
+.csp-page .md-editor .cm-content,
+.csp-page .md-editor .cm-line {
+  background: #fff;
+  color: #0f172a;
+  caret-color: #2563eb;
+}
+.csp-page .md-editor .cm-cursor,
+.csp-page .md-editor .cm-dropCursor {
+  border-left-color: #2563eb !important;
+}
+.theme--dark .csp-page .csp-muted,
+.theme--dark .csp-page .csp-danger-meta {
+  color: #94a3b8;
+}
+.theme--dark .csp-page .csp-danger-panel {
+  border-left-color: #ef4444;
+}
+.theme--dark .csp-page .csp-danger-panel .section__header {
+  background: rgba(127, 29, 29, .28);
+  border-bottom-color: rgba(248, 113, 113, .34);
+}
+.theme--dark .csp-page .csp-danger-panel .section__title,
+.theme--dark .csp-page .csp-danger,
+.theme--dark .csp-page .csp-danger-copy {
+  color: #fca5a5;
+}
+.theme--dark .csp-page .md-editor,
+.theme--dark .csp-page .md-editor .cm-editor,
+.theme--dark .csp-page .md-editor .cm-scroller,
+.theme--dark .csp-page .md-editor .cm-content,
+.theme--dark .csp-page .md-editor .cm-line {
+  background: rgba(15, 23, 42, .72) !important;
+  color: #e5eef9 !important;
+  caret-color: #93c5fd !important;
+}
+.theme--dark .csp-page .md-editor {
+  border: 1px solid rgba(148, 163, 184, .24);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, .24);
+}
+.theme--dark .csp-page .md-editor .cm-gutters {
+  background: rgba(15, 23, 42, .82) !important;
+  border-color: rgba(148, 163, 184, .24) !important;
+  color: #94a3b8 !important;
+}
+.theme--dark .csp-page .md-editor .cm-activeLine,
+.theme--dark .csp-page .md-editor .cm-activeLineGutter {
+  background: rgba(96, 165, 250, .13) !important;
+}
+.theme--dark .csp-page .md-editor .cm-cursor,
+.theme--dark .csp-page .md-editor .cm-dropCursor {
+  border-left-color: #93c5fd !important;
+}
+.theme--dark .csp-page .md-editor .cm-selectionBackground,
+.theme--dark .csp-page .md-editor ::selection {
+  background: rgba(59, 130, 246, .38) !important;
+}
+.theme--dark .csp-page .md-editor .cm-placeholder {
+  color: #94a3b8 !important;
+}
+.theme--dark .csp-page .md-editor .md-editor-toolbar-wrapper,
+.theme--dark .csp-page .md-editor .md-editor-toolbar,
+.theme--dark .csp-page .md-editor .md-editor-toolbar-item,
+.theme--dark .csp-page .md-editor .md-editor-resize-operate,
+.theme--dark .csp-page .md-editor .md-editor-preview,
+.theme--dark .csp-page .md-editor .md-editor-preview-wrapper {
+  background: rgba(15, 23, 42, .66) !important;
+  border-color: rgba(148, 163, 184, .24) !important;
+  color: #e5eef9 !important;
+}
+@media screen and (max-width: 800px) {
+  .csp-page .csp-grid { grid-template-columns: 1fr; }
+}
+</style>
+<div class="row csp-page">
+  <div class="medium-9 columns">
+    <div class="section csp-panel">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('课程小结设置') }}</h1>
+      </div>
+      <div class="section__body">
+        <form method="post" action="{{ formAction }}">
+          <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+          <label>
+            {{ _('标题') }}
+            <input name="title" class="textbox" value="{{ taskForm.title }}">
+          </label>
+          <label>
+            {{ _('写作要求') }}
+            <textarea name="content" class="textbox csp-editor" data-markdown>{{ taskForm.content|default('') }}</textarea>
+          </label>
+          <div class="section csp-panel">
+            <div class="section__header">
+              <h1 class="section__title">AI 评测设置</h1>
+            </div>
+            <div class="section__body">
+              <label>
+                <span class="csp-field-title">评测题目 ID <span class="csp-field-help">发送给 evaluation-server 的 problem_id，一般保持默认</span></span>
+                <input name="evaluationProblemId" class="textbox" value="{{ taskForm.evaluationProblemId }}" placeholder="course-summary:lesson-1">
+              </label>
+              <label>
+                <span class="csp-field-title">参考正文 <span class="csp-field-help">学生需要阅读和总结的原始资料，如课程内容、文章、题解或讲义</span></span>
+                <textarea name="evaluationSourceText" class="textbox csp-editor" data-markdown>{{ taskForm.evaluationSourceText|default('') }}</textarea>
+              </label>
+              <label>
+                <span class="csp-field-title">参考总结 <span class="csp-field-help">老师认可的标准总结或答案要点，用来判断学生是否理解到位</span></span>
+                <textarea name="evaluationReferenceSummary" class="textbox csp-editor" data-markdown>{{ taskForm.evaluationReferenceSummary|default('') }}</textarea>
+              </label>
+            </div>
+          </div>
+          <div class="csp-grid">
+            <label>
+              {{ _('截止时间') }}
+              <input name="deadlineText" class="textbox" type="datetime-local" value="{{ taskForm.deadlineText }}">
+            </label>
+            <label>
+              {{ _('提醒时间') }}
+              <input name="reminderTime" class="textbox" type="time" value="{{ taskForm.reminderTime }}">
+            </label>
+            <label>
+              {{ _('最低字数') }}
+              <input name="minWords" class="textbox" type="number" min="0" value="{{ taskForm.minWords }}">
+            </label>
+            <label>
+              {{ _('默认奖励积分') }}
+              <input name="defaultPoints" class="textbox" type="number" value="{{ taskForm.defaultPoints }}">
+            </label>
+          </div>
+          <label>
+            <input type="checkbox" name="allowLate" value="true" {% if taskForm.allowLate %}checked{% endif %}>
+            {{ _('允许补交') }}
+          </label>
+          <label>
+            <input type="checkbox" name="dailyReminder" value="true" {% if taskForm.dailyReminder %}checked{% endif %}>
+            {{ _('截止前每日站内消息提醒未提交学生') }}
+          </label>
+          <div class="csp-actions">
+            <button class="button rounded primary" type="submit">
+              <span class="icon icon-save"></span> {{ _('保存') }}
+            </button>
+            <a class="button rounded" href="{{ backUrl }}">
+              <span class="icon icon-back"></span> {{ _('返回课程') }}
+            </a>
+            {% if task %}
+            <a class="button rounded" href="{{ url('course_summary_manage', taskId=task._id) }}">
+              <span class="icon icon-statistics"></span> {{ _('查看提交') }}
+            </a>
+            {% endif %}
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    <div class="section side csp-panel">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('位置') }}</h1>
+      </div>
+      <div class="section__body typo">
+        <dl class="large horizontal">
+          <dt>{{ _('课程') }}</dt>
+          <dd><a href="{{ url('course_detail', cid=cdoc.docId) }}">{{ cdoc.title }}</a></dd>
+        </dl>
+        <dl class="large horizontal">
+          <dt>{{ _('章') }}</dt>
+          <dd><a href="{{ url('course_section_detail', cid=cdoc.docId, csid=csdoc.docId) }}">{{ csdoc.title }}</a></dd>
+        </dl>
+        {% if ssdoc %}
+        <dl class="large horizontal">
+          <dt>{{ _('小节') }}</dt>
+          <dd><a href="{{ url('course_subsec_detail', cid=cdoc.docId, csid=csdoc.docId, ssid=ssdoc._id) }}">{{ ssdoc.title }}</a></dd>
+        </dl>
+        {% endif %}
+        <p class="csp-muted">{{ targetTitle }}</p>
+      </div>
+    </div>
+    {% if task %}
+    <div class="section side csp-panel csp-danger-panel">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('删除') }}</h1>
+      </div>
+      <div class="section__body typo">
+        <p class="csp-danger-copy">{{ _('删除后会移除该任务、提交记录和对应小结积分。') }}</p>
+        <p class="csp-danger-meta">{{ task.title }}</p>
+        <form method="post" onsubmit="return confirm('{{ _('确认删除这个小结任务？已有提交和对应小结积分会一并移除。') }}');">
+          <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+          <button class="button rounded csp-danger-button" name="action" value="delete_task" type="submit">
+            <span class="icon icon-delete"></span> {{ _('删除小结任务') }}
+          </button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

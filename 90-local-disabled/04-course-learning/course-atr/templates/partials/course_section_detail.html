@@ -1,0 +1,39 @@
+{% import "components/problem.html" as problem with context %}
+{% import "partials/course_visibility_toggle.html" as vis with context %}
+{% set expanded = 0 %}
+{% set count = 0 %}
+{% include "course_inline_order_style.html" %}
+<div data-fragment-id="course_section_detail">
+  {%- for node in csdoc['dag'] -%}
+    {% set count = count + 1 %}
+    <div data-heading-extract-to="#menu-item-course_section_detail" class="training__section" style="border-top: 1px solid #e4e4e4; border-bottom: 1px solid #e4e4e4;">
+      <div class="section__header clearfix course-atr-order-row">
+        <div class="float-left course-atr-order-main">
+          <h1 data-heading id="node-{{ count }}" class="section__title">
+            <a href="{{ url('course_subsec_detail', cid=cdoc.docId, csid=csdoc.docId, ssid=node['_id']) }}">
+              {{ _('sections_s') }} {{ count }}. {{ node['title'].split('\n')[0] }}
+            </a>{{ vis.badge(node) }}
+          </h1>
+        </div>
+        {% if handler.user.hasPerm(perm.PERM_EDIT_DOMAIN) or handler.user.hasPerm(perm.PERM_EDIT_TRAINING) %}
+        <div class="float-right course-atr-order-side">
+          <div class="course-atr-order-tools">
+            {% if handler.user.hasPerm(perm.PERM_EDIT_DOMAIN) %}
+            <form method="post" action="{{ url('course_inline_order_action') }}" class="course-atr-order-controls">
+              <input type="hidden" name="kind" value="subsec">
+              <input type="hidden" name="cid" value="{{ cdoc.docId }}">
+              <input type="hidden" name="csid" value="{{ csdoc.docId }}">
+              <input type="hidden" name="target" value="{{ node._id }}">
+              <button type="submit" name="direction" value="up" title="上移" aria-label="上移"{% if loop.first %} disabled{% endif %}><span class="icon icon-expand_less"></span></button>
+              <button type="submit" name="direction" value="down" title="下移" aria-label="下移"{% if loop.last %} disabled{% endif %}><span class="icon icon-expand_more"></span></button>
+            </form>
+            {% endif %}
+            {{ vis.inline('subsec', node, cdoc.docId, csdoc.docId, node._id) }}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  {%- endfor -%}
+  <div class="section__body">&nbsp;<!-- space placeholder --></div>
+</div>

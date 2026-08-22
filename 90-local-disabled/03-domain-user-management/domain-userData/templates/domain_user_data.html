@@ -1,0 +1,214 @@
+{% import "components/nothing.html" as nothing with context %}
+{% import "components/user.html" as user with context %}
+{% import "components/paginator.html" as paginator with context %}
+{% extends "layout/basic.html" %}
+{% set sortBase = ('?' + qsNoSort + '&') if qsNoSort else '?' %}
+{% block content %}
+<style>
+  .presence-range .button {
+    margin-right: 6px;
+    margin-bottom: 6px;
+  }
+  .table-sort {
+    display: inline-flex;
+    gap: 4px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .table-sort a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    color: #6c6257;
+  }
+  .table-sort a.is-active {
+    color: #ff0000;
+  }
+  .table-sort a:hover {
+    color: #1f1c17;
+  }
+  .table-sort svg {
+    width: 16px;
+    height: 16px;
+    display: block;
+  }
+  .table-sort .hint {
+    font-size: 16px;
+    color: #6c6257;
+    margin-left: 8px;
+  }
+  .theme--dark .table-sort a,
+  .theme--dark .table-sort .hint {
+    color: #94a3b8;
+  }
+  .theme--dark .table-sort a.is-active,
+  .theme--dark .table-sort a:hover {
+    color: #f87171;
+  }
+</style>
+{{ set(
+  UiContext, 'requestUrl',
+  "/domain/user/data?"
+  + (("&uidOrName=" + filterUidOrName) if filterUidOrName else "")
+  + (("&groupName=" + filterGroupName) if typeof(filterGroupName) == 'string' else "")
+  + (("&startDate=" + startDate) if startDate else "")
+  + (("&startTime=" + startTime) if startTime else "")
+  + (("&endDate=" + endDate) if endDate else "")
+  + (("&endTime=" + endTime) if endTime else "")
+  + (("&sort=" + sortParam) if sortParam else "")
+) }}
+<div class="row">
+  <div class="medium-12 columns">
+    <form method="get">
+      <div class="section">
+        <div class="section__header">
+          <h1 class="section__title">{{ _('User Data') }}</h1>
+          <div class="section__tools">
+            <button type="submit" class="primary button"><span class="icon icon-filter"></span> {{
+              _('Filter')
+              }}</button>
+            <a href="{{ url('domain_user_data') }}" class="button">{{ _('Reset') }}</a>
+          </div>
+        </div>
+        <div class="section__body">
+          <div class="row">
+            <div class="medium-3 columns">
+              <label class="filter-user">
+                {{ _('By Username / UID') }}
+                <input name="uidOrName" type="text" class="textbox" value="{{ filterUidOrName }}" autocomplete="off"
+                  data-autofocus>
+              </label>
+            </div>
+            <div class="medium-3 columns">
+              <label class="filter-user">
+                {{ _('By Group') }}
+                <select class="compact select" id="groupNameSelect" name="groupName">
+                  <option value="all" {% if typeof(filterGroupName) !='string' %}selected{% else %}{% endif %}>all
+                  </option>
+                  {% for group in groups %}
+                  <a>{{ filterGroupName }} {{ group.name }}</a>
+                  <option value="{{group.name}}" {% if typeof(filterGroupName)=='string' and filterGroupName==group.name
+                    %}selected{% else %}{% endif %}>{{ group.name }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+            </div>
+            <div class="medium-6 columns">
+              <label>
+                {{ _('Online Time Range') }}
+              </label>
+              <div class="presence-range" data-presence-range>
+                <button class="button" type="button" data-range="1d">近一日</button>
+                <button class="button" type="button" data-range="1w">近一周</button>
+                <button class="button" type="button" data-range="1m">近一月</button>
+                <button class="button" type="button" data-range="1y">近一年</button>
+                <div style="margin-top: 8px;">
+                  <div>
+                    <span style="display:inline-block; width: 36px;">开始</span>
+                    <input style="width:auto !important; display: inline-block !important;" class="textbox presence-start-date" name="startDate" type="date" value="{{ startDate }}">
+                    <input style="width:auto !important; display: inline-block !important;" class="textbox presence-start-time" name="startTime" type="time" value="{{ startTime }}">
+                  </div>
+                  <div style="margin-top: 6px;">
+                    <span style="display:inline-block; width: 36px;">结束</span>
+                    <input style="width:auto !important; display: inline-block !important;" class="textbox presence-end-date" name="endDate" type="date" value="{{ endDate }}">
+                    <input style="width:auto !important; display: inline-block !important;" class="textbox presence-end-time" name="endTime" type="time" value="{{ endTime }}">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    <div class="section">
+      <div class="section__body no-padding">
+        <table class="data-table">
+          <colgroup>
+            <col class="col--uid">
+            <col class="col--user">
+            <col class="col--accept">
+            <col class="col--submit">
+            <col class="col--online">
+            <col class="col--contest">
+            <col class="col--blog">
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="col--uid">
+                UID
+                <span class="table-sort">
+                  <a href="{{ sortBase }}sort=uid:asc" class="{% if sortParam == 'uid:asc' %}is-active{% endif %}" title="UID 升序" aria-label="UID 升序">
+                    <svg viewBox="0 0 1024 1024" aria-hidden="true">
+                      <path d="M719.8 480H304.2c-49.5 0-80.3-53.9-55.1-96.5l207.8-352C469.3 10.5 490.7 0 512 0s42.7 10.5 55.1 31.5l207.8 351.9c25.2 42.7-5.5 96.6-55.1 96.6z" fill="currentColor"></path>
+                    </svg>
+                  </a>
+                </span>
+              </th>
+              <th class="col--user">{{ _('User') }}</th>
+              <th class="col--accept">
+                通过数
+                <span class="table-sort">
+                  <a href="{{ sortBase }}sort=accept:desc" class="{% if sortParam == 'accept:desc' %}is-active{% endif %}" title="通过数 降序" aria-label="通过数 降序">
+                    <svg viewBox="0 0 1024 1024" aria-hidden="true">
+                      <path d="M774.9 640.5l-207.8 352c-12.4 21-33.8 31.5-55.1 31.5s-42.7-10.5-55.1-31.5l-207.8-352c-25.2-42.7 5.6-96.5 55.1-96.5h415.6c49.6 0 80.3 53.9 55.1 96.5z" fill="currentColor"></path>
+                    </svg>
+                  </a>
+                </span>
+              </th>
+              <th class="col--submit">
+                提交数
+                <span class="table-sort">
+                  <a href="{{ sortBase }}sort=submit:desc" class="{% if sortParam == 'submit:desc' %}is-active{% endif %}" title="提交数 降序" aria-label="提交数 降序">
+                    <svg viewBox="0 0 1024 1024" aria-hidden="true">
+                      <path d="M774.9 640.5l-207.8 352c-12.4 21-33.8 31.5-55.1 31.5s-42.7-10.5-55.1-31.5l-207.8-352c-25.2-42.7 5.6-96.5 55.1-96.5h415.6c49.6 0 80.3 53.9 55.1 96.5z" fill="currentColor"></path>
+                    </svg>
+                  </a>
+                </span>
+              </th>
+              <th class="col--online">
+                在线时长
+                <span class="table-sort">
+                  <a href="{{ sortBase }}sort=online:desc" class="{% if sortParam == 'online:desc' %}is-active{% endif %}" title="在线时长 降序" aria-label="在线时长 降序">
+                    <svg viewBox="0 0 1024 1024" aria-hidden="true">
+                      <path d="M774.9 640.5l-207.8 352c-12.4 21-33.8 31.5-55.1 31.5s-42.7-10.5-55.1-31.5l-207.8-352c-25.2-42.7 5.6-96.5 55.1-96.5h415.6c49.6 0 80.3 53.9 55.1 96.5z" fill="currentColor"></path>
+                    </svg>
+                  </a>
+                </span>
+              </th>
+              <th class="col--contest">
+                比赛平均排名
+                <span class="table-sort">
+                  <a href="{{ sortBase }}sort=contest:asc" class="{% if sortParam == 'contest:asc' %}is-active{% endif %}" title="比赛平均排名 升序" aria-label="比赛平均排名 升序">
+                    <svg viewBox="0 0 1024 1024" aria-hidden="true">
+                      <path d="M719.8 480H304.2c-49.5 0-80.3-53.9-55.1-96.5l207.8-352C469.3 10.5 490.7 0 512 0s42.7 10.5 55.1 31.5l207.8 351.9c25.2 42.7-5.5 96.6-55.1 96.6z" fill="currentColor"></path>
+                    </svg>
+                  </a>
+                  <a href="{{ sortBase }}sort=contest:desc" class="{% if sortParam == 'contest:desc' %}is-active{% endif %}" title="比赛平均排名 降序" aria-label="比赛平均排名 降序">
+                    <svg viewBox="0 0 1024 1024" aria-hidden="true">
+                      <path d="M774.9 640.5l-207.8 352c-12.4 21-33.8 31.5-55.1 31.5s-42.7-10.5-55.1-31.5l-207.8-352c-25.2-42.7 5.6-96.5 55.1-96.5h415.6c49.6 0 80.3 53.9 55.1 96.5z" fill="currentColor"></path>
+                    </svg>
+                  </a>
+                </span>
+              </th>
+              <th class="col--blog">
+                博客
+                <span class="table-sort">
+                  <a href="{{ sortBase }}sort=blog:desc" class="{% if sortParam == 'blog:desc' %}is-active{% endif %}" title="博客数 降序" aria-label="博客数 降序">
+                    <svg viewBox="0 0 1024 1024" aria-hidden="true">
+                      <path d="M774.9 640.5l-207.8 352c-12.4 21-33.8 31.5-55.1 31.5s-42.7-10.5-55.1-31.5l-207.8-352c-25.2-42.7 5.6-96.5 55.1-96.5h415.6c49.6 0 80.3 53.9 55.1 96.5z" fill="currentColor"></path>
+                    </svg>
+                  </a>
+                </span>
+              </th>
+            </tr>
+          </thead>
+          {% include "partials/domain_user_data.html" %}
+        </table>
+        {% if page and dpcount %}{{ paginator.render(page, dpcount, add_qs=qs) }}{% endif %}
+      </div>
+    </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

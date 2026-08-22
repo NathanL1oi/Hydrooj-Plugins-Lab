@@ -1,0 +1,220 @@
+<style>
+.course-package-ui {
+  --cp-border: #d9e2ec;
+  --cp-soft: #f7f9fc;
+  --cp-ink: #1f2937;
+  --cp-muted: #64748b;
+  font-size: 14px;
+  color: var(--cp-ink);
+}
+.course-package-ui .section {
+  border-radius: 8px;
+  overflow: hidden;
+}
+.course-package-ui .section__header {
+  padding: 13px 16px;
+}
+.course-package-ui .section__body {
+  padding: 14px 16px;
+}
+.course-package-ui .section__title {
+  margin: 0;
+  font-size: 20px !important;
+  line-height: 1.35;
+  font-weight: 500;
+  color: var(--cp-ink);
+}
+.course-package-ui .side .section__title {
+  font-size: 18px !important;
+}
+.course-package-ui .side .menu__link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 14px;
+  font-size: 15px;
+}
+.course-package-ui .side .icon {
+  width: 18px;
+  text-align: center;
+}
+.course-package-ui .textbox,
+.course-package-ui .select {
+  min-height: 34px;
+  font-size: 14px;
+}
+.course-package-ui textarea.textbox {
+  line-height: 1.5;
+}
+.course-package-ui .button {
+  min-height: 32px;
+  padding: 0 12px;
+  font-size: 14px;
+  line-height: 30px;
+}
+.course-package-ui input[type="file"] {
+  font-size: 13px;
+}
+.course-package-ui label {
+  font-size: 14px;
+  color: #374151;
+}
+.course-package-ui .help-text,
+.course-package-ui .supplementary,
+.course-package-ui .copy-muted {
+  font-size: 13px;
+  color: var(--cp-muted);
+}
+.course-package-ui .cp-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.course-package-form textarea[name="content"],
+.course-package-lesson-edit textarea[name="content"] {
+  min-height: 180px;
+}
+.course-package-form textarea[name="treeText"] {
+  height: 420px !important;
+  font-size: 13px;
+}
+.course-package-main .section__tools form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.course-package-main .section__tools .textbox {
+  width: 220px;
+}
+.course-package-main .cp-item,
+.course-package-detail .cp-version {
+  margin: 8px 0;
+  padding: 12px 14px;
+  min-height: 0;
+}
+.course-package-main .cp-item .media,
+.course-package-detail .cp-version .media {
+  align-items: center;
+}
+.course-package-main .discussion__title,
+.course-package-detail .discussion__title {
+  margin: 0 0 5px;
+  font-size: 20px !important;
+  line-height: 1.35;
+  font-weight: 500;
+}
+.course-package-main .discussion__title a,
+.course-package-detail .discussion__title a {
+  color: var(--cp-ink);
+}
+.course-package-main .cp-count {
+  min-width: 52px;
+  padding: 6px 8px;
+}
+.course-package-main .numbox__num.large {
+  font-size: 20px !important;
+  line-height: 1.15;
+}
+.course-package-main .numbox__text {
+  font-size: 12px;
+}
+.course-package-main .training__intro p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--cp-muted);
+}
+.course-package-main .media__left {
+  padding-right: 12px;
+}
+.course-package-main .media__body,
+.course-package-detail .media__body {
+  min-width: 0;
+}
+.course-package-main .supplementary.list,
+.course-package-detail .supplementary.list {
+  margin-top: 4px;
+}
+.course-package-detail .cp-version-meta {
+  gap: 8px;
+  font-size: 13px;
+}
+.course-package-form .section,
+.course-package-import .section,
+.course-package-copy .section,
+.course-package-lesson-edit .section {
+  border-radius: 8px;
+  overflow: hidden;
+}
+.course-package-form .section__body,
+.course-package-import .section__body,
+.course-package-copy .section__body,
+.course-package-lesson-edit .section__body {
+  padding: 16px;
+}
+.course-package-copy .copy-step,
+.course-package-import .import-box,
+.course-package-problem-picker {
+  margin-bottom: 12px;
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+.course-package-import textarea[name="payload"] {
+  height: 260px !important;
+  font-size: 13px;
+}
+.course-package-copy p {
+  margin-bottom: 10px;
+}
+.course-package-copy .copy-step h2 {
+  margin: 0 0 10px;
+  font-size: 16px !important;
+  line-height: 1.35;
+  font-weight: 600;
+}
+.course-package-copy .copy-stat {
+  min-width: 66px;
+  padding: 7px 9px;
+}
+.course-package-copy .copy-stat strong {
+  font-size: 18px !important;
+}
+.course-package-problem-picker__tools {
+  gap: 8px;
+}
+.course-package-problem-picker__tools label {
+  flex: 1 1 150px;
+}
+.course-package-problem-picker__actions {
+  flex: 0 0 auto;
+  gap: 8px;
+}
+.course-package-problem-picker__meta,
+.course-package-problem-picker__pager {
+  font-size: 13px;
+}
+.course-package-problem-picker table {
+  font-size: 13px;
+}
+.course-package-problem-picker__tag {
+  font-size: 12px;
+}
+@media screen and (max-width: 900px) {
+  .course-package-main .section__header {
+    display: block;
+  }
+  .course-package-main .section__tools {
+    margin-top: 10px;
+  }
+  .course-package-main .section__tools form,
+  .course-package-problem-picker__actions {
+    width: 100%;
+  }
+  .course-package-main .section__tools .textbox {
+    width: 100%;
+  }
+}
+</style>

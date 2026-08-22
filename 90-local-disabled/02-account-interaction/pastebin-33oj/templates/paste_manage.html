@@ -1,0 +1,55 @@
+{% set page_name = "管理剪贴板" %}
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row">
+  <div class="medium-12 columns">
+    <div class="section">
+      <div class="section__body">
+        <!--<form method="post">-->
+        <div class="row">
+          <div class="medium-12 columns" style="text-align: center;">
+            <h2>
+              管理剪贴板
+            </h2>
+            <a href="/paste/create" type="submit" class="rounded primary button" style="margin-top:2em;">
+              新建剪贴板
+            </a>
+          </div>
+        </div>
+        <div class="row"
+          style="padding-left:20px;padding-right: 20px;padding-top: 40px;padding-bottom: 20px;user-select:none;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 12rem">操作</th>
+                <th>标题</th>
+                {%- if all -%}
+                <th style="width: 8rem">作者</th>
+                {%- endif -%}
+                <th style="width: 8rem">最后更新时间</th>
+              </tr>
+            </thead>
+            <tbody>
+              {%- for pdoc in doc -%}
+              <tr>
+                <td style="width: 12rem">
+                  <a href="/paste/show/{{pdoc._id}}"> 查看 </a>&nbsp;/&nbsp;
+                  <a href="/paste/show/{{pdoc._id}}/edit"> 编辑 </a>&nbsp;/&nbsp;
+                  <a href="/paste/show/{{pdoc._id}}/delete"> 删除 </a>
+                </td>
+                <td><a href="/paste/show/{{pdoc._id}}" style="color:inherit">{{pdoc.title}}</a></td>
+                {%- if all -%}
+                <td style="width: 8rem"> {{pdoc.owner }}</td>
+                {%- endif -%}
+                <td style="width: 8rem">{{ datetimeSpan(pdoc.updateAt) | safe }}</td>
+              </tr>
+              {%- endfor -%}
+            </tbody>
+          </table>
+          {{ paginator.render(page, upcount) }}	
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
