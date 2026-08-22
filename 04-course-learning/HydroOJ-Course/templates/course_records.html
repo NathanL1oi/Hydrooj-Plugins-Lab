@@ -1,0 +1,89 @@
+{% extends "layout/basic.html" %}
+{% import "components/paginator.html" as paginator with context %}
+{% block content %}
+<div class="row">
+  <div class="medium-12 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('Course Records') }} - {{ cdoc.title }}</h1>
+        <div class="section__tools">
+          <a href="{{ url('course_detail', cid=cdoc.docId) }}" class="tool-button" data-tooltip="{{ _('Back to Course') }}">
+            <span class="icon icon-back"></span>
+          </a>
+        </div>
+      </div>
+      <div class="section__body">
+        {% if rdocs|length > 0 %}
+        <table class="data-table">
+          <colgroup>
+            <col class="col--status">
+            <col class="col--problem">
+            <col class="col--submitter">
+            <col class="col--time">
+            <col class="col--memory">
+            <col class="col--submit-at">
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="col--status">{{ _('Status') }}</th>
+              <th class="col--problem">{{ _('Problem') }}</th>
+              <th class="col--submitter">{{ _('Submitter') }}</th>
+              <th class="col--time">{{ _('Time') }}</th>
+              <th class="col--memory">{{ _('Memory') }}</th>
+              <th class="col--submit-at">{{ _('Submit Time') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rdoc in rdocs %}
+            <tr>
+              <td class="col--status">
+                <a href="{{ url('record_detail', rid=rdoc._id) }}">
+                  <span class="record-status--text {% if rdoc.status == 1 %}pass{% elif rdoc.status > 1 %}fail{% endif %}">
+                    {% if model.builtin.STATUS_SHORT_TEXTS[rdoc.status] %}{{ model.builtin.STATUS_SHORT_TEXTS[rdoc.status] }}{% else %}{{ _('Pending') }}{% endif %}
+                  </span>
+                </a>
+              </td>
+              <td class="col--problem">
+                {% if pdict[rdoc.pid] %}
+                <a href="{{ url('problem_detail', pid=rdoc.pid) }}">{{ pdict[rdoc.pid].title }}</a>
+                {% else %}
+                <span class="text-muted">{{ _('Problem not found') }}</span>
+                {% endif %}
+              </td>
+              <td class="col--submitter">
+                {% if udict[rdoc.uid] %}
+                <a href="{{ url('user_detail', uid=rdoc.uid) }}">{{ udict[rdoc.uid].uname }}</a>
+                {% else %}
+                {{ _('Unknown User') }}
+                {% endif %}
+              </td>
+              <td class="col--time">
+                {% if rdoc.time is defined and rdoc.time is not none %}
+                {{ rdoc.time }}ms
+                {% else %}
+                -
+                {% endif %}
+              </td>
+              <td class="col--memory">
+                {% if rdoc.memory is defined and rdoc.memory is not none %}
+                {{ (rdoc.memory / 1024)|round(2) }}MB
+                {% else %}
+                -
+                {% endif %}
+              </td>
+              <td class="col--submit-at">
+                {{ datetimeSpan(rdoc._id.getTimestamp())|safe }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {{ paginator.render(page, rpcount) }}
+        {% else %}
+        <p class="text-muted">{{ _('No records yet.') }}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

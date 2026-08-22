@@ -1,0 +1,104 @@
+{% extends "layout/basic.html" %}
+{% import "components/paginator.html" as paginator with context %}
+{% block content %}
+<div class="row">
+  <div class="large-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('All Courses') }}</h1>
+        <div class="section__tools">
+          <form method="get" class="filter-form" name="filter-form">
+            <input type="text" class="inline compact textbox" name="q" value="{{ q }}" placeholder="{{ _('Search courses...') }}">
+            <button type="submit" class="compact button">{{ _('Search') }}</button>
+          </form>
+        </div>
+      </div>
+      {% if not cdocs.length %}
+        <div class="section__body typo"><p class="text-muted">{{ _('No courses found.') }}</p></div>
+      {% else %}
+        <ol class="section__list all primary training__list">
+          {%- for cdoc in cdocs -%}
+            <li class="section__list__item training__item">
+              <div class="media">
+                <div class="media__left middle">
+                  <div class="training__participants numbox">
+                    <div class="numbox__num large">{{ cdoc.attend|default(0) }}</div>
+                    <div class="numbox__text">{{ _('Enrolled') }}</div>
+                  </div>
+                </div>
+                <div class="media__body middle">
+                  <h1 class="training__title"><a href="{{ url('course_detail', cid=cdoc.docId) }}" data-emoji-enabled>{{ cdoc.title }}</a></h1>
+                  <div class="training__intro typo"><p>{{ cdoc.content|truncate(160) }}</p></div>
+                  <ul class="supplementary list training__progress">
+                    <li>
+                      <span class="icon icon-flag text-blue"></span>
+                      {{ _('{0} chapters').format((cdoc.chapters or [])|length if (cdoc.chapters or [])|length else 1) }}, {{ _('{0} problems').format((cdoc.pids or [])|length) }}
+                    </li>
+                    {% if csdict[cdoc.docId.toString()] and csdict[cdoc.docId.toString()].enroll %}
+                    <li>
+                      <span class="icon training-status--icon done"></span>
+                      <span class="training-status--text done">{{ _('Enrolled') }}</span>
+                    </li>
+                    {% elif handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+                    <li>
+                      <span class="icon training-status--icon outside"></span>
+                      <span class="training-status--text outside">{{ _('Not Enrolled') }}</span>
+                    </li>
+                    {% endif %}
+                  </ul>
+                </div>
+              </div>
+            </li>
+          {%- endfor -%}
+        </ol>
+        {{ paginator.render(page, cpcount, add_qs=qs) }}
+      {% endif %}
+    </div>
+  </div>
+  <div class="large-3 columns">
+    {% if handler.user.hasPerm(perm.PERM_CREATE_HOMEWORK) %}
+      <div class="section side">
+        <div class="section__header">
+          <h1 class="section__title">{{ _('Create Course') }}</h1>
+        </div>
+        <ol class="menu">
+          <li class="menu__item">
+            <a href="{{ url('course_create') }}" class="menu__link"><span class="icon icon-add"></span> {{ _('New Course') }}</a>
+          </li>
+        </ol>
+        <div class="section__body">
+          <div class="typo supplementary"><p>{{ _('You can create your own courses and share them with others.') }}</p></div>
+        </div>
+      </div>
+    {% endif %}
+    {% if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+      <div class="section side">
+        <div class="section__header">
+          <h1 class="section__title">{{ _('Enrolled') }}</h1>
+        </div>
+        <div class="section__body">
+          <ol class="my secondary training__list">
+            {%- for item in enrolled -%}
+              {% set done = (item.csdoc.journal or [])|selectattr('status', 'equalto', 1)|list|length %}
+              {% set total = (item.cdoc.pids or [])|length %}
+              {% set progress = (100 * done / total)|round|int if total else 0 %}
+              <li class="training__item"><div class="media">
+                <div class="media__left">
+                  <span class="icon training-status--icon {% if progress >= 100 %}done{% else %}progress{% endif %}"></span>
+                </div>
+                <div class="media__body">
+                  <h1 class="training__title"><a href="{{ url('course_detail', cid=item.cdoc.docId) }}" data-emoji-enabled>{{ item.cdoc.title }}</a></h1>
+                  <div class="supplementary training__progress"><div class="training__progress-bar"><div class="training__progress-track" style="width:{{ progress }}%;"></div></div> {{ _('Complete') }} {{ progress }}%</div>
+                </div>
+              </div></li>
+            {%- endfor -%}
+            {% if not enrolled.length %}
+              <li class="training__item"><p class="text-muted">{{ _('You have not enrolled in any course.') }}</p></li>
+            {% endif %}
+          </ol>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

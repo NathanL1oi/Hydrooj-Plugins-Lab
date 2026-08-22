@@ -10,3 +10,5 @@ coverage/
 *.tsbuildinfo
 package-lock.json
 
+
+.DS_Store

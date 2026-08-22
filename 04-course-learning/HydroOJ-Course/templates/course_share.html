@@ -1,0 +1,119 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('Share Course') }}: {{ cdoc.title }}</h1>
+      </div>
+      <div class="section__body">
+        {% if targets|length > 0 %}
+        <form method="post">
+          <input type="hidden" name="operation" value="share">
+          <div class="row">
+            <div class="columns">
+              <label>{{ _('Target Domain') }}</label>
+              <select name="target" class="select" required>
+                <option value="">{{ _('Select a domain to share this course to') }}</option>
+                {% for domain in targets %}
+                <option value="{{ domain._id }}">{{ domain.name or domain._id }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="columns">
+              <button type="submit" class="rounded primary button">{{ _('Share') }}</button>
+              <a href="{{ url('course_detail', cid=cdoc.docId) }}" class="rounded button">{{ _('Cancel') }}</a>
+            </div>
+          </div>
+        </form>
+        {% else %}
+        <p class="text-muted">{{ _('No domains available to share to.') }}</p>
+        <p class="help-text">{{ _('Domain share setting hint') }}</p>
+        <a href="{{ url('course_detail', cid=cdoc.docId) }}" class="rounded button">{{ _('Back') }}</a>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if shares|length > 0 %}
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('Shared Courses') }}</h1>
+      </div>
+      <div class="section__body">
+        <table class="data-table">
+          <colgroup>
+            <col class="col--domain">
+            <col class="col--title">
+            <col class="col--status">
+            <col class="col--action">
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="col--domain">{{ _('Domain') }}</th>
+              <th class="col--title">{{ _('Title') }}</th>
+              <th class="col--status">{{ _('Status') }}</th>
+              <th class="col--action">{{ _('Actions') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in shares %}
+            <tr>
+              <td class="col--domain">{{ s.domain.name or s.domain._id }}</td>
+              <td class="col--title">
+                {% if s.cdoc %}
+                <a href="{{ url('course_detail', domainId=s.ref.domainId, cid=s.ref.docId) }}">{{ s.cdoc.title }}</a>
+                {% else %}
+                <span class="text-muted">{{ _('Course not found') }}</span>
+                {% endif %}
+              </td>
+              <td class="col--status">
+                {% if s.cdoc %}
+                <span class="text-green">{{ _('Shared') }}</span>
+                {% else %}
+                <span class="text-muted">{{ _('Course not found') }}</span>
+                {% endif %}
+              </td>
+              <td class="col--action">
+                <form method="post" class="inline">
+                  <input type="hidden" name="operation" value="sync">
+                  <input type="hidden" name="target" value="{{ s.ref.domainId }}">
+                  <button type="submit" class="rounded button">{{ _('Sync') }}</button>
+                </form>
+                <form method="post" class="inline">
+                  <input type="hidden" name="operation" value="unshare">
+                  <input type="hidden" name="target" value="{{ s.ref.domainId }}">
+                  <button type="submit" class="rounded button danger">{{ _('Revoke') }}</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p class="help-text">{{ _('Revoke hint') }}</p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="medium-3 columns">
+    <div class="section side">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('Available Domains') }}</h1>
+      </div>
+      <div class="section__body">
+        {% if targets|length > 0 %}
+        <ul class="menu">
+          {% for domain in targets %}
+          <li class="menu__item">{{ domain.name or domain._id }}</li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted">{{ _('No domains available to share to.') }}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

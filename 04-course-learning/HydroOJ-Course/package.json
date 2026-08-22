@@ -1,0 +1,13 @@
+{
+    "name": "@hydrooj/course",
+    "version": "1.0.0-beta.1",
+    "description": "Course plugin for HydroOJ - Enhanced training + homework functionality for classroom use",
+    "main": "index.ts",
+    "repository": "https://github.com/rohitsharmaw/HydroOJ-Course",
+    "author": "HydroOJ Community",
+    "license": "AGPL-3.0-or-later",
+    "preferUnplugged": true,
+    "peerDependencies": {
+        "hydrooj": "^5.0.0-beta.16"
+    }
+}

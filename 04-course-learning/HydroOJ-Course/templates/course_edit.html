@@ -1,0 +1,379 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+  .course-chapter-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .course-chapter {
+    border: 1px solid #e3e8ef;
+    border-radius: 12px;
+    background: #ffffff;
+    padding: 14px;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  }
+  .course-chapter__header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .course-chapter__title {
+    flex: 1;
+    margin: 0;
+  }
+  .course-chapter__children {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 12px 0 0 18px;
+    padding-left: 16px;
+    border-left: 2px solid #e3e8ef;
+  }
+  .course-chapter__body {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .course-chapter__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .course-chapter__actions .button {
+    margin: 0;
+  }
+</style>
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _(page_name) }}</h1>
+      </div>
+      <div class="section__body">
+        {% if source %}
+        <blockquote class="note">
+          <p>
+            <span class="icon icon-link"></span>
+            {{ _('Shared from domain') }} <strong>{{ source.ddoc.name or source.ddoc._id }}</strong>:
+            <a href="{{ url('course_detail', domainId=source.ddoc._id, cid=source.cdoc.docId) }}">{{ source.cdoc.title }}</a>
+          </p>
+        </blockquote>
+        {% endif %}
+        <form method="post" enctype="multipart/form-data">
+          <input type="hidden" name="operation" value="update">
+
+          <div class="row">
+            <div class="columns">
+              <label>{{ _('Title') }}</label>
+              <input type="text" name="title" value="{{ cdoc.title if cdoc else '' }}" required>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="columns">
+              <label>{{ _('Introduction') }}</label>
+              <textarea name="content" class="textbox monospace" data-markdown>{{ cdoc.content if cdoc else '' }}</textarea>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="columns">
+              <label>{{ _('Chapters') }}</label>
+              <div id="course-chapter-editor" class="course-chapter-editor"></div>
+              <p class="help-text">{{ _('Add chapters and nested subchapters. Each chapter can contain problems or child chapters.') }}</p>
+              <input type="hidden" name="chapters" id="course-chapters" value="{{ chaptersJson }}">
+              <input type="hidden" name="pids" id="course-pids" value="{{ pids }}">
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="columns">
+              <label>{{ _('Teachers') }} ({{ _('User IDs, comma separated') }})</label>
+              <input type="text" name="teachers" value="{{ (cdoc.teachers or [])|join(',') if cdoc else '' }}" placeholder="1, 2, 3">
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="columns">
+              <label>{{ _('Maintainers') }} ({{ _('User IDs, comma separated') }})</label>
+              <input type="text" name="maintainer" value="{{ (cdoc.maintainer or [])|join(',') if cdoc else '' }}" placeholder="1, 2, 3">
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="medium-6 columns">
+              <label>{{ _('Assign to Groups') }} ({{ _('comma separated') }})</label>
+              <input type="text" name="assign" value="{{ (cdoc.assign or [])|join(',') if cdoc else '' }}">
+            </div>
+            <div class="medium-6 columns">
+              <label>{{ _('Classes') }} ({{ _('comma separated') }})</label>
+              <input type="text" name="classes" value="{{ (cdoc.classes or [])|join(',') if cdoc else '' }}">
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="columns">
+              <button type="submit" class="rounded primary button">{{ _('Save') }}</button>
+              {% if cdoc %}
+              <a href="{{ url('course_detail', cid=cdoc.docId) }}" class="rounded button">{{ _('Cancel') }}</a>
+              {% else %}
+              <a href="{{ url('course_main') }}" class="rounded button">{{ _('Cancel') }}</a>
+              {% endif %}
+            </div>
+          </div>
+        </form>
+
+        {% if cdoc %}
+        <hr>
+        <h2>{{ _('Danger Zone') }}</h2>
+        {% if canShare %}
+        <div class="row">
+          <div class="columns">
+            <a href="{{ url('course_share', cid=cdoc.docId) }}" class="rounded button">{{ _('Share to Domain') }}</a>
+          </div>
+        </div>
+        {% endif %}
+        <form method="post" onsubmit="return confirm('{{ _('Are you sure you want to delete this course?') }}');">
+          <input type="hidden" name="operation" value="delete">
+          <button type="submit" class="rounded button danger">{{ _('Delete Course') }}</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="medium-3 columns">
+    <div class="section side">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('Available Groups') }}</h1>
+      </div>
+      <div class="section__body">
+        {% if groups|length > 0 %}
+        <ul class="menu">
+          {% for group in groups %}
+          <li class="menu__item">{{ group.name }}</li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted">{{ _('No groups available.') }}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+(() => {
+  const root = document.getElementById('course-chapter-editor');
+  const dataInput = document.getElementById('course-chapters');
+  const pidsInput = document.getElementById('course-pids');
+  if (!root || !dataInput) return;
+
+  let chapters = [];
+  try {
+    chapters = JSON.parse(dataInput.value || '[]');
+  } catch (e) {
+    chapters = [];
+  }
+  if (!Array.isArray(chapters) || !chapters.length) {
+    chapters = [{ _id: 1, title: 'Chapter 1', content: '', pids: [], children: [] }];
+  }
+
+  const normalizeNode = (node) => ({
+    _id: Number(node._id),
+    title: String(node.title || ''),
+    content: String(node.content || ''),
+    pids: Array.isArray(node.pids) ? node.pids.map((pid) => String(pid).trim()).filter((pid) => pid) : [],
+    children: Array.isArray(node.children) ? node.children.map(normalizeNode) : [],
+  });
+  chapters = chapters.map(normalizeNode);
+
+  const collectIds = (nodes) => {
+    const ids = [];
+    const visit = (list) => list.forEach((node) => {
+      ids.push(node._id);
+      visit(node.children || []);
+    });
+    visit(nodes);
+    return ids;
+  };
+
+  const findParent = (nodes, target, parent = null, siblings = null, parentIndex = -1) => {
+    for (let i = 0; i < nodes.length; i++) {
+      if (nodes[i] === target) return { node: parent, siblings, index: parentIndex, childIndex: i };
+      const child = findParent(nodes[i].children || [], target, nodes[i], nodes, i);
+      if (child) return child;
+    }
+    return null;
+  };
+
+  const nextId = () => {
+    const ids = collectIds(chapters);
+    let id = 1;
+    while (ids.includes(id)) id++;
+    return id;
+  };
+
+  const flattenPids = (nodes) => {
+    const out = [];
+    const visit = (list) => list.forEach((node) => {
+      out.push(...(node.pids || []));
+      visit(node.children || []);
+    });
+    visit(nodes);
+    return Array.from(new Set(out));
+  };
+
+  const sync = () => {
+    dataInput.value = JSON.stringify(chapters);
+    pidsInput.value = flattenPids(chapters).join(',');
+  };
+
+  const makeButton = (label, className = 'rounded button', title = '') => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = className;
+    button.textContent = label;
+    if (title) button.title = title;
+    return button;
+  };
+
+  const renderNode = (node, siblings, index, depth) => {
+    const card = document.createElement('section');
+    card.className = 'course-chapter';
+    card.style.marginLeft = `${Math.min(depth * 18, 48)}px`;
+
+    const header = document.createElement('div');
+    header.className = 'course-chapter__header';
+
+    const title = document.createElement('input');
+    title.type = 'text';
+    title.className = 'textbox course-chapter__title';
+    title.value = node.title;
+    title.placeholder = 'Chapter title';
+    title.addEventListener('input', () => {
+      node.title = title.value;
+      sync();
+    });
+    header.appendChild(title);
+
+    const addChild = makeButton('+ Subchapter', 'rounded button');
+    addChild.addEventListener('click', () => {
+      node.children = node.children || [];
+      node.children.push({ _id: nextId(), title: 'New Chapter', content: '', pids: [], children: [] });
+      render();
+    });
+    header.appendChild(addChild);
+
+    if (depth > 0) {
+      const outdent = makeButton('Outdent', 'rounded button');
+      outdent.addEventListener('click', () => {
+        const parent = findParent(chapters, node);
+        if (!parent?.node) return;
+        parent.node.children = parent.node.children || [];
+        parent.node.children.splice(parent.childIndex, 1);
+        const targetSiblings = parent.siblings || chapters;
+        targetSiblings.splice(parent.index + 1, 0, node);
+        render();
+      });
+      header.appendChild(outdent);
+    }
+
+    const moveUp = makeButton('↑', 'rounded button', 'Move up');
+    moveUp.disabled = index === 0;
+    moveUp.addEventListener('click', () => {
+      [siblings[index - 1], siblings[index]] = [siblings[index], siblings[index - 1]];
+      render();
+    });
+    header.appendChild(moveUp);
+
+    const moveDown = makeButton('↓', 'rounded button', 'Move down');
+    moveDown.disabled = index === siblings.length - 1;
+    moveDown.addEventListener('click', () => {
+      [siblings[index + 1], siblings[index]] = [siblings[index], siblings[index + 1]];
+      render();
+    });
+    header.appendChild(moveDown);
+
+    const remove = makeButton('Delete', 'rounded button danger');
+    remove.addEventListener('click', () => {
+      if (!confirm('Delete this chapter and its subchapters?')) return;
+      siblings.splice(index, 1);
+      render();
+    });
+    header.appendChild(remove);
+
+    const body = document.createElement('div');
+    body.className = 'course-chapter__body';
+
+    const contentLabel = document.createElement('label');
+    contentLabel.textContent = 'Chapter introduction (optional)';
+    const content = document.createElement('textarea');
+    content.className = 'textbox';
+    content.rows = 3;
+    content.value = node.content || '';
+    content.placeholder = 'Markdown or plain text shown above this chapter’s problems.';
+    content.addEventListener('input', () => {
+      node.content = content.value;
+      sync();
+    });
+    contentLabel.appendChild(content);
+    body.appendChild(contentLabel);
+
+    const pidsLabel = document.createElement('label');
+    pidsLabel.textContent = 'Problem IDs (comma separated)';
+    const pids = document.createElement('input');
+    pids.type = 'text';
+    pids.className = 'textbox';
+    pids.value = (node.pids || []).join(', ');
+    pids.placeholder = '1001, 1002, 1003';
+    pids.addEventListener('input', () => {
+      node.pids = pids.value.replace(/，/g, ',').split(',').map((i) => i.trim()).filter((i) => i);
+      sync();
+    });
+    pidsLabel.appendChild(pids);
+    body.appendChild(pidsLabel);
+
+    card.appendChild(header);
+    card.appendChild(body);
+
+    if (node.children && node.children.length) {
+      const children = document.createElement('div');
+      children.className = 'course-chapter__children';
+      node.children.forEach((child, childIndex) => {
+        children.appendChild(renderNode(child, node.children, childIndex, depth + 1));
+      });
+      card.appendChild(children);
+    }
+
+    return card;
+  };
+
+  const render = () => {
+    root.innerHTML = '';
+    if (!chapters.length) chapters = [{ _id: nextId(), title: 'Chapter 1', content: '', pids: [], children: [] }];
+    chapters.forEach((node, index) => root.appendChild(renderNode(node, chapters, index, 0)));
+    sync();
+  };
+
+  const addRootButton = document.createElement('button');
+  addRootButton.type = 'button';
+  addRootButton.className = 'rounded primary button';
+  addRootButton.textContent = '+ Add Chapter';
+  addRootButton.addEventListener('click', () => {
+    chapters.push({ _id: nextId(), title: 'New Chapter', content: '', pids: [], children: [] });
+    render();
+  });
+  root.parentNode.insertBefore(addRootButton, root.nextSibling);
+
+  render();
+
+  const form = root.closest('form');
+  if (form) form.addEventListener('submit', sync);
+})();
+</script>
+{% endblock %}

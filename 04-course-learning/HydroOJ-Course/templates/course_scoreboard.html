@@ -1,0 +1,101 @@
+{% extends "layout/basic.html" %}
+{% import "components/paginator.html" as paginator with context %}
+{% block content %}
+<style>
+  .scoreboard-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .scoreboard-scroll table {
+    table-layout: auto;
+    min-width: 100%;
+  }
+  .scoreboard-scroll thead th {
+    position: static;
+    top: auto;
+    z-index: auto;
+  }
+</style>
+<div class="row">
+  <div class="medium-12 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('Scoreboard') }} - {{ cdoc.title }}{% if chapter %} / {{ chapter.title }}{% endif %}</h1>
+        <div class="section__tools">
+          {% if chapter %}
+          <a href="{{ url('course_chapter', cid=cdoc.docId, chapterId=chapter._id) }}" class="tool-button" data-tooltip="{{ _('Back to Chapter') }}">
+            <span class="icon icon-back"></span>
+          </a>
+          {% else %}
+          <a href="{{ url('course_detail', cid=cdoc.docId) }}" class="tool-button" data-tooltip="{{ _('Back to Course') }}">
+            <span class="icon icon-back"></span>
+          </a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="section__body">
+        {% if rows|length > 0 %}
+        <div class="scoreboard-scroll">
+          <table class="data-table scoreboard">
+            <colgroup>
+              <col class="col--rank" style="width: 60px;">
+              <col class="col--user">
+              {% for pid in pids %}
+              <col class="col--problem">
+              {% endfor %}
+              <col class="col--total">
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="col--rank">#</th>
+                <th class="col--user">{{ _('Student') }}</th>
+                {% for pid in pids %}
+                <th class="col--problem">
+                  {% if pdict[pid] %}
+                  <a href="{{ url('problem_detail', pid=pid) }}" title="{{ pdict[pid].title }}">
+                    {{ loop.index }}
+                  </a>
+                  {% else %}
+                  {{ loop.index }}
+                  {% endif %}
+                </th>
+                {% endfor %}
+                <th class="col--total">{{ _('Total Score') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in rows %}
+              <tr>
+                <td class="col--rank">{{ rankBase|default(0) + loop.index }}</td>
+                <td class="col--user">
+                  {% if row.user %}
+                  <a href="{{ url('user_detail', uid=row.uid) }}">{{ row.user.uname }}</a>
+                  {% else %}
+                  {{ _('Unknown User') }}
+                  {% endif %}
+                </td>
+                {% for pid in pids %}
+                <td class="col--problem">
+                  {% set score = row.scores[pid] %}
+                  <span class="{% if score >= 100 %}pass{% elif score > 0 %}fail{% endif %}">
+                    {% if score %}{{ score }}{% else %}-{% endif %}
+                  </span>
+                </td>
+                {% endfor %}
+                <td class="col--total">
+                  <strong>{{ row.totalScore }}</strong>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {{ paginator.render(page, cpcount) }}
+        {% else %}
+        <p class="text-muted">{{ _('No students enrolled yet.') }}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

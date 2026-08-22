@@ -1,0 +1,102 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('Course Files') }} - {{ cdoc.title }}</h1>
+      </div>
+      <div class="section__body">
+        <form method="post" enctype="multipart/form-data">
+          <input type="hidden" name="operation" value="upload_file">
+          <div class="row">
+            <div class="medium-8 columns">
+              <input type="file" name="file" required>
+            </div>
+            <div class="medium-4 columns">
+              <input type="text" name="filename" placeholder="{{ _('Custom filename (optional)') }}">
+            </div>
+          </div>
+          <button type="submit" class="rounded primary button">{{ _('Upload') }}</button>
+        </form>
+        
+        <hr>
+        
+        {% if files|length > 0 %}
+        <form method="post" id="delete-files-form">
+          <input type="hidden" name="operation" value="delete_files">
+          <table class="data-table">
+            <colgroup>
+              <col class="col--checkbox" style="width: 40px;">
+              <col class="col--name">
+              <col class="col--size">
+              <col class="col--date">
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="col--checkbox"><input type="checkbox" id="select-all"></th>
+                <th class="col--name">{{ _('Filename') }}</th>
+                <th class="col--size">{{ _('Size') }}</th>
+                <th class="col--date">{{ _('Modified') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for file in files %}
+              <tr>
+                <td class="col--checkbox">
+                  <input type="checkbox" name="files" value="{{ file.name }}">
+                </td>
+                <td class="col--name">
+                  <a href="{{ urlForFile(file.name) }}">
+                    <span class="icon icon-file"></span>
+                    {{ file.name }}
+                  </a>
+                </td>
+                <td class="col--size">{{ file.size|size }}</td>
+                <td class="col--date">
+                  {% if file.lastModified %}
+                  {{ datetimeSpan(file.lastModified)|safe }}
+                  {% else %}
+                  -
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <button type="submit" class="rounded button danger">{{ _('Delete Selected') }}</button>
+        </form>
+        <script>
+          document.getElementById('select-all').addEventListener('change', function() {
+            var checkboxes = document.querySelectorAll('input[name="files"]');
+            for (var i = 0; i < checkboxes.length; i++) {
+              checkboxes[i].checked = this.checked;
+            }
+          });
+        </script>
+        {% else %}
+        <p class="text-muted">{{ _('No files uploaded yet.') }}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  
+  <div class="medium-3 columns">
+    <div class="section side">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('Actions') }}</h1>
+      </div>
+      <div class="section__body">
+        <ul class="menu">
+          <li class="menu__item">
+            <a href="{{ url('course_detail', cid=cdoc.docId) }}">{{ _('Back to Course') }}</a>
+          </li>
+          <li class="menu__item">
+            <a href="{{ url('course_edit', cid=cdoc.docId) }}">{{ _('Edit Course') }}</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
