@@ -1239,7 +1239,9 @@ class CourseShareHandler extends Handler {
 // requested page. Sorting must happen before pagination: slicing first (as
 // framework `paginate()` does) would scramble ranks across pages.
 async function buildCourseScoreboard(domainId: string, cid: ObjectId, pids: number[], page: number) {
-    const pageSize = SystemModel.get('pagination.scoreboard');
+    // pagination.scoreboard is not a core setting; fall back to 20 per page,
+    // the same default the framework's paginate() uses for unknown keys.
+    const pageSize = SystemModel.get('pagination.scoreboard') || 20;
     const csdocs = await CourseModel.getMultiStatus(domainId, { docId: cid, attend: 1 }).toArray();
     const udict = await UserModel.getListForRender(domainId, csdocs.map((csdoc) => csdoc.uid));
     const pdict = await ProblemModel.getList(domainId, pids, true, true);
