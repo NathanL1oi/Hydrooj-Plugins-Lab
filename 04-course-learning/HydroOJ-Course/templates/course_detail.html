@@ -56,16 +56,6 @@
 
   <div class="ca-layout">
     <div>
-      {% if source %}
-      <div class="ca-note ca-fade">
-        <p>
-          <span class="icon icon-link"></span>
-          {{ _('Shared from domain') }} <strong>{{ source.ddoc.name or source.ddoc._id }}</strong>:
-          <a href="{{ url('course_detail', domainId=source.ddoc._id, cid=source.cdoc.docId) }}">{{ source.cdoc.title }}</a>
-        </p>
-      </div>
-      {% endif %}
-
       <div class="ca-section ca-fade">
         <div class="ca-section__head">
           <h2 class="ca-section__title">{{ _('Course Introduction') }}</h2>
