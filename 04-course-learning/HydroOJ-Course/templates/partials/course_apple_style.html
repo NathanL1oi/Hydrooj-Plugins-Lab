@@ -578,6 +578,13 @@
   font-size: 14px;
 }
 .ca-scope .ca-suggest-wrap { position: relative; }
+/* Sibling cards below carry entrance animations/transforms, forming their
+   own stacking contexts that paint over the suggest menu; lift the card
+   that contains the search box instead of the menu's local z-index. */
+.ca-scope .ca-card:has(.ca-suggest-wrap) {
+  position: relative;
+  z-index: 10;
+}
 .ca-scope .ca-problem-suggest {
   position: absolute;
   z-index: 30;
