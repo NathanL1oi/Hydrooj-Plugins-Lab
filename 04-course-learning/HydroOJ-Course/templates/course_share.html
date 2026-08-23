@@ -1,119 +1,127 @@
 {% extends "layout/basic.html" %}
 {% block content %}
-<div class="row">
-  <div class="medium-9 columns">
-    <div class="section">
-      <div class="section__header">
-        <h1 class="section__title">{{ _('Share Course') }}: {{ cdoc.title }}</h1>
+{% include "partials/course_apple_style.html" %}
+<div class="ca-scope">
+  <section class="ca-hero ca-hero--compact ca-fade">
+    <p class="ca-eyebrow">
+      <a href="{{ url('course_detail', cid=cdoc.docId) }}">{{ cdoc.title }}</a>
+      <span class="ca-sep">›</span>{{ _('Share Course') }}
+    </p>
+    <div class="ca-hero__row">
+      <div class="ca-hero__text">
+        <h1 class="ca-headline">{{ _('Share Course') }}</h1>
       </div>
-      <div class="section__body">
+      <div class="ca-hero__actions">
+        <a href="{{ url('course_detail', cid=cdoc.docId) }}" class="ca-btn ca-btn--gray ca-btn--small">
+          <span class="icon icon-back"></span> {{ _('Back to Course') }}
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <div class="ca-layout">
+    <div class="ca-side-stack">
+      <div class="ca-card ca-fade">
+        <h2 class="ca-card__title" style="margin-bottom: 18px;">{{ _('Share to Domain') }}</h2>
         {% if targets|length > 0 %}
         <form method="post">
           <input type="hidden" name="operation" value="share">
-          <div class="row">
-            <div class="columns">
-              <label>{{ _('Target Domain') }}</label>
-              <select name="target" class="select" required>
-                <option value="">{{ _('Select a domain to share this course to') }}</option>
-                {% for domain in targets %}
-                <option value="{{ domain._id }}">{{ domain.name or domain._id }}</option>
-                {% endfor %}
-              </select>
-            </div>
+          <div class="ca-field">
+            <label class="ca-label" for="course-share-target">{{ _('Target Domain') }}</label>
+            <select name="target" id="course-share-target" class="ca-select" required>
+              <option value="">{{ _('Select a domain to share this course to') }}</option>
+              {% for domain in targets %}
+              <option value="{{ domain._id }}">{{ domain.name or domain._id }}</option>
+              {% endfor %}
+            </select>
           </div>
-          <div class="row">
-            <div class="columns">
-              <button type="submit" class="rounded primary button">{{ _('Share') }}</button>
-              <a href="{{ url('course_detail', cid=cdoc.docId) }}" class="rounded button">{{ _('Cancel') }}</a>
-            </div>
+          <div>
+            <button type="submit" class="ca-btn">{{ _('Share') }}</button>
+            <a href="{{ url('course_detail', cid=cdoc.docId) }}" class="ca-btn ca-btn--gray">{{ _('Cancel') }}</a>
           </div>
         </form>
         {% else %}
-        <p class="text-muted">{{ _('No domains available to share to.') }}</p>
-        <p class="help-text">{{ _('Domain share setting hint') }}</p>
-        <a href="{{ url('course_detail', cid=cdoc.docId) }}" class="rounded button">{{ _('Back') }}</a>
+        <p class="ca-help" style="margin: 0 0 8px;">{{ _('No domains available to share to.') }}</p>
+        <p class="ca-help" style="margin: 0 0 18px;">{{ _('Domain share setting hint') }}</p>
+        <a href="{{ url('course_detail', cid=cdoc.docId) }}" class="ca-btn ca-btn--gray">{{ _('Back') }}</a>
         {% endif %}
       </div>
+
+      {% if shares|length > 0 %}
+      <div class="ca-fade" style="animation-delay: 80ms;">
+        <div class="ca-section__head" style="margin-top: 8px;">
+          <h2 class="ca-section__title">{{ _('Shared Courses') }}</h2>
+        </div>
+        <div class="ca-table-wrap">
+          <table class="ca-table">
+            <colgroup>
+              <col class="col--domain">
+              <col class="col--title">
+              <col class="col--status">
+              <col class="col--action">
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="col--domain">{{ _('Domain') }}</th>
+                <th class="col--title">{{ _('Title') }}</th>
+                <th class="col--status">{{ _('Status') }}</th>
+                <th class="col--action">{{ _('Actions') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in shares %}
+              <tr>
+                <td class="col--domain">{{ s.domain.name or s.domain._id }}</td>
+                <td class="col--title">
+                  {% if s.cdoc %}
+                  <a href="{{ url('course_detail', domainId=s.ref.domainId, cid=s.ref.docId) }}">{{ s.cdoc.title }}</a>
+                  {% else %}
+                  <span class="text-muted">{{ _('Course not found') }}</span>
+                  {% endif %}
+                </td>
+                <td class="col--status">
+                  {% if s.cdoc %}
+                  <span class="ca-chip ca-chip--green">{{ _('Shared') }}</span>
+                  {% else %}
+                  <span class="text-muted">{{ _('Course not found') }}</span>
+                  {% endif %}
+                </td>
+                <td class="col--action" style="white-space: nowrap;">
+                  <form method="post" class="ca-inline">
+                    <input type="hidden" name="operation" value="sync">
+                    <input type="hidden" name="target" value="{{ s.ref.domainId }}">
+                    <button type="submit" class="ca-btn ca-btn--gray ca-btn--xsmall">{{ _('Sync') }}</button>
+                  </form>
+                  <form method="post" class="ca-inline">
+                    <input type="hidden" name="operation" value="unshare">
+                    <input type="hidden" name="target" value="{{ s.ref.domainId }}">
+                    <button type="submit" class="ca-btn ca-btn--danger ca-btn--xsmall">{{ _('Revoke') }}</button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <p class="ca-help">{{ _('Revoke hint') }}</p>
+      </div>
+      {% endif %}
     </div>
 
-    {% if shares|length > 0 %}
-    <div class="section">
-      <div class="section__header">
-        <h1 class="section__title">{{ _('Shared Courses') }}</h1>
-      </div>
-      <div class="section__body">
-        <table class="data-table">
-          <colgroup>
-            <col class="col--domain">
-            <col class="col--title">
-            <col class="col--status">
-            <col class="col--action">
-          </colgroup>
-          <thead>
-            <tr>
-              <th class="col--domain">{{ _('Domain') }}</th>
-              <th class="col--title">{{ _('Title') }}</th>
-              <th class="col--status">{{ _('Status') }}</th>
-              <th class="col--action">{{ _('Actions') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for s in shares %}
-            <tr>
-              <td class="col--domain">{{ s.domain.name or s.domain._id }}</td>
-              <td class="col--title">
-                {% if s.cdoc %}
-                <a href="{{ url('course_detail', domainId=s.ref.domainId, cid=s.ref.docId) }}">{{ s.cdoc.title }}</a>
-                {% else %}
-                <span class="text-muted">{{ _('Course not found') }}</span>
-                {% endif %}
-              </td>
-              <td class="col--status">
-                {% if s.cdoc %}
-                <span class="text-green">{{ _('Shared') }}</span>
-                {% else %}
-                <span class="text-muted">{{ _('Course not found') }}</span>
-                {% endif %}
-              </td>
-              <td class="col--action">
-                <form method="post" class="inline">
-                  <input type="hidden" name="operation" value="sync">
-                  <input type="hidden" name="target" value="{{ s.ref.domainId }}">
-                  <button type="submit" class="rounded button">{{ _('Sync') }}</button>
-                </form>
-                <form method="post" class="inline">
-                  <input type="hidden" name="operation" value="unshare">
-                  <input type="hidden" name="target" value="{{ s.ref.domainId }}">
-                  <button type="submit" class="rounded button danger">{{ _('Revoke') }}</button>
-                </form>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-        <p class="help-text">{{ _('Revoke hint') }}</p>
-      </div>
-    </div>
-    {% endif %}
-  </div>
-
-  <div class="medium-3 columns">
-    <div class="section side">
-      <div class="section__header">
-        <h1 class="section__title">{{ _('Available Domains') }}</h1>
-      </div>
-      <div class="section__body">
+    <aside class="ca-side-stack">
+      <div class="ca-card ca-card--gray ca-fade" style="animation-delay: 120ms;">
+        <h2 class="ca-card__title">{{ _('Available Domains') }}</h2>
         {% if targets|length > 0 %}
-        <ul class="menu">
+        <div class="ca-user-chips">
           {% for domain in targets %}
-          <li class="menu__item">{{ domain.name or domain._id }}</li>
+          <span class="ca-chip">{{ domain.name or domain._id }}</span>
           {% endfor %}
-        </ul>
+        </div>
         {% else %}
-        <p class="text-muted">{{ _('No domains available to share to.') }}</p>
+        <p class="ca-help" style="margin: 0;">{{ _('No domains available to share to.') }}</p>
         {% endif %}
       </div>
-    </div>
+    </aside>
   </div>
 </div>
 {% endblock %}

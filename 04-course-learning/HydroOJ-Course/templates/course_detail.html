@@ -4,350 +4,268 @@
 {% import "components/problem.html" as problem with context %}
 {% import "components/record.html" as record with context %}
 {% block content %}
-<style>
-  .course-chapter-item {
-    border: 1px solid rgba(227, 232, 239, 0.7);
-    border-radius: 12px;
-    padding: 8px 12px;
-    margin-bottom: 8px;
-    background: rgba(255, 255, 255, 0.45);
-  }
-  .course-chapter-item .media {
-    align-items: center;
-  }
-  .course-chapter-item .training__title {
-    font-size: 18px;
-    font-weight: 600;
-    line-height: 1.45;
-    margin: 0;
-  }
-  .course-chapter-item .training__title a {
-    font-size: 18px;
-  }
-  .course-chapter-item .training__intro p {
-    margin: 2px 0 0;
-    color: #475467;
-    font-size: 13px;
-    line-height: 1.5;
-  }
-  .course-chapter-item .numbox__num.large {
-    font-size: 18px;
-    line-height: 1;
-  }
-  .course-chapter-item .numbox__text {
-    font-size: 11px;
-  }
-  .course-chapter-children {
-    margin: 8px 0 0 16px;
-    padding-left: 12px;
-    border-left: 2px solid rgba(227, 232, 239, 0.7);
-  }
-  .course-chapter-children.collapsed {
-    display: none;
-  }
-  .course-chapter-toggle {
-    border: 0;
-    background: transparent;
-    color: #667085;
-    cursor: pointer;
-    padding: 0 6px 0 0;
-    font-size: 14px;
-    white-space: nowrap;
-    line-height: 1;
-  }
-  .course-chapter-progress {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-width: 140px;
-  }
-  .course-progress-text {
-    font-size: 12px;
-    color: #667085;
-    white-space: nowrap;
-  }
-  .course-progress-bar {
-    flex: 1;
-    height: 6px;
-    min-width: 80px;
-    border-radius: 999px;
-    background: #eef2f6;
-    overflow: hidden;
-  }
-  .course-progress-track {
-    height: 100%;
-    border-radius: 999px;
-    background: #2f5bcd;
-    transition: width 160ms ease;
-  }
-  .course-toggle-all {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 14px;
-    border: 1px solid #d0d7e2;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.6);
-    color: #475467;
-    font-size: 13px;
-    line-height: 1.5;
-    text-decoration: none;
-    transition: all 160ms ease;
-  }
-  .course-toggle-all:hover {
-    border-color: #2f5bcd;
-    background: #eef4ff;
-    color: #2f5bcd;
-  }
-</style>
-<div class="row">
-  <div class="large-9 columns">
-    <div class="section">
-      <div class="section__header">
-        <h1 class="section__title">{{ _('Course') }}: {{ cdoc.title }}</h1>
-        <div class="section__tools">
-          {% if handler.user.own(cdoc) or handler.user.hasPerm(perm.PERM_EDIT_HOMEWORK) %}
-          <a href="{{ url('course_edit', cid=cdoc.docId) }}" class="tool-button" data-tooltip="{{ _('Edit') }}">
-            <span class="icon icon-edit"></span>
-          </a>
-          <a href="{{ url('course_files', cid=cdoc.docId) }}" class="tool-button" data-tooltip="{{ _('Manage Files') }}">
-            <span class="icon icon-file"></span>
-          </a>
+{% include "partials/course_apple_style.html" %}
+<div class="ca-scope">
+  <section class="ca-hero ca-hero--compact ca-fade">
+    <p class="ca-eyebrow"><a href="{{ url('course_main') }}">{{ _('course_main') }}</a><span class="ca-sep">›</span>{{ _('Course Detail') }}</p>
+    <div class="ca-hero__row">
+      <div class="ca-hero__text">
+        <h1 class="ca-headline ca-headline--gradient" data-emoji-enabled>{{ cdoc.title }}</h1>
+        <div class="ca-hero__meta">
+          {% if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+          {% if csdoc and csdoc.enroll %}
+          <span class="ca-chip ca-chip--green">{{ _('Enrolled') }}</span>
+          {% else %}
+          <span class="ca-chip">{{ _('Not Enrolled') }}</span>
           {% endif %}
-          {% if canShare %}
-          <a href="{{ url('course_share', cid=cdoc.docId) }}" class="tool-button" data-tooltip="{{ _('Share Course') }}">
-            <span class="icon">📎</span>
-          </a>
           {% endif %}
-          <a href="{{ url('course_scoreboard', cid=cdoc.docId) }}" class="tool-button" data-tooltip="{{ _('Scoreboard') }}">
-            <span class="icon icon-statistics"></span>
-          </a>
+          <span class="ca-chip">{{ _('Enrollees') }} {{ cdoc.attend|default(0) }}</span>
+          {% if cdoc.chapters and cdoc.chapters|length > 0 %}
+          <span class="ca-chip">{{ _('{0} chapters').format(cdoc.chapters|length) }}</span>
+          {% endif %}
+          <span class="ca-chip">{{ _('{0} problems').format((cdoc.pids or [])|length) }}</span>
+          <span class="ca-chip">{{ _('Created By') }} {{ udict[cdoc.owner].uname }}</span>
         </div>
       </div>
-      <div class="section__body typo">
-        {{ cdoc.content|markdown|safe }}
-      </div>
-    </div>
-
-    {% if cdoc.chapters and cdoc.chapters|length > 0 %}
-    <div class="section">
-      <div class="section__header">
-        <h1 class="section__title">{{ _('Course Content') }}</h1>
-        <div class="section__tools">
-          <a href="javascript:;" name="course__chapter__expand-all" class="course-toggle-all"><span class="icon icon-expand_more"></span> {{ _('Expand all') }}</a>
-          <a href="javascript:;" name="course__chapter__collapse-all" class="course-toggle-all"><span class="icon icon-expand_less"></span> {{ _('Collapse all') }}</a>
-        </div>
-      </div>
-      {% macro render_chapter(chapter, path) %}
-      <li class="section__list__item course-chapter-item">
-        <div class="media">
-          <div class="media__left middle">
-            {% if chapter.children and chapter.children|length %}
-            <button type="button" class="course-chapter-toggle" name="course__chapter__toggle" data-expand="▸" data-collapse="▾">▾</button>
-            {% endif %}
-          </div>
-          <div class="media__body middle">
-            <h1 class="training__title">
-              <a href="{{ url('course_chapter', cid=cdoc.docId, chapterId=chapter._id) }}">
-                {{ _('Chapter') }} {{ path }}. {{ chapter.title }}
-              </a>
-            </h1>
-          </div>
-          <div class="media__right middle course-chapter-progress">
-            {% set cp = chapterProgress[chapter._id] or { done: 0, total: 0 } %}
-            {% set progress = (100 * cp.done / cp.total)|round|int if cp.total else 0 %}
-            <span class="course-progress-text">{{ cp.done }}/{{ cp.total }}</span>
-            <div class="course-progress-bar"><div class="course-progress-track" style="width: {{ progress }}%;"></div></div>
-            {% if canEditChapter %}
-            <a href="{{ url('course_chapter_edit', cid=cdoc.docId, chapterId=chapter._id) }}" class="tool-button" data-tooltip="{{ _('Edit') }}">
-              <span class="icon icon-edit"></span>
-            </a>
-            {% endif %}
-          </div>
-        </div>
-        {% if chapter.children and chapter.children|length %}
-        <ol class="section__list training__list course-chapter-children">
-          {% for child in chapter.children %}
-          {{ render_chapter(child, path ~ '.' ~ loop.index) }}
-          {% endfor %}
-        </ol>
+      <div class="ca-hero__actions">
+        {% if not csdoc or not csdoc.enroll %}
+        <form action="" method="post" style="margin: 0;">
+          <input type="hidden" name="operation" value="attend">
+          <button class="ca-btn" type="submit"><span class="icon icon-add"></span> {{ _('Join Course') }}</button>
+        </form>
         {% endif %}
-      </li>
-      {% endmacro %}
-
-      <ol class="section__list all primary training__list">
-        {% for chapter in cdoc.chapters %}
-        {{ render_chapter(chapter, loop.index) }}
-        {% endfor %}
-      </ol>
-    </div>
-    {% elif pdict|length > 0 %}
-    <div class="section">
-      <div class="section__header">
-        <h1 class="section__title">{{ _('Problems') }}</h1>
-      </div>
-      <div class="section__body no-padding">
-        <table class="data-table">
-          <colgroup>
-            {% if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
-            <col class="col--status">
-            {% endif %}
-            <col class="col--name">
-            <col class="col--ac-tried">
-            <col class="col--difficulty">
-          </colgroup>
-          <thead>
-            <tr>
-              {% if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
-              <th class="col--status record-status--border">{{ _('Status') }}</th>
-              {% endif %}
-              <th class="col--name">{{ _('Problem') }}</th>
-              <th class="col--ac-tried">{{ _('AC') }} / {{ _('Tried') }}</th>
-              <th class="col--difficulty">{{ _('Difficulty') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for pid in cdoc.pids %}
-            {% set pdoc = pdict[pid] %}
-            {% set psdoc = psdict[pid] %}
-            {% set rdoc = rdict[psdoc.rid.toString()] if psdoc and psdoc.rid else none %}
-            <tr>
-              {% if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
-                {% if rdoc %}
-                {{ record.render_status_td(rdoc, rid_key='_id', short=true) }}
-                {% else %}
-                <td class="col--status record-status--border"></td>
-                {% endif %}
-              {% endif %}
-              <td class="col--name col--problem-name">
-                {{ problem.render_problem_title(pdoc, show_tags=false, show_pid=false) }}
-              </td>
-              <td class="col--ac-tried">{{ pdoc.nAccept }} / {{ pdoc.nSubmit }}</td>
-              <td class="col--difficulty">{{ pdoc.difficulty or lib.difficulty(pdoc.nSubmit, pdoc.nAccept) or _('(None)') }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-    {% endif %}
-
-    {% if files|length > 0 %}
-    <div class="section">
-      <div class="section__header">
-        <h1 class="section__title">{{ _('Course Materials') }}</h1>
-      </div>
-      <div class="section__body">
-        <table class="data-table">
-          <colgroup>
-            <col class="col--name">
-            <col class="col--size">
-          </colgroup>
-          <tbody>
-            {% for file in files %}
-            <tr>
-              <td class="col--name">
-                <a href="{{ url('course_file_download', cid=cdoc.docId, filename=file.name) }}">
-                  <span class="icon icon-file"></span>
-                  {{ file.name }}
-                </a>
-              </td>
-              <td class="col--size">{{ file.size|size }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-    {% endif %}
-
-    <div class="section">
-      <div class="section__header">
-        <h1 class="section__title">{{ _('Discussion') }}</h1>
-        {% if handler.user.hasPerm(perm.PERM_CREATE_DISCUSSION) %}
-        <a href="{{ url('discussion_create', type=50, docId=cdoc.docId) }}" class="primary rounded button">
-          {{ _('New Discussion') }}
+        {% if handler.user.own(cdoc) or handler.user.hasPerm(perm.PERM_EDIT_HOMEWORK) %}
+        <a href="{{ url('course_edit', cid=cdoc.docId) }}" class="ca-btn ca-btn--gray ca-btn--small">
+          <span class="icon icon-edit"></span> {{ _('Edit') }}
+        </a>
+        <a href="{{ url('course_files', cid=cdoc.docId) }}" class="ca-btn ca-btn--gray ca-btn--small">
+          <span class="icon icon-file"></span> {{ _('Files') }}
         </a>
         {% endif %}
-      </div>
-      <div class="section__body">
-        {% if ddocs|length > 0 %}
-        {% for ddoc in ddocs %}
-        <div class="dhead">
-          <a href="{{ url('discussion_detail', did=ddoc.docId) }}">{{ ddoc.title }}</a>
-          <span class="text-muted">{{ udict[ddoc.owner].uname }}</span>
-        </div>
-        {% endfor %}
-        {{ paginator.render(page, dpcount) }}
-        {% else %}
-        <p class="text-muted">{{ _('No discussions yet.') }}</p>
+        {% if canShare %}
+        <a href="{{ url('course_share', cid=cdoc.docId) }}" class="ca-btn ca-btn--gray ca-btn--small">
+          <span class="icon">📎</span> {{ _('Share Course') }}
+        </a>
         {% endif %}
+        <a href="{{ url('course_scoreboard', cid=cdoc.docId) }}" class="ca-btn ca-btn--gray ca-btn--small">
+          <span class="icon icon-statistics"></span> {{ _('Scoreboard') }}
+        </a>
       </div>
     </div>
-  </div>
+  </section>
 
-  <div class="large-3 columns">
-    <div class="section side">
-      <div class="section__header">
-        <h1 class="section__title">{{ _('Course') }}</h1>
+  <div class="ca-layout">
+    <div>
+      {% if source %}
+      <div class="ca-note ca-fade">
+        <p>
+          <span class="icon icon-link"></span>
+          {{ _('Shared from domain') }} <strong>{{ source.ddoc.name or source.ddoc._id }}</strong>:
+          <a href="{{ url('course_detail', domainId=source.ddoc._id, cid=source.cdoc.docId) }}">{{ source.cdoc.title }}</a>
+        </p>
       </div>
-      <div class="section__body">
-        <ol class="menu">
-          {% if not csdoc or not csdoc.enroll %}
-          <li class="menu__item">
-            <form action="" method="post">
-              <input type="hidden" name="operation" value="attend">
-              <button class="menu__link" type="submit">
-                <span class="icon icon-add"></span> {{ _('Join Course') }}
-              </button>
-            </form>
-          </li>
-          {% endif %}
-          {% if handler.user.own(cdoc) or handler.user.hasPerm(perm.PERM_EDIT_HOMEWORK) %}
-          <li class="menu__item">
-            <a class="menu__link" href="{{ url('course_edit', cid=cdoc.docId) }}">
-              <span class="icon icon-edit"></span> {{ _('Edit') }}
-            </a>
-          </li>
-          <li class="menu__item">
-            <a class="menu__link" href="{{ url('course_files', cid=cdoc.docId) }}">
-              <span class="icon icon-file"></span> {{ _('Files') }}
-            </a>
-          </li>
-          {% endif %}
-          {% if canShare %}
-          <li class="menu__item">
-            <a class="menu__link" href="{{ url('course_share', cid=cdoc.docId) }}">
-              <span class="icon">📎</span> {{ _('Share Course') }}
-            </a>
-          </li>
-          {% endif %}
-        </ol>
+      {% endif %}
+
+      <div class="ca-section ca-fade">
+        <div class="ca-section__head">
+          <h2 class="ca-section__title">{{ _('Course Introduction') }}</h2>
+        </div>
+        <div class="ca-card typo">
+          {{ cdoc.content|markdown|safe }}
+        </div>
       </div>
-      <div class="section__body typo">
-        <dl class="large horizontal">
+
+      {% if cdoc.chapters and cdoc.chapters|length > 0 %}
+      <div class="ca-section ca-fade">
+        <div class="ca-section__head">
+          <h2 class="ca-section__title">{{ _('Course Content') }}</h2>
+          <div class="ca-section__tools">
+            <a href="javascript:;" name="course__chapter__expand-all" class="ca-link-more">{{ _('Expand all') }}</a>
+            <a href="javascript:;" name="course__chapter__collapse-all" class="ca-link-more">{{ _('Collapse all') }}</a>
+          </div>
+        </div>
+        {% macro render_chapter(chapter, path) %}
+        <div class="ca-chapter">
+          <div class="ca-chapter__row">
+            {% if chapter.children and chapter.children|length %}
+            <button type="button" class="ca-chapter__toggle" name="course__chapter__toggle">▾</button>
+            {% endif %}
+            <div class="ca-chapter__main">
+              <h3 class="ca-chapter__title">
+                <a href="{{ url('course_chapter', cid=cdoc.docId, chapterId=chapter._id) }}">
+                  {{ _('Chapter') }} {{ path }}. {{ chapter.title }}
+                </a>
+              </h3>
+            </div>
+            <div class="ca-chapter__meta">
+              {% set cp = chapterProgress[chapter._id] or { done: 0, total: 0 } %}
+              {% set progress = (100 * cp.done / cp.total)|round|int if cp.total else 0 %}
+              <span class="ca-progress-text">{{ cp.done }}/{{ cp.total }}</span>
+              <div class="ca-progress"><div class="ca-progress__track" style="width: {{ progress }}%;"></div></div>
+              {% if canEditChapter %}
+              <a href="{{ url('course_chapter_edit', cid=cdoc.docId, chapterId=chapter._id) }}" class="ca-icon-btn" data-tooltip="{{ _('Edit') }}">
+                <span class="icon icon-edit"></span>
+              </a>
+              {% endif %}
+            </div>
+          </div>
+          {% if chapter.children and chapter.children|length %}
+          <div class="ca-chapter__children">
+            {% for child in chapter.children %}
+            {{ render_chapter(child, path ~ '.' ~ loop.index) }}
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        {% endmacro %}
+
+        <div>
+          {% for chapter in cdoc.chapters %}
+          {{ render_chapter(chapter, loop.index) }}
+          {% endfor %}
+        </div>
+      </div>
+      {% elif pdict|length > 0 %}
+      <div class="ca-section ca-fade">
+        <div class="ca-section__head">
+          <h2 class="ca-section__title">{{ _('Problems') }}</h2>
+        </div>
+        <div class="ca-table-wrap">
+          <table class="ca-table">
+            <colgroup>
+              {% if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+              <col class="col--status">
+              {% endif %}
+              <col class="col--name">
+              <col class="col--ac-tried">
+              <col class="col--difficulty">
+            </colgroup>
+            <thead>
+              <tr>
+                {% if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+                <th class="col--status record-status--border">{{ _('Status') }}</th>
+                {% endif %}
+                <th class="col--name">{{ _('Problem') }}</th>
+                <th class="col--ac-tried">{{ _('AC') }} / {{ _('Tried') }}</th>
+                <th class="col--difficulty">{{ _('Difficulty') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for pid in cdoc.pids %}
+              {% set pdoc = pdict[pid] %}
+              {% set psdoc = psdict[pid] %}
+              {% set rdoc = rdict[psdoc.rid.toString()] if psdoc and psdoc.rid else none %}
+              <tr>
+                {% if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+                  {% if rdoc %}
+                  {{ record.render_status_td(rdoc, rid_key='_id', short=true) }}
+                  {% else %}
+                  <td class="col--status record-status--border"></td>
+                  {% endif %}
+                {% endif %}
+                <td class="col--name col--problem-name">
+                  {{ problem.render_problem_title(pdoc, show_tags=false, show_pid=false) }}
+                </td>
+                <td class="col--ac-tried">{{ pdoc.nAccept }} / {{ pdoc.nSubmit }}</td>
+                <td class="col--difficulty">{{ pdoc.difficulty or lib.difficulty(pdoc.nSubmit, pdoc.nAccept) or _('(None)') }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if files|length > 0 %}
+      <div class="ca-section ca-fade">
+        <div class="ca-section__head">
+          <h2 class="ca-section__title">{{ _('Course Materials') }}</h2>
+        </div>
+        <div class="ca-table-wrap">
+          <table class="ca-table">
+            <colgroup>
+              <col class="col--name">
+              <col class="col--size">
+            </colgroup>
+            <tbody>
+              {% for file in files %}
+              <tr>
+                <td class="col--name">
+                  <a href="{{ url('course_file_download', cid=cdoc.docId, filename=file.name) }}">
+                    <span class="icon icon-file"></span>
+                    {{ file.name }}
+                  </a>
+                </td>
+                <td class="col--size">{{ file.size|size }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="ca-section ca-fade">
+        <div class="ca-card">
+          <div class="ca-card__head">
+            <h2 class="ca-card__title">{{ _('Discussion') }}</h2>
+            {% if handler.user.hasPerm(perm.PERM_CREATE_DISCUSSION) %}
+            <a href="{{ url('discussion_create', type=50, docId=cdoc.docId) }}" class="ca-btn ca-btn--small">
+              {{ _('New Discussion') }}
+            </a>
+            {% endif %}
+          </div>
+          {% if ddocs|length > 0 %}
+          <div class="ca-discuss">
+            {% for ddoc in ddocs %}
+            <div class="ca-discuss__item">
+              <a class="ca-discuss__title" href="{{ url('discussion_detail', did=ddoc.docId) }}">{{ ddoc.title }}</a>
+              <span class="ca-discuss__author">{{ udict[ddoc.owner].uname }}</span>
+            </div>
+            {% endfor %}
+          </div>
+          {{ paginator.render(page, dpcount) }}
+          {% else %}
+          <p class="ca-help" style="margin: 0;">{{ _('No discussions yet.') }}</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <aside class="ca-side-stack">
+      <div class="ca-card ca-card--gray ca-fade">
+        <h2 class="ca-card__title">{{ _('Course') }}</h2>
+        <div class="ca-meta">
           {% if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
-          <dt>{{ _('Status') }}</dt>
-          <dd>{{ _('Enrolled') if csdoc and csdoc.enroll else _('Not Enrolled') }}</dd>
+          <div class="ca-meta__row">
+            <span class="ca-meta__label">{{ _('Status') }}</span>
+            <span class="ca-meta__value">
+              {% if csdoc and csdoc.enroll %}
+              <span class="ca-chip ca-chip--green">{{ _('Enrolled') }}</span>
+              {% else %}
+              <span class="ca-chip">{{ _('Not Enrolled') }}</span>
+              {% endif %}
+            </span>
+          </div>
           {% endif %}
-          <dt>{{ _('Enrollees') }}</dt>
-          <dd>{{ cdoc.attend|default(0) }}</dd>
-          <dt>{{ _('Created By') }}</dt>
-          <dd>{{ user.render_inline(udict[cdoc.owner], badge=false) }}</dd>
-        </dl>
+          <div class="ca-meta__row">
+            <span class="ca-meta__label">{{ _('Enrollees') }}</span>
+            <span class="ca-meta__value">{{ cdoc.attend|default(0) }}</span>
+          </div>
+          <div class="ca-meta__row">
+            <span class="ca-meta__label">{{ _('Created By') }}</span>
+            <span class="ca-meta__value">{{ user.render_inline(udict[cdoc.owner], badge=false) }}</span>
+          </div>
+        </div>
       </div>
-    </div>
 
-    {% if cdoc.chapters and cdoc.chapters|length > 0 %}
-    <div class="section side">
-      <div class="section__header">
-        <h1 class="section__title">{{ _('Chapter List') }}</h1>
-      </div>
-      <div class="section__body">
-        <ol class="menu">
+      {% if cdoc.chapters and cdoc.chapters|length > 0 %}
+      <div class="ca-card ca-card--gray ca-fade" style="animation-delay: 80ms;">
+        <h2 class="ca-card__title">{{ _('Chapter List') }}</h2>
+        <ol class="ca-menu">
           {% macro render_chapter_link(chapter, path) %}
-          <li class="menu__item">
-            <a class="menu__link" href="{{ url('course_chapter', cid=cdoc.docId, chapterId=chapter._id) }}">
+          <li>
+            <a href="{{ url('course_chapter', cid=cdoc.docId, chapterId=chapter._id) }}">
               <span class="icon icon-folder"></span>
               {{ _('Chapter') }} {{ path }}. {{ chapter.title }}
             </a>
@@ -363,28 +281,37 @@
           {% endfor %}
         </ol>
       </div>
-    </div>
-    {% endif %}
+      {% endif %}
 
-    <div class="section side">
-      <div class="section__header">
-        <h1 class="section__title">{{ _('Quick Links') }}</h1>
-      </div>
-      <div class="section__body">
-        <ol class="menu">
-          <li class="menu__item">
-            <a class="menu__link" href="{{ url('course_records', cid=cdoc.docId) }}">
+      <div class="ca-card ca-card--gray ca-fade" style="animation-delay: 140ms;">
+        <h2 class="ca-card__title">{{ _('Quick Links') }}</h2>
+        <ol class="ca-menu">
+          <li>
+            <a href="{{ url('course_records', cid=cdoc.docId) }}">
               <span class="icon icon-flag"></span> {{ _('Records') }}
             </a>
           </li>
-          <li class="menu__item">
-            <a class="menu__link" href="{{ url('course_scoreboard', cid=cdoc.docId) }}">
+          <li>
+            <a href="{{ url('course_scoreboard', cid=cdoc.docId) }}">
               <span class="icon icon-statistics"></span> {{ _('Scoreboard') }}
             </a>
           </li>
         </ol>
       </div>
-    </div>
+
+      {% if enrolledUsers and enrolledUsers|length %}
+      <div class="ca-card ca-card--gray ca-fade" style="animation-delay: 200ms;">
+        <h2 class="ca-card__title">{{ _('Enrolled Students') }}</h2>
+        <div class="ca-user-chips">
+          {% for uid in enrolledUsers %}
+          {% if enrolledUdict[uid] %}
+          <a class="ca-chip" href="{{ url('user_detail', uid=uid) }}">{{ enrolledUdict[uid].uname }}</a>
+          {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </aside>
   </div>
 </div>
 {% endblock %}
@@ -395,29 +322,27 @@
   const directChild = (el, selector) => Array.from(el.children).find((child) => child.matches(selector));
 
   const setExpanded = (item, expanded) => {
-    const children = directChild(item, '.course-chapter-children');
-    const media = directChild(item, '.media');
-    const toggle = media ? media.querySelector('.course-chapter-toggle') : null;
+    const children = directChild(item, '.ca-chapter__children');
+    const row = directChild(item, '.ca-chapter__row');
+    const toggle = row ? row.querySelector('.ca-chapter__toggle') : null;
     if (!children) return;
-    children.classList.toggle('collapsed', !expanded);
-    if (toggle) {
-      toggle.textContent = expanded ? toggle.dataset.collapse : toggle.dataset.expand;
-    }
+    children.classList.toggle('is-collapsed', !expanded);
+    if (toggle) toggle.classList.toggle('is-collapsed', !expanded);
   };
 
   document.addEventListener('click', (ev) => {
     const toggle = ev.target.closest('[name="course__chapter__toggle"]');
     if (toggle) {
-      const item = toggle.closest('.course-chapter-item');
+      const item = toggle.closest('.ca-chapter');
       if (!item) return;
-      const children = directChild(item, '.course-chapter-children');
-      if (children) setExpanded(item, children.classList.contains('collapsed'));
+      const children = directChild(item, '.ca-chapter__children');
+      if (children) setExpanded(item, children.classList.contains('is-collapsed'));
       return;
     }
     if (ev.target.closest('[name="course__chapter__expand-all"]')) {
-      document.querySelectorAll('.course-chapter-item').forEach((item) => setExpanded(item, true));
+      document.querySelectorAll('.ca-chapter').forEach((item) => setExpanded(item, true));
     } else if (ev.target.closest('[name="course__chapter__collapse-all"]')) {
-      document.querySelectorAll('.course-chapter-item').forEach((item) => setExpanded(item, false));
+      document.querySelectorAll('.ca-chapter').forEach((item) => setExpanded(item, false));
     }
   });
 })();

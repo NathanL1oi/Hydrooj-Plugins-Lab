@@ -1,166 +1,114 @@
 {% extends "layout/basic.html" %}
 {% block content %}
-<style>
-  .course-chapter-editor {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  .course-chapter {
-    border: 1px solid #e3e8ef;
-    border-radius: 12px;
-    background: #ffffff;
-    padding: 14px;
-    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
-  }
-  .course-chapter__header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-  }
-  .course-chapter__title {
-    flex: 1;
-    margin: 0;
-  }
-  .course-chapter__children {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin: 12px 0 0 18px;
-    padding-left: 16px;
-    border-left: 2px solid #e3e8ef;
-  }
-  .course-chapter__body {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-  .course-chapter__actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-  .course-chapter__actions .button {
-    margin: 0;
-  }
-</style>
-<div class="row">
-  <div class="medium-9 columns">
-    <div class="section">
-      <div class="section__header">
-        <h1 class="section__title">{{ _(page_name) }}</h1>
+{% include "partials/course_apple_style.html" %}
+<div class="ca-scope">
+  <section class="ca-hero ca-hero--compact ca-fade">
+    <p class="ca-eyebrow">
+      <a href="{{ url('course_main') }}">{{ _('course_main') }}</a>
+      {% if cdoc %}<span class="ca-sep">›</span><a href="{{ url('course_detail', cid=cdoc.docId) }}">{{ cdoc.title }}</a>{% endif %}
+      <span class="ca-sep">›</span>{{ _(page_name) }}
+    </p>
+    <div class="ca-hero__row">
+      <div class="ca-hero__text">
+        <h1 class="ca-headline">{{ _(page_name) }}</h1>
       </div>
-      <div class="section__body">
-        {% if source %}
-        <blockquote class="note">
-          <p>
-            <span class="icon icon-link"></span>
-            {{ _('Shared from domain') }} <strong>{{ source.ddoc.name or source.ddoc._id }}</strong>:
-            <a href="{{ url('course_detail', domainId=source.ddoc._id, cid=source.cdoc.docId) }}">{{ source.cdoc.title }}</a>
-          </p>
-        </blockquote>
-        {% endif %}
+    </div>
+  </section>
+
+  <div class="ca-layout">
+    <div class="ca-side-stack">
+      {% if source %}
+      <div class="ca-note ca-fade">
+        <p>
+          <span class="icon icon-link"></span>
+          {{ _('Shared from domain') }} <strong>{{ source.ddoc.name or source.ddoc._id }}</strong>:
+          <a href="{{ url('course_detail', domainId=source.ddoc._id, cid=source.cdoc.docId) }}">{{ source.cdoc.title }}</a>
+        </p>
+      </div>
+      {% endif %}
+
+      <div class="ca-card ca-fade">
         <form method="post" enctype="multipart/form-data">
           <input type="hidden" name="operation" value="update">
 
-          <div class="row">
-            <div class="columns">
-              <label>{{ _('Title') }}</label>
-              <input type="text" name="title" value="{{ cdoc.title if cdoc else '' }}" required>
+          <div class="ca-field">
+            <label class="ca-label" for="course-title">{{ _('Title') }}</label>
+            <input type="text" id="course-title" class="ca-input" name="title" value="{{ cdoc.title if cdoc else '' }}" required>
+          </div>
+
+          <div class="ca-field">
+            <label class="ca-label" for="course-content">{{ _('Introduction') }}</label>
+            <textarea id="course-content" name="content" class="textbox monospace ca-input" data-markdown>{{ cdoc.content if cdoc else '' }}</textarea>
+          </div>
+
+          <div class="ca-field">
+            <label class="ca-label">{{ _('Chapters') }}</label>
+            <div id="course-chapter-editor" class="ca-chapter-editor"></div>
+            <p class="ca-help">{{ _('Add chapters and nested subchapters. Each chapter can contain problems or child chapters.') }}</p>
+            <input type="hidden" name="chapters" id="course-chapters" value="{{ chaptersJson }}">
+            <input type="hidden" name="pids" id="course-pids" value="{{ pids }}">
+          </div>
+
+          <div class="ca-form-grid">
+            <div class="ca-field">
+              <label class="ca-label" for="course-teachers">{{ _('Teachers') }} <span class="ca-label-hint">({{ _('User IDs, comma separated') }})</span></label>
+              <input type="text" id="course-teachers" class="ca-input" name="teachers" value="{{ (cdoc.teachers or [])|join(',') if cdoc else '' }}" placeholder="1, 2, 3">
+            </div>
+            <div class="ca-field">
+              <label class="ca-label" for="course-maintainer">{{ _('Maintainers') }} <span class="ca-label-hint">({{ _('User IDs, comma separated') }})</span></label>
+              <input type="text" id="course-maintainer" class="ca-input" name="maintainer" value="{{ (cdoc.maintainer or [])|join(',') if cdoc else '' }}" placeholder="1, 2, 3">
+            </div>
+            <div class="ca-field">
+              <label class="ca-label" for="course-assign">{{ _('Assign to Groups') }} <span class="ca-label-hint">({{ _('comma separated') }})</span></label>
+              <input type="text" id="course-assign" class="ca-input" name="assign" value="{{ (cdoc.assign or [])|join(',') if cdoc else '' }}">
+            </div>
+            <div class="ca-field">
+              <label class="ca-label" for="course-classes">{{ _('Classes') }} <span class="ca-label-hint">({{ _('comma separated') }})</span></label>
+              <input type="text" id="course-classes" class="ca-input" name="classes" value="{{ (cdoc.classes or [])|join(',') if cdoc else '' }}">
             </div>
           </div>
 
-          <div class="row">
-            <div class="columns">
-              <label>{{ _('Introduction') }}</label>
-              <textarea name="content" class="textbox monospace" data-markdown>{{ cdoc.content if cdoc else '' }}</textarea>
-            </div>
-          </div>
-
-          <div class="row">
-            <div class="columns">
-              <label>{{ _('Chapters') }}</label>
-              <div id="course-chapter-editor" class="course-chapter-editor"></div>
-              <p class="help-text">{{ _('Add chapters and nested subchapters. Each chapter can contain problems or child chapters.') }}</p>
-              <input type="hidden" name="chapters" id="course-chapters" value="{{ chaptersJson }}">
-              <input type="hidden" name="pids" id="course-pids" value="{{ pids }}">
-            </div>
-          </div>
-
-          <div class="row">
-            <div class="columns">
-              <label>{{ _('Teachers') }} ({{ _('User IDs, comma separated') }})</label>
-              <input type="text" name="teachers" value="{{ (cdoc.teachers or [])|join(',') if cdoc else '' }}" placeholder="1, 2, 3">
-            </div>
-          </div>
-
-          <div class="row">
-            <div class="columns">
-              <label>{{ _('Maintainers') }} ({{ _('User IDs, comma separated') }})</label>
-              <input type="text" name="maintainer" value="{{ (cdoc.maintainer or [])|join(',') if cdoc else '' }}" placeholder="1, 2, 3">
-            </div>
-          </div>
-
-          <div class="row">
-            <div class="medium-6 columns">
-              <label>{{ _('Assign to Groups') }} ({{ _('comma separated') }})</label>
-              <input type="text" name="assign" value="{{ (cdoc.assign or [])|join(',') if cdoc else '' }}">
-            </div>
-            <div class="medium-6 columns">
-              <label>{{ _('Classes') }} ({{ _('comma separated') }})</label>
-              <input type="text" name="classes" value="{{ (cdoc.classes or [])|join(',') if cdoc else '' }}">
-            </div>
-          </div>
-
-          <div class="row">
-            <div class="columns">
-              <button type="submit" class="rounded primary button">{{ _('Save') }}</button>
-              {% if cdoc %}
-              <a href="{{ url('course_detail', cid=cdoc.docId) }}" class="rounded button">{{ _('Cancel') }}</a>
-              {% else %}
-              <a href="{{ url('course_main') }}" class="rounded button">{{ _('Cancel') }}</a>
-              {% endif %}
-            </div>
+          <div>
+            <button type="submit" class="ca-btn">{{ _('Save') }}</button>
+            {% if cdoc %}
+            <a href="{{ url('course_detail', cid=cdoc.docId) }}" class="ca-btn ca-btn--gray">{{ _('Cancel') }}</a>
+            {% else %}
+            <a href="{{ url('course_main') }}" class="ca-btn ca-btn--gray">{{ _('Cancel') }}</a>
+            {% endif %}
           </div>
         </form>
+      </div>
 
-        {% if cdoc %}
-        <hr>
-        <h2>{{ _('Danger Zone') }}</h2>
-        {% if canShare %}
-        <div class="row">
-          <div class="columns">
-            <a href="{{ url('course_share', cid=cdoc.docId) }}" class="rounded button">{{ _('Share to Domain') }}</a>
-          </div>
+      {% if cdoc %}
+      <div class="ca-card ca-danger ca-fade" style="animation-delay: 80ms;">
+        <h2 class="ca-card__title">{{ _('Danger Zone') }}</h2>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+          {% if canShare %}
+          <a href="{{ url('course_share', cid=cdoc.docId) }}" class="ca-btn ca-btn--ghost">{{ _('Share to Domain') }}</a>
+          {% endif %}
+          <form method="post" style="margin: 0;" onsubmit="return confirm('{{ _('Are you sure you want to delete this course?') }}');">
+            <input type="hidden" name="operation" value="delete">
+            <button type="submit" class="ca-btn ca-btn--danger">{{ _('Delete Course') }}</button>
+          </form>
         </div>
-        {% endif %}
-        <form method="post" onsubmit="return confirm('{{ _('Are you sure you want to delete this course?') }}');">
-          <input type="hidden" name="operation" value="delete">
-          <button type="submit" class="rounded button danger">{{ _('Delete Course') }}</button>
-        </form>
-        {% endif %}
       </div>
+      {% endif %}
     </div>
-  </div>
 
-  <div class="medium-3 columns">
-    <div class="section side">
-      <div class="section__header">
-        <h1 class="section__title">{{ _('Available Groups') }}</h1>
-      </div>
-      <div class="section__body">
+    <aside class="ca-side-stack">
+      <div class="ca-card ca-card--gray ca-fade" style="animation-delay: 120ms;">
+        <h2 class="ca-card__title">{{ _('Available Groups') }}</h2>
         {% if groups|length > 0 %}
-        <ul class="menu">
+        <div class="ca-user-chips">
           {% for group in groups %}
-          <li class="menu__item">{{ group.name }}</li>
+          <span class="ca-chip">{{ group.name }}</span>
           {% endfor %}
-        </ul>
+        </div>
         {% else %}
-        <p class="text-muted">{{ _('No groups available.') }}</p>
+        <p class="ca-help" style="margin: 0;">{{ _('No groups available.') }}</p>
         {% endif %}
       </div>
-    </div>
+    </aside>
   </div>
 </div>
 {% endblock %}
@@ -233,7 +181,7 @@
     pidsInput.value = flattenPids(chapters).join(',');
   };
 
-  const makeButton = (label, className = 'rounded button', title = '') => {
+  const makeButton = (label, className = 'ca-btn ca-btn--gray ca-btn--xsmall', title = '') => {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = className;
@@ -244,15 +192,15 @@
 
   const renderNode = (node, siblings, index, depth) => {
     const card = document.createElement('section');
-    card.className = 'course-chapter';
+    card.className = 'ca-chapter-edit';
     card.style.marginLeft = `${Math.min(depth * 18, 48)}px`;
 
     const header = document.createElement('div');
-    header.className = 'course-chapter__header';
+    header.className = 'ca-chapter-edit__header';
 
     const title = document.createElement('input');
     title.type = 'text';
-    title.className = 'textbox course-chapter__title';
+    title.className = 'ca-input ca-chapter-edit__title';
     title.value = node.title;
     title.placeholder = 'Chapter title';
     title.addEventListener('input', () => {
@@ -261,7 +209,7 @@
     });
     header.appendChild(title);
 
-    const addChild = makeButton('+ Subchapter', 'rounded button');
+    const addChild = makeButton('+ Subchapter');
     addChild.addEventListener('click', () => {
       node.children = node.children || [];
       node.children.push({ _id: nextId(), title: 'New Chapter', content: '', pids: [], children: [] });
@@ -270,7 +218,7 @@
     header.appendChild(addChild);
 
     if (depth > 0) {
-      const outdent = makeButton('Outdent', 'rounded button');
+      const outdent = makeButton('Outdent');
       outdent.addEventListener('click', () => {
         const parent = findParent(chapters, node);
         if (!parent?.node) return;
@@ -283,7 +231,7 @@
       header.appendChild(outdent);
     }
 
-    const moveUp = makeButton('↑', 'rounded button', 'Move up');
+    const moveUp = makeButton('↑', 'ca-btn ca-btn--gray ca-btn--xsmall', 'Move up');
     moveUp.disabled = index === 0;
     moveUp.addEventListener('click', () => {
       [siblings[index - 1], siblings[index]] = [siblings[index], siblings[index - 1]];
@@ -291,7 +239,7 @@
     });
     header.appendChild(moveUp);
 
-    const moveDown = makeButton('↓', 'rounded button', 'Move down');
+    const moveDown = makeButton('↓', 'ca-btn ca-btn--gray ca-btn--xsmall', 'Move down');
     moveDown.disabled = index === siblings.length - 1;
     moveDown.addEventListener('click', () => {
       [siblings[index + 1], siblings[index]] = [siblings[index], siblings[index + 1]];
@@ -299,7 +247,7 @@
     });
     header.appendChild(moveDown);
 
-    const remove = makeButton('Delete', 'rounded button danger');
+    const remove = makeButton('Delete', 'ca-btn ca-btn--danger ca-btn--xsmall');
     remove.addEventListener('click', () => {
       if (!confirm('Delete this chapter and its subchapters?')) return;
       siblings.splice(index, 1);
@@ -308,12 +256,12 @@
     header.appendChild(remove);
 
     const body = document.createElement('div');
-    body.className = 'course-chapter__body';
+    body.className = 'ca-chapter-edit__body';
 
     const contentLabel = document.createElement('label');
     contentLabel.textContent = 'Chapter introduction (optional)';
     const content = document.createElement('textarea');
-    content.className = 'textbox';
+    content.className = 'ca-input';
     content.rows = 3;
     content.value = node.content || '';
     content.placeholder = 'Markdown or plain text shown above this chapter’s problems.';
@@ -328,7 +276,7 @@
     pidsLabel.textContent = 'Problem IDs (comma separated)';
     const pids = document.createElement('input');
     pids.type = 'text';
-    pids.className = 'textbox';
+    pids.className = 'ca-input';
     pids.value = (node.pids || []).join(', ');
     pids.placeholder = '1001, 1002, 1003';
     pids.addEventListener('input', () => {
@@ -343,7 +291,7 @@
 
     if (node.children && node.children.length) {
       const children = document.createElement('div');
-      children.className = 'course-chapter__children';
+      children.className = 'ca-chapter-edit__children';
       node.children.forEach((child, childIndex) => {
         children.appendChild(renderNode(child, node.children, childIndex, depth + 1));
       });
@@ -362,7 +310,7 @@
 
   const addRootButton = document.createElement('button');
   addRootButton.type = 'button';
-  addRootButton.className = 'rounded primary button';
+  addRootButton.className = 'ca-btn ca-btn--small';
   addRootButton.textContent = '+ Add Chapter';
   addRootButton.addEventListener('click', () => {
     chapters.push({ _id: nextId(), title: 'New Chapter', content: '', pids: [], children: [] });
