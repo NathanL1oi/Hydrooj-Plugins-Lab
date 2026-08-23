@@ -49,6 +49,7 @@ PLUGINS=(
     "01-homepage-frontend/scratchpad-editor-theme" # Scratchpad 编辑器主题
     "06-contest-rating/contest-pdf"                # 比赛题面 PDF
     "01-homepage-frontend/problem-difficulty-label" # 洛谷式难度标签（新增，不在 2026-07-12 导出清单中；若线上未启用可先注释掉）
+    "01-homepage-frontend/countdown"                # 首页倒计时挂件（从 90-local-disabled 归档启用）
 )
 
 echo "==> 仓库目录: ${BASE_DIR}"

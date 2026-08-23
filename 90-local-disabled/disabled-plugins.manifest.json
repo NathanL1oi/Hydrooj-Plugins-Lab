@@ -9,11 +9,6 @@
       "version": "1.0.0"
     },
     {
-      "path": "01-homepage-frontend/countdown",
-      "name": "hydrooj-countdown",
-      "version": "0.1.0"
-    },
-    {
       "path": "01-homepage-frontend/frontend-33oj",
       "name": "frontend-33oj",
       "version": "0.0.1"
