@@ -61,7 +61,7 @@
             </td>
             <td class="col--submitter">
               {% if udict[rdoc.uid] %}
-              <a href="{{ url('user_detail', uid=rdoc.uid) }}">{{ udict[rdoc.uid].uname }}</a>
+              <a href="{{ url('user_detail', uid=rdoc.uid) }}">{{ udict[rdoc.uid].displayName or udict[rdoc.uid].uname }}</a>
               {% else %}
               {{ _('Unknown User') }}
               {% endif %}

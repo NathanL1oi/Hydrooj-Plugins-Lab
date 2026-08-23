@@ -65,7 +65,7 @@
             <td class="col--rank"><span class="ca-rank">{{ rankBase|default(0) + loop.index }}</span></td>
             <td class="col--user">
               {% if row.user %}
-              <a href="{{ url('user_detail', uid=row.uid) }}">{{ row.user.uname }}</a>
+              <a href="{{ url('user_detail', uid=row.uid) }}">{{ row.user.displayName or row.user.uname }}</a>
               {% else %}
               {{ _('Unknown User') }}
               {% endif %}

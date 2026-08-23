@@ -24,7 +24,7 @@
           <span class="ca-chip">{{ _('{0} chapters').format(cdoc.chapters|length) }}</span>
           {% endif %}
           <span class="ca-chip">{{ _('{0} problems').format((cdoc.pids or [])|length) }}</span>
-          <span class="ca-chip">{{ _('Created By') }} {{ udict[cdoc.owner].uname }}</span>
+          <span class="ca-chip">{{ _('Created By') }} {{ udict[cdoc.owner].displayName or udict[cdoc.owner].uname }}</span>
         </div>
       </div>
       <div class="ca-hero__actions">
@@ -210,7 +210,7 @@
             {% for ddoc in ddocs %}
             <div class="ca-discuss__item">
               <a class="ca-discuss__title" href="{{ url('discussion_detail', did=ddoc.docId) }}">{{ ddoc.title }}</a>
-              <span class="ca-discuss__author">{{ udict[ddoc.owner].uname }}</span>
+              <span class="ca-discuss__author">{{ udict[ddoc.owner].displayName or udict[ddoc.owner].uname }}</span>
             </div>
             {% endfor %}
           </div>
@@ -295,7 +295,7 @@
         <div class="ca-user-chips">
           {% for uid in enrolledUsers %}
           {% if enrolledUdict[uid] %}
-          <a class="ca-chip" href="{{ url('user_detail', uid=uid) }}">{{ enrolledUdict[uid].uname }}</a>
+          <a class="ca-chip" href="{{ url('user_detail', uid=uid) }}">{{ enrolledUdict[uid].displayName or enrolledUdict[uid].uname }}</a>
           {% endif %}
           {% endfor %}
         </div>

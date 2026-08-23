@@ -692,7 +692,7 @@ class CourseDetailHandler extends Handler {
             enrolledUsers = (await CourseModel.getMultiStatus(domainId, { docId: cid, uid: { $gt: 1 }, attend: 1 })
                 .project({ uid: 1 }).limit(100).toArray()).map((x) => +x.uid);
         }
-        const enrolledUdict = await UserModel.getListForRender(domainId, enrolledUsers);
+        const enrolledUdict = await UserModel.getListForRender(domainId, enrolledUsers, ['displayName']);
 
         // New courses store nested chapters, while the flat `pids` field is kept
         // in sync. Fall back to it for legacy data.
@@ -1243,7 +1243,7 @@ async function buildCourseScoreboard(domainId: string, cid: ObjectId, pids: numb
     // the same default the framework's paginate() uses for unknown keys.
     const pageSize = SystemModel.get('pagination.scoreboard') || 20;
     const csdocs = await CourseModel.getMultiStatus(domainId, { docId: cid, attend: 1 }).toArray();
-    const udict = await UserModel.getListForRender(domainId, csdocs.map((csdoc) => csdoc.uid));
+    const udict = await UserModel.getListForRender(domainId, csdocs.map((csdoc) => csdoc.uid), ['displayName']);
     const pdict = await ProblemModel.getList(domainId, pids, true, true);
 
     const rows: any[] = [];
@@ -1374,7 +1374,7 @@ class CourseRecordsHandler extends Handler {
         const [rdocs, rpcount] = await this.paginate(cursor, page, 'record');
 
         const uids = [...new Set(rdocs.map((r) => r.uid))];
-        const udict = await UserModel.getListForRender(domainId, uids);
+        const udict = await UserModel.getListForRender(domainId, uids, ['displayName']);
         const pdict = await ProblemModel.getList(domainId, cdoc.pids, true, true);
 
         this.response.template = 'course_records.html';
