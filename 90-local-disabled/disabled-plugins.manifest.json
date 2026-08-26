@@ -264,11 +264,6 @@
       "version": "0.1.1"
     },
     {
-      "path": "06-contest-rating/contest-acm-group-roll",
-      "name": "hydrooj-contest-acm-group-roll",
-      "version": "0.1.3"
-    },
-    {
       "path": "06-contest-rating/contest-fun-kit",
       "name": "hydrooj-contest-fun-kit",
       "version": "0.1.0"

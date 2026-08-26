@@ -50,6 +50,7 @@ PLUGINS=(
     "06-contest-rating/contest-pdf"                # 比赛题面 PDF
     "01-homepage-frontend/problem-difficulty-label" # 洛谷式难度标签（新增，不在 2026-07-12 导出清单中；若线上未启用可先注释掉）
     "01-homepage-frontend/countdown"                # 首页倒计时挂件（从 90-local-disabled 归档启用）
+    "06-contest-rating/contest-acm-group-roll"      # XCPC 小组榜/封榜/滚榜（从 90-local-disabled 归档启用；会替换 XCPC 比赛官方成绩表为小组榜）
 )
 
 echo "==> 仓库目录: ${BASE_DIR}"
