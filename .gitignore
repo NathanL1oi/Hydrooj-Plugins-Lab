@@ -9,6 +9,6 @@ coverage/
 *.log
 *.tsbuildinfo
 package-lock.json
-
+.tools/
 
 .DS_Store
