@@ -34,7 +34,7 @@ PLUGINS=(
     "01-homepage-frontend/frontend-33oj"           # 33OJ 前端模板
     "01-homepage-frontend/extension"               # Hydro plus 前端增强
     "03-domain-user-management/users-manage"       # 用户管理
-    "02-account-interaction/coin-33oj"             # 金币/商城
+    # "02-account-interaction/coin-33oj"           # 金币/商城（2026-10-20 起线下停用；如需恢复取消注释并在服务器重新 addon add）
     "06-contest-rating/hydro-hide-objective-score" # 隐藏客观题分数
     "06-contest-rating/hydro-live-board"           # 实时榜单
     "07-content-system/hydro-discussion-search"    # 讨论搜索
