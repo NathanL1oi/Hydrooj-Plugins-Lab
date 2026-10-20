@@ -34,7 +34,7 @@
         <h1 class="ca-headline">{{ _('All Contests') if not rule else _('All {0} Contests').format(_(model.contest.RULES[rule].TEXT)) }}</h1>
       </div>
       <div class="ca-hero__actions">
-        <form method="get" name="filter-form" class="ca-search" style="margin: 0;">
+        <form method="get" name="filter-form" class="ca-search" style="margin: 0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
           <input type="text" class="ca-input" name="q" value="{{ q }}" placeholder="{{ _('Search contests...') }}">
           <select class="ca-select" name="group">
             <option value=""{% if not group %} selected{% endif %}>{{ _('All') }}</option>
