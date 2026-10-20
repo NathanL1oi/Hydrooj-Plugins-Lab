@@ -1,0 +1,113 @@
+{% extends "layout/basic.html" %}
+{% import "components/contest.html" as contest with context %}
+{% macro render_featured_contest(view, title, tdoc) %}
+<div class="ca-card ca-card--hover ca-fade ca-feature ca-feature--{{ view }}">
+  <div class="ca-feature__body">
+    <p class="ca-feature__label">
+      {% if view == 'live' %}<span class="ca-live-dot"></span>{% endif %}
+      {{ _(title) }}
+    </p>
+    <h2 class="ca-feature__title"><a href="{{ url('contest_detail', tid=tdoc.docId) }}" data-emoji-enabled>{{ tdoc.title }}</a></h2>
+    <div class="ca-feature__meta">
+      <span><span class="icon icon-award"></span> {{ _(model.contest.RULES[tdoc['rule']].TEXT) }}</span>
+      <span><span class="icon icon-calendar"></span> {{ contest.render_time(tsdoc.startAt or tdoc.beginAt) }}</span>
+      <span><span class="icon icon-schedule--fill"></span> {{ contest.render_duration(tdoc) }} {{ _('hour(s)') }}</span>
+      <span><span class="icon icon-user--multiple"></span> {{ tdoc['attend']|default(0) }}</span>
+    </div>
+  </div>
+  <div class="ca-feature__side">
+    <a href="{{ url('contest_detail', tid=tdoc.docId) }}" class="ca-btn">{{ _('View Details') }}</a>
+    {% if tsdict[tdoc.docId].attend %}
+      <span class="ca-chip ca-chip--green"><span class="icon icon-check"></span> {{ _('Attended') }}</span>
+    {% else %}
+      <span class="ca-chip"><span class="icon icon-schedule"></span> {{ _('Not Attended') }}</span>
+    {% endif %}
+  </div>
+</div>
+{% endmacro %}
+{% block content %}
+<div class="ca-scope">
+  <section class="ca-hero ca-hero--compact ca-fade">
+    <div class="ca-hero__row">
+      <div class="ca-hero__text">
+        <p class="ca-eyebrow">{{ _('Contest') }}</p>
+        <h1 class="ca-headline">{{ _('All Contests') if not rule else _('All {0} Contests').format(_(model.contest.RULES[rule].TEXT)) }}</h1>
+      </div>
+      <div class="ca-hero__actions">
+        <form method="get" name="filter-form" class="ca-search" style="margin: 0;">
+          <input type="text" class="ca-input" name="q" value="{{ q }}" placeholder="{{ _('Search contests...') }}">
+          <select class="ca-select" name="group">
+            <option value=""{% if not group %} selected{% endif %}>{{ _('All') }}</option>
+            {%- for g in groups -%}
+              <option value="{{ g }}"{% if group == g %} selected{% endif %}>{{ g }}</option>
+            {%- endfor -%}
+            {%- if not groups|length -%}
+              <option disabled>{{ _('No group available') }}</option>
+            {%- endif -%}
+          </select>
+          <select class="ca-select" name="rule">
+            <option value=""{% if not rule %} selected{% endif %}>{{ _('All') }}</option>
+            {%- for k, v in model.contest.RULES -%}
+              {% if not v.hidden %}
+                <option value="{{ k }}"{% if rule == k %} selected{% endif %}>{{ _('All {0} Contests').format(v.TEXT) }}</option>
+              {% endif %}
+            {%- endfor -%}
+          </select>
+          <button type="submit" class="ca-btn">{{ _('Search') }}</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <div class="ca-layout">
+    <div>
+      {%- for tdoc in tdocs -%}
+        {% if model.contest.isOngoing(tdoc, tsdoc) %}
+          {{ render_featured_contest('live', 'Live...', tdoc) }}
+        {% elif model.contest.isUpcoming(tdoc) %}
+          {{ render_featured_contest('ready', 'Ready (☆▽☆)', tdoc) }}
+        {% endif %}
+      {%- endfor -%}
+
+      {% if not tdocs.length %}
+        <div class="ca-empty ca-fade"><p>{{ _('There are no contests...') }}</p></div>
+      {% else %}
+        <div class="ca-card ca-fade" style="padding: 10px 24px;">
+          {%- for tdoc in tdocs -%}
+          <div class="ca-row">
+            <div class="ca-row__date">
+              <div class="ca-row__date-num">{{ datetimeSpan(tdoc['beginAt'], false, 'D')|safe }}</div>
+              <div class="ca-row__date-text">{{ datetimeSpan(tdoc['beginAt'], false, 'YYYY-M')|safe }}</div>
+            </div>
+            <div class="ca-row__main">
+              <h3 class="ca-row__title"><a href="{{ url('contest_detail', tid=tdoc.docId) }}" data-emoji-enabled>{{ tdoc.title }}</a></h3>
+              <div class="ca-row__meta">
+                <a href="?rule={{ tdoc['rule'] }}" class="ca-chip"><span class="icon icon-award"></span> {{ _(model.contest.RULES[tdoc.rule].TEXT) }}</a>
+                {% if tdoc.rated %}
+                  <span class="ca-chip ca-chip--blue"><span class="icon icon-star"></span> Rated</span>
+                {% endif %}
+                <span><span class="icon icon-schedule--fill"></span> {{ contest.render_duration(tdoc) }} {{ _('hour(s)') }}</span>
+                <span><span class="icon icon-user--multiple"></span> {{ tdoc['attend']|default(0) }}</span>
+                {% if tsdict[tdoc.docId].attend %}
+                  <span class="ca-chip ca-chip--green"><span class="icon icon-check"></span> {{ _('Attended') }}</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {%- endfor -%}
+        </div>
+        {{ paginator.render(page, tpcount, add_qs=qs) }}
+      {% endif %}
+    </div>
+
+    <aside class="ca-side-stack">
+      {% if handler.user.hasPerm(perm.PERM_CREATE_CONTEST) %}
+        <div class="ca-card ca-card--gray ca-fade">
+          <h2 class="ca-card__title">{{ _('Create Contest') }}</h2>
+          <a href="{{ url('contest_create') }}" class="ca-btn ca-btn--block" style="margin-top: 16px;"><span class="icon icon-add"></span> {{ _('Create a contest') }}</a>
+        </div>
+      {% endif %}
+    </aside>
+  </div>
+</div>
+{% endblock %}

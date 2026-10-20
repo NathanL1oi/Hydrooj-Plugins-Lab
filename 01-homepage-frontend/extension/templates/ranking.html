@@ -2,18 +2,38 @@
 {% import "components/paginator.html" as paginator with context %}
 {% import "components/nothing.html" as nothing with context %}
 {% block content %}
-<div class="row">
-  <div class="medium-12 columns">
-    <div class="section">
-      <div class="section__body no-padding">
-        <div data-fragment-id="ranking">
-          {% if not udocs.length and  not groupName %}
-            {% if page == 1 %}
-              <blockquote class="note">{{ _('The ranking page is not updated realtime.') }}</blockquote>
-            {% endif %}
-          {{ nothing.render('Sorry, there are no users in this domain.') }}
-          {% else %}
-          <table class="data-table">
+<div class="ca-scope">
+  <section class="ca-hero ca-hero--compact ca-fade">
+    <div class="ca-hero__row">
+      <div class="ca-hero__text">
+        <p class="ca-eyebrow">{{ _('Ranking') }}</p>
+        <h1 class="ca-headline">{{ groupName if groupName else _('Ranking') }}</h1>
+      </div>
+      <div class="ca-hero__actions">
+        <form method="get" class="ca-search" style="margin: 0;">
+          <select name="groupName" class="ca-select" onchange="this.form.submit()">
+            <option value="">{{ _('所有小组') }}</option>
+            {% for group in groups %}
+              <option value="{{ group.name }}" {% if groupName == group.name %}selected{% endif %}>
+                {{ group.name }} ({{ group.uids.length }} {{ _('users') }})
+              </option>
+            {% endfor %}
+          </select>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <div data-fragment-id="ranking">
+    {% if not udocs.length and not groupName %}
+      {% if page == 1 %}
+        <blockquote class="note">{{ _('The ranking page is not updated realtime.') }}</blockquote>
+      {% endif %}
+      <div class="ca-empty ca-fade"><p>{{ _('Sorry, there are no users in this domain.') }}</p></div>
+    {% else %}
+      <div class="ca-table-wrap ca-fade">
+        <div class="ca-table-scroll">
+          <table class="ca-table">
             <colgroup>
               <col class="col--rank">
               <col class="col--user">
@@ -25,25 +45,13 @@
                 {% endif %}
               {% endfor %}
               <col class="col--ac">
-              <!-- <col class="col--bio"> -->
-              <col class="col--actions"  style="width:5rem">
+              <col class="col--actions" style="width:5rem">
             </colgroup>
             <thead>
               <tr>
                 <th class="col--rank">{{ _('Rank') }}</th>
                 <th class="col--user">{{ _('Username') }}</th>
-                <th class="col--groups">
-                      <form method="get" class="inline">  
-                        <select name="groupName" class="inline compact select" onchange="this.form.submit()">  
-                          <option value="">{{ _('所有小组') }}</option>  
-                          {% for group in groups %}  
-                            <option value="{{ group.name }}" {% if groupName == group.name %}selected{% endif %}>  
-                              {{ group.name }} ({{ group.uids.length }} {{ _('users') }})  
-                            </option>  
-                          {% endfor %}  
-                        </select>  
-                      </form> 
-                </th>
+                <th class="col--groups">{{ _('小组') }}</th>
                 <th class="col--rp">{{ _('RP') }}</th>
                 {% for key, def in model.rp %}
                   {% if not def.hidden %}
@@ -51,14 +59,13 @@
                   {% endif %}
                 {% endfor %}
                 <th class="col--ac">{{ _('Accept') }}</th>
-                <!-- <th class="col--bio">{{ _('Bio') }}</th> -->
                 <th class="col--actions">{{ _('Actions') }}</th>
               </tr>
             </thead>
             <tbody>
               {% if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
               <tr>
-                <td class="col--rank">{{ handler.user.rank|default('-') }}</td>
+                <td class="col--rank"><span class="ca-rank">{{ handler.user.rank|default('-') }}</span></td>
                 <td class="col--user">{{ user.render_inline(handler.user) }}</td>
                 <td class="col--groups">
                 {%- for group in groups -%}
@@ -74,15 +81,12 @@
                   {% endif %}
                 {% endfor %}
                 <td class="col--ac">{{ handler.user.nAccept|default(0) }}</td>
-                <!--
-                <td class="col--bio">{{ handler.user.bio|default('')|truncate(64, true)|markdownInline|safe }}</td>
-                -->
                 <td class="col--actions"><a href="{{ url('record_main',query={uidOrName:handler.user._id}) }}" class="typo-a contest-tag">{{ _('Records') }}</a></td>
               </tr>
               {% endif %}
               {%- for udoc in udocs -%}
               <tr>
-                <td class="col--rank">{{ (page - 1) * model.system.get('pagination.ranking') + loop.index }}</td>
+                <td class="col--rank"><span class="ca-rank">{{ (page - 1) * model.system.get('pagination.ranking') + loop.index }}</span></td>
                 <td class="col--user">{{ user.render_inline(udoc) }}</td>
                 <td class="col--groups">
                 {%- for group in groups -%}
@@ -98,19 +102,15 @@
                   {% endif %}
                 {% endfor %}
                 <td class="col--ac">{{ udoc.nAccept|default(0) }}</td>
-                <!--
-                <td class="col--bio">{{ udoc.bio|default('')|truncate(64, true)|markdownInline|safe }}</td>
-                -->
                 <td class="col--actions"><a href="{{ url('record_main',query={uidOrName:udoc._id}) }}" class="typo-a contest-tag">{{ _('Records') }}</a></td>
               </tr>
               {%- endfor -%}
             </tbody>
           </table>
-          {{ paginator.render(page, upcount,add_qs=('groupName=' + groupName if groupName else '')) }}
-          {% endif %}
         </div>
       </div>
-    </div>
+      {{ paginator.render(page, upcount,add_qs=('groupName=' + groupName if groupName else '')) }}
+    {% endif %}
   </div>
 </div>
 {% endblock %}

@@ -1,0 +1,60 @@
+{% extends "layout/basic.html" %}
+{% import "components/contest.html" as contest with context %}
+{% import "components/record.html" as record with context %}
+{% import "components/problem.html" as problem with context %}
+{% block content %}
+{{ set(UiContext, 'tdoc', tdoc) }}
+{{ set(UiContext, 'tsdoc', tsdoc) }}
+<div class="ca-scope">
+<div class="row" data-sticky-parent>
+  <div class="medium-9 columns">
+    <div class="section ca-fade">
+      <div class="section__header">
+        <h1 class="section__title" data-emoji-enabled>{{ tdoc.title }}</h1>
+      </div>
+      <div class="section__body">
+        <ul class="problem__tags">
+          <span class="problem__tag-item">{{ _(model.contest.statusText(tdoc, tsdoc)) }}</span>
+          <span class="problem__tag-item icon icon-award">{{ _(model.contest.RULES[tdoc.rule].TEXT) }}</span>
+          <span class="problem__tag-item">{{ _('Start at') }}: {{ contest.render_time(tsdoc.startAt or tdoc.beginAt) }}</span>
+          <span class="problem__tag-item icon icon-schedule">{{ contest.render_duration(tdoc) }} {{ _('hour(s)') }}</span>
+          <span class="problem__tag-item">{{ _('Host') }}: {{ user.render_inline(udict[tdoc.owner], badge=false) }}</span>
+          <span class="problem__tag-item icon icon-user--multiple">{{ tdoc['attend']|default(0) }}</span>
+          {% if tsdoc.attend %}
+            <span class="problem__tag-item icon icon-check">{{ _('Attended') }}</span>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+    <div class="section ca-fade" style="animation-delay: 80ms;">
+      <div class="section__body typo richmedia">
+        {{ tdoc['content']|markdown|safe }}
+      {% if model.contest.isOngoing(tdoc, tsdoc) %}
+        <blockquote class="warn">
+          <p>{{ _('We will check code similarity after this contest.') }}</p>
+        </blockquote>
+      {% endif %}
+      {% if tdoc.duration %}
+        <blockquote class="note">
+          <p>{{ _('The contest is a flexible time contest. You need to complete the contest within a specified time after you attended.') }}</p>
+        </blockquote>
+      {% endif %}
+      </div>
+    </div>
+    {% if files.length %}
+      <div class="section ca-fade" style="animation-delay: 140ms;">
+        <div class="section__header">
+          <h1 class="section__title">{{ _('Files') }}</h1>
+        </div>
+        {% set filetype = 'private' %}
+        {% include "partials/files.html" %}
+      </div>
+    {% endif %}
+  </div>
+  <div class="medium-3 columns"><div data-sticky="large">
+    {% set owner_udoc = udict[tdoc.owner] %}
+    {% include "partials/contest_sidebar.html" %}
+  </div></div>
+</div>
+</div>
+{% endblock %}

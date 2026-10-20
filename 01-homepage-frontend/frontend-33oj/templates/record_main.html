@@ -1,0 +1,139 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+{{ set(
+  UiContext, 'socketUrl',
+  "record-conn?domainId=" + handler.args.domainId
+  + (("&tid=" + filterTid) if filterTid else "")
+  + (("&uidOrName=" + filterUidOrName) if filterUidOrName else "")
+  + (("&pid=" + filterPid) if filterPid else "")
+  + ("&all=1" if all else "")
+  + ("&allDomain=1" if allDomain else "")
+) }}
+{{ set(UiContext, 'rids', rdocs.map(eval("rdoc=>rdoc._id.toString()"))) }}
+<div class="ca-scope">
+  <section class="ca-hero ca-hero--compact ca-fade">
+    <div class="ca-hero__row">
+      <div class="ca-hero__text">
+        <p class="ca-eyebrow">{{ _('Records') }}</p>
+        <h1 class="ca-headline">{{ _('All Submissions') }}</h1>
+      </div>
+    </div>
+  </section>
+
+  <form method="get">
+    <div class="ca-card ca-fade" style="animation-delay: 60ms; margin-bottom: 28px;">
+      <div class="ca-card__head">
+        <h2 class="ca-card__title">{{ _('Filter') }}</h2>
+        <div class="ca-section__tools">
+          <button type="submit" class="ca-btn ca-btn--small"><span class="icon icon-filter"></span> {{ _('Filter') }}</button>
+          <a href="{{ url('record_main') }}" class="ca-btn ca-btn--small ca-btn--gray">{{ _('Reset') }}</a>
+        </div>
+      </div>
+      <div class="ca-filter-grid">
+        <div class="ca-field">
+          <label class="ca-label">{{ _('By Username / UID') }}</label>
+          <input name="uidOrName" type="text" class="ca-input" value="{{ filterUidOrName }}" autocomplete="off" data-autofocus>
+        </div>
+        <div class="ca-field">
+          <label class="ca-label">{{ _('By Problem') }}</label>
+          <input name="pid" type="text" class="ca-input" value="{{ filterPid }}">
+        </div>
+        <div class="ca-field">
+          <label class="ca-label">{{ _('By Contest') }}</label>
+          <input name="tid" type="text" class="ca-input" value="{{ filterTid }}">
+        </div>
+        <div class="ca-field">
+          <label class="ca-label">{{ _('By Language') }}</label>
+          <select class="ca-select" name="lang">
+            <option value="">{{ _('All Languages') }}</option>
+          </select>
+        </div>
+        <div class="ca-field">
+          <label class="ca-label">{{ _('By Status') }}</label>
+          <select class="ca-select" name="status">
+            <option value="" {% if typeof(filterStatus) != 'number' %}selected{% else %}{% endif %}>{{ _('All Submissions') }}</option>
+            {%- for k,v in utils.status.STATUS_TEXTS -%}
+            <option value="{{k}}" {% if filterStatus == k %}selected{% else %}{% endif %}>{{v}}</option>
+            {%- endfor -%}
+          </select>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <div class="section ca-fade" style="animation-delay: 120ms;">
+    <div class="section__body no-padding">
+    {% if not rdocs.length %}
+      {% if not filterUidOrName and not filterPid and not filterTid %}
+      {{ nothing.render('Oh, there is no task in the queue!') }}
+      {% else %}
+      {{ nothing.render('Oh, there are no tasks that match the filter!') }}
+      {% endif %}
+    {% else %}
+      <table class="data-table record_main__table">
+        <colgroup>
+          <col class="col--status">
+          <col class="col--problem">
+          <col class="col--submit-by">
+          <col class="col--time">
+          <col class="col--memory">
+          <col class="col--lang">
+          <col class="col--submit-at">
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="col--status record-status--border">{{ _('Status') }}</th>
+            <th class="col--problem">{{ _('Problem') }}</th>
+            <th class="col--submit-by">{{ _('Submit By') }}</th>
+            <th class="col--time">{{ _('Time') }}</th>
+            <th class="col--memory">{{ _('Memory') }}</th>
+            <th class="col--lang">{{ _('Language') }}</th>
+            <th class="col--submit-at">{{ _('Submit At') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+        {%- for rdoc in rdocs -%}
+          {% set udoc = udict[rdoc['uid']] %}
+          {% set pdoc = pdict[rdoc['pid']] %}
+          {% include 'record_main_tr.html' %}
+        {%- endfor -%}
+        </tbody>
+      </table>
+      {% if handler.user.hasPriv(PRIV.PRIV_VIEW_JUDGE_STATISTICS) or filterTid or filterPid or filterUidOrName %}
+      <ul class="pager">
+        <li>
+          <a class="pager__item next link" href="?page={{ page + 1 }}{{
+            (('&tid=' + filterTid) if filterTid else '')
+            + (('&uidOrName=' + filterUidOrName) if filterUidOrName else '')
+            + (('&lang=' + filterLang) if filterLang else '')
+            + (('&status=' + filterStatus) if filterStatus else '')
+            + (('&pid=' + filterPid) if filterPid else '')
+            + ('&all=1' if all else '')
+            + ('&allDomain=1' if allDomain else '') }}">{{ _('pager_next') }}</a>
+        </li>
+      </ul>
+      {% endif %}
+    {% endif %}
+    </div>
+  </div>
+
+  {% if statistics %}
+  <div class="section ca-fade" style="animation-delay: 180ms;">
+    <div class="section__header">
+      <h1 class="section__title">{{ _('Statistics') }}</h1>
+    </div>
+    <div class="section__body">
+      <dl class="large horizontal">
+        <dt>{{ _('5 Min')}}</dt><dd>{{ statistics['d5min'] }}</dd>
+        <dt>{{ _('1 Hour')}}</dt><dd>{{ statistics['d1h'] }}</dd>
+        <dt>{{ _('Day') }}</dt><dd>{{ statistics['day'] }}</dd>
+        <dt>{{ _('Week') }}</dt><dd>{{ statistics['week'] }}</dd>
+        <dt>{{ _('Month') }}</dt><dd>{{ statistics['month'] }}</dd>
+        <dt>{{ _('Year') }}</dt><dd>{{ statistics['year'] }}</dd>
+        <dt>{{ _('Total') }}</dt><dd>{{ statistics['total'] }}</dd>
+      </dl>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

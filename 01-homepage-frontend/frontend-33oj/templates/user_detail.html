@@ -8,9 +8,10 @@
     background-image: url("{{ udoc.backgroundImage }}"), url("/components/profile/backgrounds/1.jpg");
   }
 </style>
+<div class="ca-scope">
 <div class="row">
   <div class="medium-9 columns">
-    <div class="section">
+    <div class="section ca-fade">
       <div class="profile-header user-profile-bg">
         <div class="profile-header__content">
           <div class="media">
@@ -22,21 +23,6 @@
               <p>
                 {{ _('UID') }}: {{ udoc['_id'] }}
               </p>
-
-              {% if udoc['coin_all'] > 0 %}
-              <p>
-                当前硬币数量: {{ udoc['coin_now'] }} （累计获取硬币数量：{{ udoc['coin_all'] }}）:
-                <a class="profile-header__contact-item" href="{{ url('coin_bill') }}?uid={{ udoc['_id'] }}" target="_blank"
-                  data-tooltip="查看硬币明细">
-                  <span class="icon icon-search "></span>
-                </a>
-              </p>
-              {% else %}
-              <p> 暂未获得硬币 </p>
-              {% endif %}
-
-              <hr />
-
               <p>
                 {{ _('Registered at') }} {{ datetimeSpan(udoc['regat'])|safe }},
                 {{ _('last login at') }} {{ datetimeSpan(udoc['loginat'])|safe }},
@@ -156,7 +142,7 @@
     {% if isSelfProfile %}
       {{ home.render_sidebar() }}
     {% endif %}
-    <div class="section side">
+    <div class="section side ca-fade" style="animation-delay: 100ms;">
       <div class="section__body">
         <div class="balancer sidebar-user-stat">
           <div class="balancer__body">
@@ -181,7 +167,7 @@
       </div>
     </div>
     {% if tags.length %}
-      <div class="section side">
+      <div class="section side ca-fade" style="animation-delay: 160ms;">
         <div class="section__header">
           <h2 class="section__title">{{ _('Problem Tags') }}</h2>
         </div>
@@ -196,5 +182,6 @@
       </div>
     {% endif %}
   </div>
+</div>
 </div>
 {% endblock %}
