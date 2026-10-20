@@ -1,40 +1,63 @@
 <div class="section side nojs--hide text-center">
-    <div class="section__header">
-      <div class="index-calendar text-red">
-        <span class="punch-small">{{ payload.calendar.month }}</span>
-        <span class="punch-big">{{ payload.calendar.day }}</span>
-        <span class="punch-small">{{ payload.calendar.week }}</span>
-      </div>
+  <div class="section__body" style="padding-top: 22px;">
+    <div class="cd-calendar">
+      <span class="cd-calendar__side">{{ payload.calendar.month }}</span>
+      <span class="cd-calendar__day">{{ payload.calendar.day }}</span>
+      <span class="cd-calendar__side">{{ payload.calendar.week }}</span>
     </div>
     {% if payload.dates %}
-      <div class="section__body typo" id="countdowns">
+      <div id="countdowns" class="cd-list">
         {% for date in payload.dates %}
-          <p> 距 <strong> {{date.name}} </strong> 还剩 <strong> {{date.diff}} 天 </strong></p>
+          <div class="cd-item">
+            <span class="cd-item__name">{{ date.name }}</span>
+            <span class="ca-chip ca-chip--blue">{{ date.diff }} 天</span>
+          </div>
         {% endfor %}
       </div>
     {% endif %}
+  </div>
 </div>
 <style>
-.index-calendar {
-    margin-top: 10px;
-    margin-bottom: 10px;
+.cd-calendar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 14px;
 }
-.punch-big {
-    display: inline-block;
-    font-size: 85px;
-    vertical-align: top;
-    line-height: 55px;
-    font-weight: bolder;
+.cd-calendar__day {
+  font-size: 64px;
+  line-height: 52px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #1d1d1f;
 }
-.punch-small {
-    display: inline-block;
-    width: 20px;
-    vertical-align: top;
-    line-height: 17px;
-    margin-left: 10px;
-    margin-right: 10px;
-    font-weight: bold;
+.cd-calendar__side {
+  width: 22px;
+  line-height: 16px;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #d70015;
+  word-break: break-all;
 }
+.cd-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+.cd-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 4px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  font-size: 14px;
+}
+.cd-item:first-child { border-top: none; }
+.cd-item__name { color: #1d1d1f; font-weight: 500; }
 </style>
 <script>
     function loadCountdown() {

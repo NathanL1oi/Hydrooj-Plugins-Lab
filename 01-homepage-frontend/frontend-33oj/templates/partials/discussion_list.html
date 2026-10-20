@@ -1,0 +1,20 @@
+{% import "components/nothing.html" as nothing with context %}
+{% import "components/user.html" as user with context %}
+{% import "components/paginator.html" as paginator with context %}
+{% if not ddocs.length %}
+  {{ nothing.render('No discussion yet...') }}
+{% else %}
+  <div class="ca-discuss">
+  {%- for ddoc in ddocs -%}
+    <div class="ca-discuss__item{% if ddoc.highlight %} highlight{% endif %}">
+      <a class="ca-discuss__title" href="{{ url('discussion_detail', did=ddoc._id, anchor=ddoc.updateAt.getTime()) }}" data-emoji-enabled>{{ ddoc['title'] }}</a>
+      <span class="ca-discuss__author">
+        {{ vndict[ddoc.parentType][ddoc.parentId].title|default(_('(missing)')) }} · {{ ddoc.nReply }} {{ _('Comments') }} · {{ user.render_inline(udict[ddoc.owner], badge=false) }}
+      </span>
+    </div>
+  {%- endfor -%}
+  </div>
+  {% if page != undefined and dpcount != undefined %}
+  {{ paginator.render(page, dpcount) }}
+  {% endif %}
+{% endif %}

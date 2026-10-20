@@ -1,70 +1,63 @@
 {% extends "layout/basic.html" %}
 {% block content %}
-<div class="row">
-  <div class="large-9 columns">
-    <div class="section">
-      <div class="section__header">
-        <h1 class="section__title">{{ _('All Training Plans') }}</h1>
-        <div class="section__tools">
-          <form method="get" class="filter-form" name="filter-form">
-            <input type="text" class="inline compact textbox" name="q" value="{{ q }}" placeholder="{{ _('Search training...') }}">
-            <button type="submit" class="compact button">
-              {{ _('Search') }}
-            </button>
-          </form>
-        </div>
+<div class="ca-scope">
+  <section class="ca-hero ca-hero--compact ca-fade">
+    <div class="ca-hero__row">
+      <div class="ca-hero__text">
+        <p class="ca-eyebrow">{{ _('Training') }}</p>
+        <h1 class="ca-headline">{{ _('All Training Plans') }}</h1>
       </div>
+      <div class="ca-hero__actions">
+        <form method="get" class="filter-form ca-search" name="filter-form" style="margin: 0;">
+          <input type="text" class="ca-input" name="q" value="{{ q }}" placeholder="{{ _('Search training...') }}">
+          <button type="submit" class="ca-btn">{{ _('Search') }}</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <div class="ca-layout">
+    <div>
       {% if not tdocs.length %}
-        {{ nothing.render('Sorry, there are no training plans.') }}
+        <div class="ca-empty ca-fade"><p>{{ _('Sorry, there are no training plans.') }}</p></div>
       {% else %}
-        {% include "partials/training_list.html" %}
+        <div class="ca-table-wrap ca-fade">
+          <div class="ca-table-scroll">
+            {% include "partials/training_list.html" %}
+          </div>
+        </div>
         {{ paginator.render(page, tpcount, add_qs=qs) }}
       {% endif %}
     </div>
-  </div>
-  <div class="large-3 columns">
-    {% if handler.user.hasPerm(perm.PERM_CREATE_TRAINING) %}
-      <div class="section side">
-        <div class="section__header">
-          <h1 class="section__title">{{ _('Create Training Plan') }}</h1>
+
+    <aside class="ca-side-stack">
+      {% if handler.user.hasPerm(perm.PERM_CREATE_TRAINING) %}
+        <div class="ca-card ca-card--gray ca-fade">
+          <h2 class="ca-card__title">{{ _('Create Training Plan') }}</h2>
+          <p class="ca-help" style="margin: 0 0 18px;">{{ _('You can create your own training plans and share them with others.') }}</p>
+          <a href="{{ url('training_create') }}" class="ca-btn ca-btn--block"><span class="icon icon-add"></span> {{ _('New Training Plan') }}</a>
         </div>
-        <ol class="menu">
-          <li class="menu__item">
-            <a href="{{ url('training_create') }}" class="menu__link"><span class="icon icon-add"></span> {{ _('New Training Plan') }}</a>
-          </li>
-        </ol>
-        <div class="section__body">
-          <div class="typo supplementary">
-            <p>{{ _('You can create your own training plans and share them with others.') }}</p>
-          </div>
-        </div>
-      </div>
-    {% endif %}
-    {% if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
-      <div class="section side">
-        <div class="section__header">
-          <h1 class="section__title">{{ _('Enrolled') }}</h1>
-        </div>
-        <div class="section__body">
-          <ol class="my secondary training__list">
+      {% endif %}
+      {% if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+        <div class="ca-card ca-card--gray ca-fade" style="animation-delay: 120ms;">
+          <h2 class="ca-card__title">{{ _('Enrolled') }}</h2>
+          <div class="ca-enrolled" style="margin-top: 14px;">
             {%- for tid, tsdoc in tsdict -%}
               {% if tsdoc['enroll'] %}
                 {% set progress = (100 * (tsdoc['donePids']|length) / (model.training.getPids(tdict[tsdoc['docId']].dag)|length))|round|int %}
-                <li class="training__item"><div class="media">
-                  <div class="media__left">
-                    <span class="icon training-status--icon {% if tsdoc['done'] %}done{% else %}progress{% endif %}"></span>
+                <div class="ca-enrolled__item">
+                  <h3 class="ca-enrolled__title"><a href="{{ url('training_detail', tid=tsdoc.docId) }}" data-emoji-enabled>{{ tdict[tsdoc['docId']]['title'] }}</a></h3>
+                  <div class="ca-enrolled__bar">
+                    <div class="ca-progress"><div class="ca-progress__track" style="width:{{ progress }}%;"></div></div>
+                    <span class="ca-progress-text">{{ _('Complete') }} {{ progress }}%</span>
                   </div>
-                  <div class="media__body">
-                    <h1 class="training__title"><a href="{{ url('training_detail', tid=tsdoc.docId) }}" data-emoji-enabled>{{ tdict[tsdoc['docId']]['title'] }}</a></h1>
-                    <div class="supplementary training__progress"><div class="training__progress-bar"><div class="training__progress-track" style="width:{{ progress }}%;"></div></div> {{ _('Complete') }} {{ progress }}%</div>
-                  </div>
-                </div></li>
+                </div>
               {% endif %}
             {%- endfor -%}
-          </ol>
+          </div>
         </div>
-      </div>
-    {% endif %}
+      {% endif %}
+    </aside>
   </div>
 </div>
 {% endblock %}

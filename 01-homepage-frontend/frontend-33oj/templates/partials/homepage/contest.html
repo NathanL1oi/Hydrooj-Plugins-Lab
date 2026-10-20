@@ -1,0 +1,39 @@
+{% set tdocs = payload[0] %}
+{% set tsdict = payload[1] %}
+{% if tdocs.length %}
+  <div class="section page--contest_main">
+    <div class="section__header">
+      <h1 class="section__title">{{ _('Contest') }}</h1>
+    </div>
+    <div class="section__body">
+      {%- for tdoc in tdocs -%}
+        <div class="ca-row">
+          <div class="ca-row__date">
+            <div class="ca-row__date-num">{{ datetimeSpan(tdoc['beginAt'], false, 'D')|safe }}</div>
+            <div class="ca-row__date-text">{{ datetimeSpan(tdoc['beginAt'], false, 'YYYY-M')|safe }}</div>
+          </div>
+          <div class="ca-row__main">
+            <h2 class="ca-row__title"><a href="{{ url('contest_detail', tid=tdoc.docId) }}" data-emoji-enabled>{{ tdoc.title }}</a></h2>
+            <div class="ca-row__meta">
+              <a class="ca-chip" href="{{ url('contest_main', query={rule:tdoc.rule}) }}"><span class="icon icon-award"></span>{{ _(model.contest.RULES[tdoc.rule].TEXT) }}</a>
+              {% if model.contest.isOngoing(tdoc, tsdict[tdoc.docId]) %}
+                <span class="ca-chip ca-chip--green">{{ _('Live') }}</span>
+              {% elif model.contest.isUpcoming(tdoc) %}
+                <span class="ca-chip ca-chip--blue">{{ _('Ready') }}</span>
+              {% endif %}
+              {% if tdoc.rated %}
+                <span class="ca-chip ca-chip--blue"><span class="icon icon-star"></span>Rated</span>
+              {% endif %}
+              <span class="ca-chip"><span class="icon icon-schedule--fill"></span> {{ contest.render_duration(tdoc) }} {{ _('hour(s)') }}</span>
+              <span class="ca-chip"><span class="icon icon-user--multiple"></span> {{ tdoc['attend']|default(0) }}</span>
+              {% if tsdict[tdoc.docId]['attend'] == 1 %}
+                <span class="ca-chip ca-chip--green"><span class="icon icon-check"></span> {{ _('Attended') }}</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {%- endfor -%}
+      <div style="margin-top: 14px;"><a class="ca-link-more" href="{{ url('contest_main') }}">{{ _('More') }}</a></div>
+    </div>
+  </div>
+{% endif %}

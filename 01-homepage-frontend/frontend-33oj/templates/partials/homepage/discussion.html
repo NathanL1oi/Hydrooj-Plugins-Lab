@@ -1,0 +1,13 @@
+{% set ddocs = payload[0] %}
+{% set vndict = payload[1] %}
+{% if ddocs.length %}
+  <div class="section page--discussion_main">
+    <div class="section__header">
+      <h1 class="section__title">{{ _('Discussion') }}</h1>
+    </div>
+    <div class="section__body">
+      {% include "partials/discussion_list.html" %}
+      <div style="margin-top: 14px;"><a class="ca-link-more" href="{{ url('discussion_main') }}">{{ _('More') }}</a></div>
+    </div>
+  </div>
+{% endif %}

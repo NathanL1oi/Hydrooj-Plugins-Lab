@@ -1,0 +1,17 @@
+{% set pdocs = payload[0] %}
+{% if pdocs.length %}
+  <div class="section side nojs--hide">
+    <div class="section__header">
+      <h1 class="section__title">{{ _('Starred Problems') }}</h1>
+    </div>
+    <div class="section__body typo no-media col--problem-name">
+      <div class="ca-discuss">
+        {%- for pdoc in pdocs -%}
+          <div class="ca-discuss__item" data-star-action="{{ url('problem_detail', pid=pdoc.docId) }}" data-star="true">
+            {{ problem.render_problem_title(pdoc, show_tags=false, show_invisible_flag=false) }}
+          </div>
+        {%- endfor -%}
+      </div>
+    </div>
+  </div>
+{% endif %}

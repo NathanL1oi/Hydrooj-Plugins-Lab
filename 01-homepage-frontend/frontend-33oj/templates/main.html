@@ -1,0 +1,33 @@
+{% set page_name = "homepage" %}
+{% extends "layout/basic.html" %}
+{% import "components/contest.html" as contest with context %}
+{% import "components/problem.html" as problem with context %}
+{% import "components/user.html" as user with context %}
+{% block content %}
+<div class="ca-scope">
+  <section class="ca-hero ca-fade">
+    <p class="ca-eyebrow">{{ (handler.domain|default({ui:[]})).ui.name|default(model.system.get('server.name')) }}</p>
+    <h1 class="ca-headline ca-headline--gradient">{{ model.system.get('server.name') }}</h1>
+    <p class="ca-subhead">{{ _('刷题、比赛、课程，从这里开始。') }}</p>
+    <form method="get" action="{{ url('problem_main') }}" class="ca-search" name="homepage-search">
+      <input type="text" class="ca-input" name="q" value="" placeholder="{{ _('Search problems...') }}">
+      <button type="submit" class="ca-btn">{{ _('Search') }}</button>
+    </form>
+  </section>
+  <div class="row">
+    {% for column in contents %}
+      <div class="large-{{ column.width }} columns">
+        {% for s in column.sections %}
+          {% if templateExists("partials/homepage/" + s[0] + ".html") %}
+            {% set payload = s[1] %}
+            {% include "partials/homepage/" + s[0] + ".html" %}
+          {% else %}
+            {% set payload = _("Template {0} not found.").format(s[0]) %}
+            {% include "partials/homepage/error.html" %}
+          {% endif %}
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -126,6 +126,7 @@
   {% else %}
     <link rel="stylesheet" media="all" href="{{ UiContext.cdn_prefix }}theme-{{ global.Hydro.version['ui-default'] }}.css">
   {% endif %}
+  {% include "partials/apple_style.html" %}
   {% if not isIE(handler.request.headers['user-agent']) and not handler.session.legacy %}
     <script>
       var _htmlNode = document.documentElement;

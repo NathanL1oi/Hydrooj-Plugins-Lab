@@ -1,0 +1,24 @@
+<div class="section side">
+  <div class="section__header">
+    <h1 class="section__title">{{ _('Recommended') }}</h1>
+  </div>
+  <div class="section__body">
+    {%- set groups = [
+      ['Chinese', [['LibreOJ', 'https://loj.ac/'], ['洛谷', 'https://www.luogu.com.cn/'], ['UOJ', 'https://uoj.ac/'], ['CometOJ', 'https://www.cometoj.com/'], ['Vijos', 'https://vijos.org/']]],
+      ['English', [['Codeforces', 'https://codeforces.com/'], ['AtCoder', 'https://atcoder.jp/'], ['CodeChef', 'https://www.codechef.com/'], ['SPOJ', 'https://www.spoj.com/'], ['TopCoder', 'https://www.topcoder.com/'], ['OnlineJudge', 'https://onlinejudge.org/']]],
+      ['Tools', [['OIerDb', 'https://oier.baoshuo.dev/']]]
+    ] -%}
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      {% for group in groups %}
+        <div>
+          <div class="ca-eyebrow" style="margin: 0 0 8px; font-size: 11px;">{{ _(group[0]) }}</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            {% for item in group[1] %}
+              <a class="ca-chip" href="{{ item[1] }}" target="_blank">{{ item[0] }}</a>
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>

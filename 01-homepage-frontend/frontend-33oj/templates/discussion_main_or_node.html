@@ -1,0 +1,47 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="ca-scope">
+  <section class="ca-hero ca-hero--compact ca-fade">
+    <div class="ca-hero__row">
+      <div class="ca-hero__text">
+        <p class="ca-eyebrow">{{ _('Discussion') }}</p>
+        <h1 class="ca-headline">{{ vnode['title'] or _('Discussion') }}</h1>
+      </div>
+      <div class="ca-hero__actions">
+        {% if vnode._id %}
+          {% if handler.user.hasPerm(perm.PERM_CREATE_DISCUSSION) %}
+            <a href="{{ url('discussion_create', type=model.discussion.typeDisplay[vnode.type], name=vnode.id) }}" class="ca-btn">{{ _('Create a Discussion') }}</a>
+          {% elif not handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+            <a href="javascript:showSignInDialog();" class="ca-btn">{{ _('Login to Create a Discussion') }}</a>
+          {% else %}
+            <a href="javascript:;" class="ca-btn" disabled>{{ _('No Permission to Create a Discussion') }}</a>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  <div class="ca-layout">
+    <div>
+      <div class="ca-card ca-fade">
+        {% include "partials/discussion_list.html" %}
+      </div>
+    </div>
+    <aside class="ca-side-stack">
+      {% if vnode.type == model.document.TYPE_PROBLEM %}
+        {% set pdoc = vnode %}
+        {% set owner_udoc = udict[vnode.owner] %}
+        {% include "partials/problem_sidebar.html" %}
+      {% elif vnode.type == model.document.TYPE_CONTEST %}
+        {% set tdoc = vnode %}
+        {%- if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) -%}
+        {% set tsdoc = { attend: tdoc.attend } %}
+        {%- endif -%}
+        {% set owner_udoc = udict[vnode.owner] %}
+        {% include "partials/contest_sidebar.html" %}
+      {% endif %}
+      <div class="ca-fade">{% include 'partials/discussion_nodes_widget.html' %}</div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% set htdocs = payload[0] %}
+{% set htsdict = payload[1] %}
+{% if htdocs.length %}
+  <div class="section page--homework_main">
+    <div class="section__header">
+      <h1 class="section__title">{{ _('Homework') }}</h1>
+    </div>
+    <div class="section__body">
+      {%- for tdoc in htdocs -%}
+        <div class="ca-row">
+          <div class="ca-row__date">
+            <div class="ca-row__date-num">{{ datetimeSpan(tdoc['penaltySince'], false, 'D')|safe }}</div>
+            <div class="ca-row__date-text">{{ datetimeSpan(tdoc['penaltySince'], false, 'YYYY-M')|safe }}</div>
+          </div>
+          <div class="ca-row__main">
+            <h2 class="ca-row__title"><a href="{{ url('homework_detail', tid=tdoc.docId) }}" data-emoji-enabled>{{ tdoc['title'] }}</a></h2>
+            <div class="ca-row__meta">
+              <span class="ca-chip">{{ _('Status') }}: {{ _(model.contest.statusText(tdoc)) }}</span>
+              <span class="ca-chip">{{ _('Open Since') }}: {{ datetimeSpan(tdoc['beginAt'])|safe }}</span>
+              <span class="ca-chip">
+                {% if model.contest.isExtended(tdoc) or model.contest.isDone(tdoc) %}
+                  {{ _('Hard Deadline') }}: {{ datetimeSpan(tdoc['endAt'])|safe }}
+                {% else %}
+                  {{ _('Deadline') }}: {{ datetimeSpan(tdoc['penaltySince'])|safe }}
+                {% endif %}
+              </span>
+              {% if htsdict[tdoc['docId']]['attend'] == 1 %}
+                <span class="ca-chip ca-chip--green"><span class="icon icon-check"></span> {{ _('Claimed') }}</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {%- endfor -%}
+      <div style="margin-top: 14px;"><a class="ca-link-more" href="{{ url('homework_main') }}">{{ _('More') }}</a></div>
+    </div>
+  </div>
+{% endif %}

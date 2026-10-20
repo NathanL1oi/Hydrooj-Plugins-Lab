@@ -1,0 +1,110 @@
+{% import "components/record.html" as record with context %}
+{% import "components/problem.html" as problem with context %}
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="ca-scope">
+  <section class="ca-hero ca-hero--compact ca-fade">
+    <div class="ca-hero__row">
+      <div class="ca-hero__text">
+        <p class="ca-eyebrow">{{ _('Problem Set') }}</p>
+        <h1 class="ca-headline">{{ _('Problem Set') }}</h1>
+        <div data-fragment-id="problem_stat">
+          <p class="ca-subhead" style="margin-top: 8px; font-size: 14px;">{{ _('{0} problems' if pcountRelation == 'eq' else 'Over {0} problems').format(pcount) }}</p>
+        </div>
+      </div>
+      <div class="ca-hero__actions">
+        <form method="get" id="searchForm" action="{{ url('problem_main') }}" class="ca-search" style="margin: 0;">
+          <input name="q" type="text" class="ca-input" value="{{ qs }}" placeholder="{{ _('Search') }}">
+          <select name="sort" class="ca-select" style="width: auto; flex: none;" onchange="document.getElementById('searchForm').submit()">
+            {%- for sortType in ["default", "recent"] -%}
+              <option value="{{ sortType }}" {{ "selected" if sort == sortType else "" }}>{{ _('sort::' + sortType) }}</option>
+            {%- endfor -%}
+          </select>
+          <button type="submit" class="ca-btn"><span class="icon icon-search"></span></button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <div class="ca-layout">
+    <div>
+      <div class="section display-mode ca-fade">
+        <div class="section__body no-padding">
+          {% include "partials/problem_list.html" %}
+        </div>
+      </div>
+    </div>
+
+    <aside class="ca-side-stack">
+      {% if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+        <div class="section side nojs--hide ca-fade">
+          <ol class="menu">
+            <a href="javascript:;" class="menu__link edit-mode-hide" name="enter-edit-mode">
+              <span class="icon icon-edit"></span>
+              {{ _('Enter Edit Mode') }}
+            </a>
+            <a href="javascript:;" class="menu__link display-mode-hide" name="leave-edit-mode">
+              <span class="icon icon-edit"></span>
+              {{ _('Leave Edit Mode') }}
+            </a>
+            <div id="problem_selection" class="display-mode-hide"></div>
+            {% if handler.user.hasPerm(perm.PERM_EDIT_PROBLEM) %}
+              <a href="javascript:;" class="menu__link display-mode-hide" name="hide_selected_problems">
+                <span class="icon icon-close"></span>
+                {{ _('Hide Selected') }}
+              </a>
+              <a href="javascript:;" class="menu__link display-mode-hide" name="unhide_selected_problems">
+                <span class="icon icon-check"></span>
+                {{ _('Unhide Selected') }}
+              </a>
+              <a href="javascript:;" class="menu__link display-mode-hide" name="download_selected_problems">
+                <span class="icon icon-download"></span>
+                {{ _('Download Selected') }}
+              </a>
+              <a href="javascript:;" class="menu__link display-mode-hide" name="delete_selected_problems">
+                <span class="icon icon-delete"></span>
+                {{ _('Remove Selected') }}
+              </a>
+            {% endif %}
+            <a href="javascript:;" class="menu__link display-mode-hide" name="copy_selected_problems">
+              <span class="icon icon-copy"></span>
+              {{ _('Copy Selected') }}
+            </a>
+          </ol>
+        </div>
+      {% endif %}
+      {% if handler.user.hasPerm(perm.PERM_CREATE_PROBLEM) %}
+        <div class="section side ca-fade">
+          <div class="section__header">
+            <h1 class="section__title">{{ _('Create Problem') }}</h1>
+          </div>
+          <ol class="menu">
+            {%- for item in ui.getNodes('ProblemAdd') -%}
+              <a href="{{ url(item.name, item.args) }}" class="menu__link">
+                <span class="icon icon-{{ item.args.icon|default('add') }}"></span>
+                {{ _(item.args.text) }}
+              </a>
+            {%- endfor -%}
+          </ol>
+          <div class="section__body">
+            <div class="typo supplementary">
+              <p>{{ _('You have permission to create problems for this domain.') }}</p>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+      <div class="section side ca-fade">
+        <div class="section__header edit-mode-hide">
+          <h1 class="section__title">{{ _('Categories') }}</h1>
+        </div>
+        <div class="section__body">
+          {% include "partials/category.html" %}
+        </div>
+        <div class="section__body edit-mode-hide">
+          {% include "partials/problem_lucky.html" %}
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}
