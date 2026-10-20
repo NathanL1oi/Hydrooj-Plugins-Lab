@@ -207,31 +207,33 @@ html.theme--light .pager.pager-top,
 html.theme--default .pager.pager-bottom,
 html.theme--light .pager.pager-bottom { border: none; }
 html.theme--default .pager li,
-html.theme--light .pager li { margin: 0 1px; }
+html.theme--light .pager li { margin: 0 2px; }
 html.theme--default .pager__item,
 html.theme--light .pager__item {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 32px;
+  min-width: 28px;
   height: 32px;
   border: none;
-  border-radius: 980px;
-  font-size: 13px;
-  font-weight: 500;
+  border-radius: 0;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 400;
   color: #6e6e73;
-  padding: 0 12px;
-  transition: background 0.15s ease, color 0.15s ease;
+  padding: 0 6px;
+  transition: color 0.15s ease;
 }
 html.theme--default .pager__item.link:hover,
 html.theme--light .pager__item.link:hover {
-  background: rgba(0, 113, 227, 0.08);
-  color: #0071e3;
+  background: transparent;
+  color: #0066cc;
 }
 html.theme--default .pager__item.current,
 html.theme--light .pager__item.current {
-  background: #0071e3 !important;
-  color: #fff !important;
+  background: transparent !important;
+  color: #0071e3 !important;
+  font-weight: 700;
   border: none !important;
 }
 
