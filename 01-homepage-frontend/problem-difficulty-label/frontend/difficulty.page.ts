@@ -187,7 +187,7 @@ function applyDifficultySelect() {
     }
 }
 
-addPage(new NamedPage(['problem_main', 'training_detail', 'course_subsec_detail'], async () => {
+addPage(new NamedPage(['problem_main', 'training_detail', 'course_detail', 'course_chapter', 'course_subsec_detail'], async () => {
     applyDifficultyList();
     $(document).on('vjContentNew', applyDifficultyList);
 }));
