@@ -191,6 +191,14 @@ html.theme--light .menu__link {
 }
 html.theme--default .menu__link:hover,
 html.theme--light .menu__link:hover { background: rgba(0, 0, 0, 0.045); color: #0066cc; }
+html.theme--default .menu__link.highlight,
+html.theme--light .menu__link.highlight {
+  background: rgba(0, 113, 227, 0.10);
+  color: #0066cc;
+  font-weight: 600;
+}
+html.theme--default .menu__link.highlight .icon,
+html.theme--light .menu__link.highlight .icon { color: #0066cc; }
 html.theme--default .dropdown-target.menu,
 html.theme--light .dropdown-target.menu {
   border-radius: 14px;
@@ -766,6 +774,7 @@ html.theme--light ::selection { background: rgba(0, 113, 227, 0.18); }
 
 /* ---------- Hero search ---------- */
 .ca-scope .ca-search { display: flex; gap: 10px; max-width: 520px; margin: 26px auto 0; }
+.ca-scope .ca-hero__actions .ca-search { max-width: none; margin: 0; flex-wrap: wrap; justify-content: flex-end; }
 .ca-scope .ca-search .ca-input {
   flex: 1;
   border-radius: 980px;
