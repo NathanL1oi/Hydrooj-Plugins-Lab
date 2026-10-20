@@ -1144,6 +1144,49 @@ html.theme--light select.select:focus {
   box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.16), inset 0 0 0 1px #0071e3;
 }
 
+/* ---------- Material textbox (login dialog etc.) -> flat ---------- */
+html.theme--default label.textbox.material,
+html.theme--light label.textbox.material {
+  border: none;
+  background: none;
+  box-shadow: none;
+  outline: none;
+  height: auto;
+  min-height: 0;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1d1d1f;
+  transition: color 0.15s ease;
+}
+html.theme--default label.textbox.material.focus,
+html.theme--light label.textbox.material.focus { color: #0071e3; }
+html.theme--default label.textbox.material input,
+html.theme--light label.textbox.material input {
+  border: none;
+  border-radius: 12px;
+  background: #f5f5f7;
+  box-shadow: none;
+  outline: none;
+  height: auto;
+  min-height: 42px;
+  padding: 10px 14px;
+  margin: 6px 0 0;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.45;
+  color: #1d1d1f;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+html.theme--default label.textbox.material input:hover,
+html.theme--light label.textbox.material input:hover { background: #eeeef2; }
+html.theme--default label.textbox.material input:focus,
+html.theme--light label.textbox.material input:focus {
+  background: #ffffff;
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.16), inset 0 0 0 1px #0071e3;
+}
+
 /* ---------- Entrance animation ---------- */
 @keyframes ca-fade-up {
   from { opacity: 0; transform: translateY(14px); }
