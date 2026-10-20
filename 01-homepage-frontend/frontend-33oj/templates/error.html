@@ -1,0 +1,29 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="ca-scope ca-error">
+  <div class="ca-error__card ca-fade">
+    <div class="ca-error__emoji">😵</div>
+    <h1 class="ca-error__title">{{ _('Oops!') }}</h1>
+    <p class="ca-error__message">{{ _(error.message).formatFromArray(error.params) }}</p>
+    <details class="ca-error__tech">
+      <summary>{{ _('Technical Information') }}</summary>
+      <div class="ca-error__tech-body">
+        <p><span class="ca-error__tech-key">{{ _('Type') }}:</span> <code>{{ error.name }}</code></p>
+        <p class="ca-error__tech-key">{{ _('Arguments') }}:</p>
+        <ol>
+        {%- for param in error.params -%}
+          {% if instanceof(param, UserFacingError) %}
+            <li>{{ _(param.message).formatFromArray(param.params)}}</li>
+          {% else %}
+            <li>{{ param }}</li>
+          {% endif %}
+        {%- endfor -%}
+        </ol>
+      </div>
+    </details>
+    <div class="ca-error__actions">
+      <a class="ca-btn" href="{{ url('homepage') }}">{{ _('Back to Home') }}</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
