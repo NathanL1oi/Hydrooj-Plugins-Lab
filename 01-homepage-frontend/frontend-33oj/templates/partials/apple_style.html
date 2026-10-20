@@ -202,21 +202,37 @@ html.theme--default .dropdown-target .menu__link,
 html.theme--light .dropdown-target .menu__link { border-radius: 10px; }
 
 /* ---------- Paginator ---------- */
+html.theme--default .pager.pager-top,
+html.theme--light .pager.pager-top,
+html.theme--default .pager.pager-bottom,
+html.theme--light .pager.pager-bottom { border: none; }
+html.theme--default .pager li,
+html.theme--light .pager li { margin: 0 1px; }
 html.theme--default .pager__item,
 html.theme--light .pager__item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  border: none;
   border-radius: 980px;
   font-size: 13px;
   font-weight: 500;
-  color: #0066cc;
-  padding: 6px 14px;
+  color: #6e6e73;
+  padding: 0 12px;
   transition: background 0.15s ease, color 0.15s ease;
 }
-html.theme--default .pager__item:hover,
-html.theme--light .pager__item:hover { background: rgba(0, 113, 227, 0.08); }
-html.theme--default .pager__item.pager--current,
-html.theme--light .pager__item.pager--current {
-  background: #0071e3;
-  color: #fff;
+html.theme--default .pager__item.link:hover,
+html.theme--light .pager__item.link:hover {
+  background: rgba(0, 113, 227, 0.08);
+  color: #0071e3;
+}
+html.theme--default .pager__item.current,
+html.theme--light .pager__item.current {
+  background: #0071e3 !important;
+  color: #fff !important;
+  border: none !important;
 }
 
 /* ---------- Form controls ---------- */
