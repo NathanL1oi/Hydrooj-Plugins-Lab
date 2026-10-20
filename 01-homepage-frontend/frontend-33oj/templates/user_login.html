@@ -1,0 +1,36 @@
+{% extends "layout/immersive.html" %}
+{% block content %}
+<div class="ca-scope ca-auth">
+  <div class="ca-auth__card ca-fade">
+    <h1 class="ca-auth__title">{{ _('Login') }}</h1>
+    <form method="POST">
+      {% if model.system.get('server.login') %}
+      <div class="ca-field">
+        <label class="ca-label" for="auth-uname">{{ _('Username') }}</label>
+        <input id="auth-uname" name="uname" type="text" class="ca-input" autofocus autocomplete="username webauthn">
+      </div>
+      <div class="ca-field">
+        <label class="ca-label" for="auth-password">{{ _('Password') }}</label>
+        <input id="auth-password" name="password" type="password" class="ca-input">
+      </div>
+      <label class="ca-auth__remember">
+        <input type="checkbox" name="rememberme"> {{ _('Remember me') }}
+      </label>
+      <input type="hidden" name="tfa" value="">
+      <input type="hidden" name="authnChallenge" value="">
+      <div class="ca-auth__actions">
+        <input type="submit" value="{{ _('Login') }}" name="login_submit" class="ca-btn ca-btn--block">
+      </div>
+      {% endif %}
+      {%- for v in handler.loginMethods -%}
+        <div class="ca-auth__actions">
+          <a href="{{ url('user_oauth', type=v.id) }}" class="ca-btn ca-btn--gray ca-btn--block">{{ _(v.text) }}</a>
+        </div>
+      {%- endfor -%}
+      <p class="ca-auth__links">
+        <a href="{{ url('user_lostpass') }}">{{ _('Forgot password or username?') }}</a>
+      </p>
+    </form>
+  </div>
+</div>
+{% endblock %}

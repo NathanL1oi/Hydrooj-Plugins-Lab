@@ -958,6 +958,45 @@ html.theme--light ::selection { background: rgba(0, 113, 227, 0.18); }
 .ca-scope .ca-filter-grid .ca-field { margin-bottom: 14px; }
 .ca-scope .ca-filter-grid .ca-field:last-child { margin-bottom: 0; }
 
+/* ---------- Auth pages (login / register) ---------- */
+.ca-scope.ca-auth {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 7vh;
+  min-height: 60vh;
+}
+.ca-scope .ca-auth__card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--ca-bg);
+  border-radius: 22px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.16);
+  padding: 36px 34px 30px;
+}
+.ca-scope .ca-auth__title {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-align: center;
+  margin: 0 0 26px;
+  color: var(--ca-text);
+}
+.ca-scope .ca-auth__card .ca-input { width: 100%; box-sizing: border-box; }
+.ca-scope .ca-auth__remember {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--ca-gray);
+  margin: 2px 0 20px;
+  cursor: pointer;
+}
+.ca-scope .ca-auth__actions { margin-top: 14px; }
+.ca-scope .ca-auth__actions .ca-btn { cursor: pointer; }
+.ca-scope .ca-auth__captcha { display: flex; justify-content: center; margin: 6px 0 4px; }
+.ca-scope .ca-auth__links { text-align: center; margin: 18px 0 0; font-size: 13px; }
+
 /* ---------- Entrance animation ---------- */
 @keyframes ca-fade-up {
   from { opacity: 0; transform: translateY(14px); }
