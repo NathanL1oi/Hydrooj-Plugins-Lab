@@ -48,30 +48,47 @@ html.theme--default .nav--shadow,
 html.theme--light .nav--shadow { box-shadow: none; }
 html.theme--default .nav__item,
 html.theme--light .nav__item {
+  display: inline-flex;
+  align-items: center;
+  height: 45px;
+  padding: 0 16px;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  line-height: 1;
   color: #1d1d1f;
   font-size: 14px;
-  font-weight: 500;
-  border-radius: 980px;
-  padding: 6px 14px;
-  margin: 0 1px;
-  transition: background 0.15s ease, color 0.15s ease;
+  font-weight: 400;
+  transition: color 0.15s ease;
 }
+html.theme--default .nav__item:before,
+html.theme--light .nav__item:before { display: none !important; }
 html.theme--default .nav__item:hover,
 html.theme--light .nav__item:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: transparent;
   color: #0066cc;
 }
 html.theme--default .nav__item.nav--active,
 html.theme--light .nav__item.nav--active {
-  background: rgba(0, 113, 227, 0.1);
+  background: transparent;
   color: #0071e3;
+  font-weight: 600;
 }
 html.theme--default .nav__item--round,
 html.theme--light .nav__item--round {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  line-height: 1;
   background: #0071e3;
   color: #fff;
+  border: none;
   border-radius: 980px;
-  padding: 6px 16px;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 500;
 }
 html.theme--default .nav__item--round:hover,
 html.theme--light .nav__item--round:hover { background: #0077ed; color: #fff; }
