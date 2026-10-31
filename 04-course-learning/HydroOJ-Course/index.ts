@@ -610,6 +610,91 @@ async function checkCourseAccess(handler: Handler, domainId: string, cdoc: Cours
     if (!hasAccess) throw new NotFoundError('Course', cdoc.docId.toString());
 }
 
+// Let core discussion detail pages resolve a real course instead of treating
+// its id as a generic discussion node. The create route below uses the same
+// course access checks before delegating storage to DiscussionModel.add().
+function registerCourseDiscussionType() {
+    const discussion = DiscussionModel as any;
+    discussion.typeDisplay[TYPE_COURSE] = 'course';
+    const getVnode = discussion.getVnode;
+    discussion.getVnode = async (domainId: string, type: number, id: string, uid?: number) => {
+        if (type !== TYPE_COURSE) return getVnode(domainId, type, id, uid);
+        if (!ObjectId.isValid(id)) throw new NotFoundError('Course', id);
+        const cdoc = await CourseModel.get(domainId, new ObjectId(id));
+        if (!cdoc) throw new NotFoundError('Course', id);
+        const restricted = !!(cdoc.assign?.length || cdoc.classes?.length);
+        return { ...cdoc, type, id: cdoc.docId, hidden: restricted };
+    };
+    const checkVNodeVisibility = discussion.checkVNodeVisibility;
+    discussion.checkVNodeVisibility = (type: number, vnode: any, user: any) => {
+        if (type !== TYPE_COURSE) return checkVNodeVisibility(type, vnode, user);
+        if (!vnode.hidden) return true;
+        if (user.own(vnode) || user.hasPerm(PERM.PERM_VIEW_HIDDEN_HOMEWORK)) return true;
+        const groups = user.group || [];
+        return (vnode.assign || []).some((group: string) => groups.includes(group))
+            || (vnode.classes || []).some((group: string) => groups.includes(group))
+            || (vnode.teachers || []).includes(user._id);
+    };
+}
+
+class CourseDiscussionCreateHandler extends Handler {
+    cdoc: CourseDoc;
+
+    @param('cid', Types.ObjectId)
+    async prepare(domainId: string, cid: ObjectId) {
+        this.cdoc = await CourseModel.get(domainId, cid);
+        if (!this.cdoc) throw new CourseNotFoundError(domainId, cid);
+        await checkCourseAccess(this, domainId, this.cdoc);
+        this.checkPerm(PERM.PERM_CREATE_DISCUSSION);
+    }
+
+    @param('cid', Types.ObjectId)
+    async get(domainId: string, cid: ObjectId) {
+        this.response.template = 'discussion_create.html';
+        this.response.body = {
+            path: [
+                ['Hydro', 'homepage'],
+                ['course_main', 'course_main'],
+                [this.cdoc.title, 'course_detail', { cid }, true],
+                ['course_discussion_create', null],
+            ],
+            vnode: { ...this.cdoc, type: TYPE_COURSE, id: cid },
+        };
+    }
+
+    @param('cid', Types.ObjectId)
+    @param('title', Types.Title)
+    @param('content', Types.Content)
+    @param('highlight', Types.Boolean)
+    @param('pin', Types.Boolean)
+    async post(
+        domainId: string,
+        cid: ObjectId,
+        title: string,
+        content: string,
+        highlight = false,
+        pin = false,
+    ) {
+        await this.limitRate('add_discussion', 3600, 60);
+        if (highlight) this.checkPerm(PERM.PERM_HIGHLIGHT_DISCUSSION);
+        if (pin) this.checkPerm(PERM.PERM_PIN_DISCUSSION);
+        const did = await DiscussionModel.add(
+            domainId,
+            TYPE_COURSE,
+            cid,
+            this.user._id,
+            title,
+            content,
+            this.request.ip,
+            highlight,
+            pin,
+            false,
+        );
+        this.response.body = { did };
+        this.response.redirect = this.url('discussion_detail', { did });
+    }
+}
+
 // Main Course List Handler
 class CourseMainHandler extends Handler {
     @param('page', Types.PositiveInt, true)
@@ -1454,10 +1539,12 @@ class CourseProblemSearchHandler extends Handler {
 
 // Plugin apply function
 export async function apply(ctx: Context) {
+    registerCourseDiscussionType();
     ctx.Route('course_main', '/course', CourseMainHandler, PERM.PERM_VIEW_HOMEWORK);
     ctx.Route('course_create', '/course/create', CourseEditHandler);
     ctx.Route('course_problem_search', '/course/problem-search', CourseProblemSearchHandler, PERM.PERM_VIEW_PROBLEM);
     ctx.Route('course_detail', '/course/:cid', CourseDetailHandler, PERM.PERM_VIEW_HOMEWORK);
+    ctx.Route('course_discussion_create', '/course/:cid/discussion/create', CourseDiscussionCreateHandler, PRIV.PRIV_USER_PROFILE, PERM.PERM_CREATE_DISCUSSION);
     ctx.Route('course_chapter', '/course/:cid/chapter/:chapterId', CourseChapterHandler, PERM.PERM_VIEW_HOMEWORK);
     ctx.Route('course_chapter_edit', '/course/:cid/chapter/:chapterId/edit', CourseChapterEditHandler);
     ctx.Route('course_chapter_scoreboard', '/course/:cid/chapter/:chapterId/scoreboard', CourseChapterScoreboardHandler, PERM.PERM_VIEW_HOMEWORK_SCOREBOARD);

@@ -200,7 +200,7 @@
           <div class="ca-card__head">
             <h2 class="ca-card__title">{{ _('Discussion') }}</h2>
             {% if handler.user.hasPerm(perm.PERM_CREATE_DISCUSSION) %}
-            <a href="{{ url('discussion_create', type=50, docId=cdoc.docId) }}" class="ca-btn ca-btn--small">
+            <a href="{{ url('course_discussion_create', cid=cdoc.docId) }}" class="ca-btn ca-btn--small">
               {{ _('New Discussion') }}
             </a>
             {% endif %}
