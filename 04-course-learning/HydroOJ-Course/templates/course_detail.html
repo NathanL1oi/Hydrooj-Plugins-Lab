@@ -34,7 +34,7 @@
           <button class="ca-btn" type="submit"><span class="icon icon-add"></span> {{ _('Join Course') }}</button>
         </form>
         {% endif %}
-        {% if handler.user.own(cdoc) or handler.user.hasPerm(perm.PERM_EDIT_HOMEWORK) %}
+        {% if canManage %}
         <a href="{{ url('course_edit', cid=cdoc.docId) }}" class="ca-btn ca-btn--gray ca-btn--small">
           <span class="icon icon-edit"></span> {{ _('Edit') }}
         </a>

@@ -1,4 +1,5 @@
 {% extends "layout/basic.html" %}
+{% import "partials/course_problem_picker.html" as problemPicker with context %}
 {% block content %}
 {% include "partials/course_apple_style.html" %}
 <div class="ca-scope">
@@ -36,15 +37,7 @@
           </div>
           <div class="ca-field">
             <label class="ca-label">{{ _('Problems') }}</label>
-            <div id="course-chapter-problems" class="ca-problem-editor"></div>
-            <div class="ca-form-grid" style="grid-template-columns: minmax(0, 1fr) auto; align-items: start;">
-              <div class="ca-suggest-wrap">
-                <input type="text" id="course-problem-add-input" class="ca-input" placeholder="{{ _('Search problems...') }}" autocomplete="off">
-                <div id="course-problem-suggest" class="ca-problem-suggest" style="display: none;"></div>
-              </div>
-              <button type="button" id="course-problem-add" class="ca-btn">{{ _('Add') }}</button>
-            </div>
-            <input type="hidden" name="pids" id="course-pids" value="{{ pids }}">
+            {{ problemPicker.render('course-chapter-problem', 'pids') }}
           </div>
           <div>
             <button type="submit" class="ca-btn">{{ _('Save') }}</button>
@@ -111,177 +104,14 @@
 {% endblock %}
 
 {% block script %}
+{% include "partials/course_problem_picker_script.html" %}
 <script>
-(() => {
-  const root = document.getElementById('course-chapter-problems');
-  const pidsInput = document.getElementById('course-pids');
-  const addInput = document.getElementById('course-problem-add-input');
-  const addBtn = document.getElementById('course-problem-add');
-  const suggest = document.getElementById('course-problem-suggest');
-  const searchUrl = {{ url('course_problem_search')|json|safe }};
-  if (!root || !pidsInput) return;
-
-  let problems = [];
-  try {
-    problems = {{ problems|json|safe }} || [];
-  } catch (e) {
-    problems = [];
-  }
-  problems = problems.map((p) => ({
-    id: String(p.id),
-    pid: String(p.pid || ''),
-    title: String(p.title || p.id),
-    nSubmit: Number(p.nSubmit || 0),
-    nAccept: Number(p.nAccept || 0),
-    difficulty: Number(p.difficulty || 0),
-    tag: Array.isArray(p.tag) ? p.tag : [],
-    hidden: !!p.hidden,
-  }));
-
-  const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-
-  const problemInfoHtml = (p) => {
-    const pid = p.pid ? `<b>${escapeHtml(p.pid)}</b> · ` : '';
-    const title = escapeHtml(p.title || p.id);
-    const stats = `${p.nAccept || 0} / ${p.nSubmit || 0}`;
-    const diff = p.difficulty ? ` · ${p.difficulty}` : '';
-    const hidden = p.hidden ? ' <span class="text-orange">(' + {{ _('Hidden')|json|safe }} + ')</span>' : '';
-    return `${pid}${title} <span class="text-muted">(${stats}${diff})</span>${hidden}`;
-  };
-
-  const sync = () => {
-    pidsInput.value = problems.map((p) => p.id).join(',');
-  };
-
-  const makeButton = (label, title) => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'ca-btn ca-btn--gray ca-btn--xsmall';
-    b.textContent = label;
-    if (title) b.title = title;
-    return b;
-  };
-
-  const render = () => {
-    root.innerHTML = '';
-    problems.forEach((p, index) => {
-      const row = document.createElement('div');
-      row.className = 'ca-problem-row';
-
-      const title = document.createElement('span');
-      title.className = 'ca-problem-title';
-      title.innerHTML = `${index + 1}. ${problemInfoHtml(p)}`;
-      row.appendChild(title);
-
-      const up = makeButton('↑', {{ _('Move up')|json|safe }});
-      up.disabled = index === 0;
-      up.addEventListener('click', () => {
-        [problems[index - 1], problems[index]] = [problems[index], problems[index - 1]];
-        render();
-      });
-      row.appendChild(up);
-
-      const down = makeButton('↓', {{ _('Move down')|json|safe }});
-      down.disabled = index === problems.length - 1;
-      down.addEventListener('click', () => {
-        [problems[index + 1], problems[index]] = [problems[index], problems[index + 1]];
-        render();
-      });
-      row.appendChild(down);
-
-      const remove = makeButton('✕', {{ _('Remove')|json|safe }});
-      remove.addEventListener('click', () => {
-        problems.splice(index, 1);
-        render();
-      });
-      row.appendChild(remove);
-
-      root.appendChild(row);
-    });
-    sync();
-  };
-
-  const addProblem = (p) => {
-    if (!p || problems.some((item) => item.id === String(p.docId))) return;
-    problems.push({
-      id: String(p.docId),
-      pid: String(p.pid || ''),
-      title: String(p.title || p.docId),
-      nSubmit: Number(p.nSubmit || 0),
-      nAccept: Number(p.nAccept || 0),
-      difficulty: Number(p.difficulty || 0),
-      tag: Array.isArray(p.tag) ? p.tag : [],
-      hidden: !!p.hidden,
-    });
-    addInput.value = '';
-    if (suggest) suggest.style.display = 'none';
-    render();
-  };
-
-  let suggestTimer = null;
-  const renderSuggestions = (list) => {
-    if (!suggest) return;
-    suggest.innerHTML = '';
-    const candidates = (list || []).filter((p) => !problems.some((item) => item.id === String(p.docId)));
-    if (!candidates.length) {
-      suggest.style.display = 'none';
-      return;
-    }
-    candidates.forEach((p) => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'ca-problem-suggest-item';
-      btn.innerHTML = problemInfoHtml(p);
-      btn.addEventListener('click', () => addProblem(p));
-      suggest.appendChild(btn);
-    });
-    suggest.style.display = 'block';
-  };
-
-  const fetchSuggestions = () => {
-    if (!suggest) return;
-    const q = (addInput.value || '').trim();
-    if (!q) {
-      suggest.style.display = 'none';
-      return;
-    }
-    clearTimeout(suggestTimer);
-    suggestTimer = setTimeout(async () => {
-      try {
-        const res = await fetch(`${searchUrl}?q=${encodeURIComponent(q)}`, { headers: { Accept: 'application/json' } });
-        const data = await res.json();
-        renderSuggestions(Array.isArray(data) ? data : []);
-      } catch (e) {
-        suggest.style.display = 'none';
-      }
-    }, 250);
-  };
-
-  if (addBtn) addBtn.addEventListener('click', () => {
-    const q = (addInput.value || '').trim();
-    if (!q) return;
-    if (suggest && suggest.style.display === 'block') {
-      const first = suggest.querySelector('.ca-problem-suggest-item');
-      if (first) first.click();
-      return;
-    }
-    addProblem({ docId: q, pid: '', title: q, nSubmit: 0, nAccept: 0, difficulty: 0, tag: [], hidden: false });
-  });
-  if (addInput) addInput.addEventListener('input', fetchSuggestions);
-  if (addInput) addInput.addEventListener('keydown', (ev) => {
-    if (ev.key === 'Enter') {
-      ev.preventDefault();
-      if (suggest && suggest.style.display === 'block') {
-        const first = suggest.querySelector('.ca-problem-suggest-item');
-        if (first) first.click();
-      }
-    }
-  });
-  if (addInput) addInput.addEventListener('blur', () => {
-    setTimeout(() => { if (suggest) suggest.style.display = 'none'; }, 150);
-  });
-
-  render();
-})();
+window.CourseProblemPicker.create('course-chapter-problem', {
+  initial: {{ problems|json|safe }},
+  searchUrl: {{ url('course_problem_search')|json|safe }},
+  onChange: (pids) => {
+    document.getElementById('course-chapter-problem-pids').value = pids.join(',');
+  },
+});
 </script>
 {% endblock %}

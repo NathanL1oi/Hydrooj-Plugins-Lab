@@ -1,0 +1,220 @@
+<script>
+(() => {
+  if (window.CourseProblemPicker) return;
+
+  const labels = {{ {
+    hidden: _('Hidden'),
+    moveUp: _('Move up'),
+    moveDown: _('Move down'),
+    remove: _('Remove'),
+    search: _('Search problems by ID, PID, title or tag...'),
+    add: _('Add')
+  }|json|safe }};
+  const normalize = (p) => ({
+    id: String(p.id ?? p.docId),
+    pid: String(p.pid || ''),
+    title: String(p.title || p.id || p.docId),
+    nSubmit: Number(p.nSubmit || 0),
+    nAccept: Number(p.nAccept || 0),
+    difficulty: Number(p.difficulty || 0),
+    tag: Array.isArray(p.tag) ? p.tag : [],
+    hidden: !!p.hidden,
+  });
+
+  const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+
+  const problemInfoHtml = (p) => {
+    const pid = p.pid ? `<b>${escapeHtml(p.pid)}</b> · ` : '';
+    const title = escapeHtml(p.title || p.id);
+    const stats = `${p.nAccept || 0} / ${p.nSubmit || 0}`;
+    const diff = p.difficulty ? ` · ${p.difficulty}` : '';
+    const hidden = p.hidden ? ` <span class="text-orange">(${labels.hidden})</span>` : '';
+    return `${pid}${title} <span class="text-muted">(${stats}${diff})</span>${hidden}`;
+  };
+
+  window.CourseProblemPicker = {
+    create(id, { initial = [], searchUrl = '', onChange = () => {} } = {}) {
+      const host = document.getElementById(id);
+      if (host) {
+        const list = document.createElement('div');
+        list.id = `${id}-list`;
+        list.className = 'ca-problem-editor';
+        const controls = document.createElement('div');
+        controls.className = 'ca-form-grid ca-problem-picker__controls';
+        const wrap = document.createElement('div');
+        wrap.className = 'ca-suggest-wrap';
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = `${id}-input`;
+        input.className = 'ca-input';
+        input.placeholder = labels.search;
+        input.autocomplete = 'off';
+        input.setAttribute('aria-autocomplete', 'list');
+        input.setAttribute('aria-controls', `${id}-suggest`);
+        input.setAttribute('aria-expanded', 'false');
+        const suggestions = document.createElement('div');
+        suggestions.id = `${id}-suggest`;
+        suggestions.className = 'ca-problem-suggest';
+        suggestions.style.display = 'none';
+        suggestions.setAttribute('role', 'listbox');
+        wrap.append(input, suggestions);
+        const add = document.createElement('button');
+        add.type = 'button';
+        add.id = `${id}-add`;
+        add.className = 'ca-btn';
+        add.textContent = labels.add;
+        controls.append(wrap, add);
+        host.append(list, controls);
+      }
+      const root = document.getElementById(`${id}-list`);
+      const pidsInput = document.getElementById(`${id}-pids`);
+      const addInput = document.getElementById(`${id}-input`);
+      const addBtn = document.getElementById(`${id}-add`);
+      const suggest = document.getElementById(`${id}-suggest`);
+      if (!root || !addInput || !addBtn || !suggest) throw new Error(`Problem picker not found: ${id}`);
+
+      let problems = (initial || []).filter((p) => p && (p.id ?? p.docId) != null).map(normalize);
+      let suggestTimer = null;
+      let requestSerial = 0;
+
+      const showSuggestions = (show) => {
+        suggest.style.display = show ? 'block' : 'none';
+        addInput.setAttribute('aria-expanded', String(show));
+      };
+      const sync = () => {
+        if (pidsInput) pidsInput.value = problems.map((p) => p.id).join(',');
+        onChange(problems.map((p) => p.id));
+      };
+      const makeButton = (label, title) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'ca-btn ca-btn--gray ca-btn--xsmall';
+        button.textContent = label;
+        button.title = title;
+        button.setAttribute('aria-label', title);
+        return button;
+      };
+      const render = () => {
+        root.innerHTML = '';
+        problems.forEach((p, index) => {
+          const row = document.createElement('div');
+          row.className = 'ca-problem-row';
+          const title = document.createElement('span');
+          title.className = 'ca-problem-title';
+          title.innerHTML = `${index + 1}. ${problemInfoHtml(p)}`;
+          row.appendChild(title);
+
+          const up = makeButton('↑', labels.moveUp);
+          up.disabled = index === 0;
+          up.addEventListener('click', () => {
+            [problems[index - 1], problems[index]] = [problems[index], problems[index - 1]];
+            sync();
+            render();
+          });
+          row.appendChild(up);
+
+          const down = makeButton('↓', labels.moveDown);
+          down.disabled = index === problems.length - 1;
+          down.addEventListener('click', () => {
+            [problems[index + 1], problems[index]] = [problems[index], problems[index + 1]];
+            sync();
+            render();
+          });
+          row.appendChild(down);
+
+          const remove = makeButton('✕', labels.remove);
+          remove.addEventListener('click', () => {
+            problems.splice(index, 1);
+            sync();
+            render();
+          });
+          row.appendChild(remove);
+          root.appendChild(row);
+        });
+        sync();
+      };
+      const addProblem = (p) => {
+        if (!p || (p.id ?? p.docId) == null) return;
+        const problem = normalize(p);
+        if (problems.some((item) => item.id === problem.id)) return;
+        problems.push(problem);
+        addInput.value = '';
+        clearTimeout(suggestTimer);
+        requestSerial++;
+        showSuggestions(false);
+        sync();
+        render();
+      };
+      const renderSuggestions = (list) => {
+        suggest.innerHTML = '';
+        const candidates = (list || []).filter((p) => p && p.docId != null
+          && !problems.some((item) => item.id === String(p.docId)));
+        if (!candidates.length) {
+          showSuggestions(false);
+          return;
+        }
+        candidates.forEach((p) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'ca-problem-suggest-item';
+          button.setAttribute('role', 'option');
+          button.innerHTML = problemInfoHtml(normalize(p));
+          button.addEventListener('click', () => addProblem(p));
+          suggest.appendChild(button);
+        });
+        showSuggestions(true);
+      };
+      const fetchSuggestions = () => {
+        clearTimeout(suggestTimer);
+        const q = addInput.value.trim();
+        if (!q) {
+          requestSerial++;
+          showSuggestions(false);
+          return;
+        }
+        suggestTimer = setTimeout(async () => {
+          const serial = ++requestSerial;
+          try {
+            const res = await fetch(`${searchUrl}?q=${encodeURIComponent(q)}`, { headers: { Accept: 'application/json' } });
+            if (!res.ok) throw new Error(`Problem search failed: ${res.status}`);
+            const data = await res.json();
+            if (serial === requestSerial && addInput.value.trim() === q) {
+              renderSuggestions(Array.isArray(data) ? data : []);
+            }
+          } catch (e) {
+            if (serial === requestSerial) showSuggestions(false);
+          }
+        }, 250);
+      };
+
+      addBtn.addEventListener('click', () => {
+        const q = addInput.value.trim();
+        if (!q) return;
+        if (suggest.style.display === 'block') {
+          const first = suggest.querySelector('.ca-problem-suggest-item');
+          if (first) first.click();
+          return;
+        }
+        addProblem({ docId: q, title: q });
+      });
+      addInput.addEventListener('input', fetchSuggestions);
+      addInput.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter') {
+          ev.preventDefault();
+          addBtn.click();
+        } else if (ev.key === 'Escape') {
+          clearTimeout(suggestTimer);
+          requestSerial++;
+          showSuggestions(false);
+        }
+      });
+      addInput.addEventListener('blur', () => {
+        setTimeout(() => showSuggestions(false), 150);
+      });
+      render();
+    },
+  };
+})();
+</script>

@@ -1,0 +1,11 @@
+{% macro render(id, name='') %}
+<div id="{{ id }}-list" class="ca-problem-editor"></div>
+<div class="ca-form-grid ca-problem-picker__controls">
+  <div class="ca-suggest-wrap">
+    <input type="text" id="{{ id }}-input" class="ca-input" placeholder="{{ _('Search problems by ID, PID, title or tag...') }}" autocomplete="off" aria-autocomplete="list" aria-controls="{{ id }}-suggest" aria-expanded="false">
+    <div id="{{ id }}-suggest" class="ca-problem-suggest" role="listbox" style="display: none;"></div>
+  </div>
+  <button type="button" id="{{ id }}-add" class="ca-btn">{{ _('Add') }}</button>
+</div>
+{% if name %}<input type="hidden" name="{{ name }}" id="{{ id }}-pids">{% endif %}
+{% endmacro %}

@@ -61,6 +61,31 @@ export interface CourseStatusDoc {
 
 const TYPE_COURSE = 50 as const;
 
+type CourseManager = Pick<Handler['user'], '_id' | 'own' | 'hasPerm'>;
+
+// Owners, maintainers and teachers manage their own courses; other users
+// need the global homework edit permission. own() includes maintainers.
+function canManageCourse(user: CourseManager, cdoc: CourseDoc) {
+    if (user.own(cdoc) || (cdoc.teachers || []).includes(user._id)) {
+        return user.hasPerm(PERM.PERM_EDIT_HOMEWORK_SELF);
+    }
+    return user.hasPerm(PERM.PERM_EDIT_HOMEWORK);
+}
+
+function checkCourseManage(handler: Handler, cdoc: CourseDoc) {
+    if (handler.user.own(cdoc) || (cdoc.teachers || []).includes(handler.user._id)) {
+        handler.checkPerm(PERM.PERM_EDIT_HOMEWORK_SELF);
+    } else {
+        handler.checkPerm(PERM.PERM_EDIT_HOMEWORK);
+    }
+}
+
+function canDeleteCourse(user: CourseManager, cdoc: CourseDoc) {
+    return user.own(cdoc)
+        ? user.hasPerm(PERM.PERM_EDIT_HOMEWORK_SELF)
+        : user.hasPerm(PERM.PERM_EDIT_HOMEWORK);
+}
+
 // Collect every problem id from a nested chapter tree. Used to keep the
 // legacy `cdoc.pids` field in sync for permissions, progress, sharing, and
 // fallback rendering.
@@ -125,6 +150,20 @@ function parseCourseChapters(source: string): CourseChapter[] {
         };
     });
     return validate(parsed);
+}
+
+// Problem fields consumed by the shared problem picker in both editors.
+function courseProblemForEditor(pid: number | string, pdoc?: any) {
+    return {
+        id: Number(pid),
+        pid: pdoc?.pid || '',
+        title: pdoc?.title || String(pid),
+        nSubmit: pdoc?.nSubmit || 0,
+        nAccept: pdoc?.nAccept || 0,
+        difficulty: pdoc?.difficulty || 0,
+        tag: pdoc?.tag || [],
+        hidden: !!pdoc?.hidden,
+    };
 }
 
 function courseChaptersForEditor(cdoc: CourseDoc | null): CourseChapter[] {
@@ -745,13 +784,8 @@ class CourseDetailHandler extends Handler {
             if (ddoc && scdoc) source = { ddoc, cdoc: scdoc };
         }
 
-        const canShare = !this.cdoc.reference
-            && (this.user.own(this.cdoc)
-                || (this.cdoc.teachers || []).includes(this.user._id)
-                || this.user.hasPerm(PERM.PERM_EDIT_HOMEWORK));
-        const canEditChapter = this.user.own(this.cdoc)
-            ? this.user.hasPerm(PERM.PERM_EDIT_HOMEWORK_SELF)
-            : this.user.hasPerm(PERM.PERM_EDIT_HOMEWORK);
+        const canManage = canManageCourse(this.user, this.cdoc);
+        const canShare = !this.cdoc.reference && canManage;
 
         this.response.template = 'course_detail.html';
         this.response.body = {
@@ -770,7 +804,8 @@ class CourseDetailHandler extends Handler {
             files: sortFiles(validFiles),
             source,
             canShare,
-            canEditChapter,
+            canManage,
+            canEditChapter: canManage,
             chapterProgress,
         };
 
@@ -826,9 +861,7 @@ class CourseChapterHandler extends Handler {
         }
 
         this.response.template = 'course_chapter.html';
-        const canEditChapter = this.user.own(this.cdoc)
-            ? this.user.hasPerm(PERM.PERM_EDIT_HOMEWORK_SELF)
-            : this.user.hasPerm(PERM.PERM_EDIT_HOMEWORK);
+        const canEditChapter = canManageCourse(this.user, this.cdoc);
         this.response.body = {
             cdoc: this.cdoc,
             chapter,
@@ -854,8 +887,7 @@ class CourseChapterEditHandler extends Handler {
         this.cdoc = await CourseModel.get(domainId, cid);
         if (!this.cdoc) throw new CourseNotFoundError(domainId, cid);
 
-        if (!this.user.own(this.cdoc)) this.checkPerm(PERM.PERM_EDIT_HOMEWORK);
-        else this.checkPerm(PERM.PERM_EDIT_HOMEWORK_SELF);
+        checkCourseManage(this, this.cdoc);
 
         this.chapters = JSON.parse(JSON.stringify(this.cdoc.chapters || []));
         const chapterPath = findChapterPath(this.chapters, chapterId);
@@ -869,19 +901,7 @@ class CourseChapterEditHandler extends Handler {
         const chapter = this.chapterPath[this.chapterPath.length - 1];
         const chapterPids = (chapter.pids || []).map((pid) => Number(pid)).filter((pid) => Number.isSafeInteger(pid) && pid > 0);
         const pdict = await ProblemModel.getList(domainId, chapterPids, true, false);
-        const problems = chapterPids.map((pid) => {
-            const pdoc = pdict[pid];
-            return {
-                id: pid,
-                pid: pdoc?.pid || '',
-                title: pdoc?.title || String(pid),
-                nSubmit: pdoc?.nSubmit || 0,
-                nAccept: pdoc?.nAccept || 0,
-                difficulty: pdoc?.difficulty || 0,
-                tag: pdoc?.tag || [],
-                hidden: !!pdoc?.hidden,
-            };
-        });
+        const problems = chapterPids.map((pid) => courseProblemForEditor(pid, pdict[pid]));
         this.response.template = 'course_chapter_edit.html';
         this.response.body = {
             cdoc: this.cdoc,
@@ -963,6 +983,12 @@ class CourseEditHandler extends Handler {
     async get(domainId: string, cid?: ObjectId) {
         const groups = await UserModel.listGroup(domainId);
         const chapters = courseChaptersForEditor(this.cdoc);
+        const coursePids = flattenCoursePids(chapters)
+            .map((pid) => Number(pid))
+            .filter((pid) => Number.isSafeInteger(pid) && pid > 0);
+        const pdict = await ProblemModel.getList(domainId, coursePids, true, false);
+        const problemDict: Record<number, ReturnType<typeof courseProblemForEditor>> = {};
+        for (const pid of coursePids) problemDict[pid] = courseProblemForEditor(pid, pdict[pid]);
 
         let source: { ddoc: any; cdoc: CourseDoc } | null = null;
         if (this.cdoc?.reference) {
@@ -980,7 +1006,9 @@ class CourseEditHandler extends Handler {
             page_name: cid ? 'course_edit' : 'course_create',
             pids: this.cdoc ? this.cdoc.pids.join(',') : '',
             chaptersJson: JSON.stringify(chapters),
-            canShare: !!(cid && this.cdoc && !this.cdoc.reference),
+            problemDict,
+            canShare: !!(cid && this.cdoc && !this.cdoc.reference && canManageCourse(this.user, this.cdoc)),
+            canDelete: !!(cid && this.cdoc && canDeleteCourse(this.user, this.cdoc)),
             source,
         };
     }
@@ -1045,6 +1073,7 @@ class CourseEditHandler extends Handler {
     @param('cid', Types.ObjectId)
     async postDelete(domainId: string, cid: ObjectId) {
         if (!this.user.own(this.cdoc!)) this.checkPerm(PERM.PERM_EDIT_HOMEWORK);
+        else this.checkPerm(PERM.PERM_EDIT_HOMEWORK_SELF);
         await Promise.all([
             CourseModel.del(domainId, cid),
             StorageModel.del(this.cdoc?.files?.map((i) => `course/${domainId}/${cid}/${i.name}`) || [], this.user._id),
@@ -1061,11 +1090,7 @@ class CourseFilesHandler extends Handler {
     async prepare(domainId: string, cid: ObjectId) {
         this.cdoc = await CourseModel.get(domainId, cid);
         if (!this.cdoc) throw new CourseNotFoundError(domainId, cid);
-        if (!this.user.own(this.cdoc) && !(this.cdoc.teachers || []).includes(this.user._id)) {
-            this.checkPerm(PERM.PERM_EDIT_HOMEWORK);
-        } else {
-            this.checkPerm(PERM.PERM_EDIT_HOMEWORK_SELF);
-        }
+        checkCourseManage(this, this.cdoc);
     }
 
     @param('cid', Types.ObjectId)
@@ -1155,9 +1180,7 @@ class CourseShareHandler extends Handler {
     async prepare(domainId: string, cid: ObjectId) {
         this.cdoc = await CourseModel.get(domainId, cid);
         if (!this.cdoc) throw new CourseNotFoundError(domainId, cid);
-        const canManage = this.user.own(this.cdoc) || (this.cdoc.teachers || []).includes(this.user._id);
-        if (canManage) this.checkPerm(PERM.PERM_EDIT_HOMEWORK_SELF);
-        else this.checkPerm(PERM.PERM_EDIT_HOMEWORK);
+        checkCourseManage(this, this.cdoc);
         if (this.cdoc.reference) throw new ValidationError('reference');
     }
 
@@ -1488,6 +1511,16 @@ export async function apply(ctx: Context) {
         'Course List': '课程列表',
         'All Courses': '课程',
         'Search courses...': '搜索课程...',
+        'Search problems by ID, PID, title or tag...': '按题目 ID、PID、标题或标签搜索...',
+        'Chapter title': '章节标题',
+        'Outdent': '减少层级',
+        'Delete': '删除',
+        'Delete this chapter and its subchapters?': '确定删除该章节及其所有子章节吗？',
+        'Chapter introduction (optional)': '章节介绍（可选）',
+        'Markdown or plain text shown above this chapter’s problems.': '显示在章节题目上方的 Markdown 或纯文本。',
+        'New Chapter': '新章节',
+        'Chapter {0}': '章节 {0}',
+        'Add Chapter': '添加章节',
         '{0} chapters': '{0} 个章节',
         '{0} problems': '{0} 道题',
         'New Course': '新建课程',
@@ -1585,6 +1618,15 @@ export async function apply(ctx: Context) {
         'Course List': 'Course List',
         'All Courses': 'All Courses',
         'Search courses...': 'Search courses...',
+        'Search problems by ID, PID, title or tag...': 'Search problems by ID, PID, title or tag...',
+        'Chapter title': 'Chapter title',
+        'Outdent': 'Outdent',
+        'Delete': 'Delete',
+        'Delete this chapter and its subchapters?': 'Delete this chapter and its subchapters?',
+        'Chapter introduction (optional)': 'Chapter introduction (optional)',
+        'Markdown or plain text shown above this chapter’s problems.': 'Markdown or plain text shown above this chapter’s problems.',
+        'New Chapter': 'New Chapter',
+        'Add Chapter': 'Add Chapter',
         '{0} chapters': '{0} chapters',
         '{0} problems': '{0} problems',
         'New Course': 'New Course',
