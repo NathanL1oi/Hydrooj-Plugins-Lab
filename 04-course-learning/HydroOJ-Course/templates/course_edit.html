@@ -42,7 +42,14 @@
           </div>
 
           <div class="ca-field">
-            <label class="ca-label">{{ _('Chapters') }}</label>
+            <label class="ca-label" for="course-chapter-editor">{{ _('Chapters') }}</label>
+            <div class="ca-chapter-editor__toolbar">
+              <button type="button" id="course-chapter-add" class="ca-btn ca-btn--small">{{ _('Add Chapter') }}</button>
+              <div class="ca-chapter-editor__visibility">
+                <button type="button" id="course-chapter-expand-all" class="ca-link-more">{{ _('Expand all') }}</button>
+                <button type="button" id="course-chapter-collapse-all" class="ca-link-more">{{ _('Collapse all') }}</button>
+              </div>
+            </div>
             <div id="course-chapter-editor" class="ca-chapter-editor"></div>
             <p class="ca-help">{{ _('Add chapters and nested subchapters. Each chapter can contain problems or child chapters.') }}</p>
             <input type="hidden" name="chapters" id="course-chapters" value="{{ chaptersJson }}">
@@ -137,7 +144,13 @@
     problems: _('Problems'),
     newChapter: _('New Chapter'),
     chapterFallback: 'Chapter 1',
-    addChapter: _('Add Chapter')
+    addChapter: _('Add Chapter'),
+    expand: _('Expand'),
+    collapse: _('Collapse'),
+    expandAll: _('Expand all'),
+    collapseAll: _('Collapse all'),
+    problemsCount: _('{0} problems'),
+    subchaptersCount: _('{0} subchapters')
   }|json|safe }};
   const problemDict = {{ problemDict|json|safe }};
   const searchUrl = {{ url('course_problem_search')|json|safe }};
@@ -160,7 +173,7 @@
     children: Array.isArray(node.children) ? node.children.map(normalizeNode) : [],
   });
   chapters = chapters.map(normalizeNode);
-
+  const collapsed = new Set();
   const collectIds = (nodes) => {
     const ids = [];
     const visit = (list) => list.forEach((node) => {
@@ -170,6 +183,7 @@
     visit(nodes);
     return ids;
   };
+  collectIds(chapters).forEach((id) => collapsed.add(id));
 
   const findParent = (nodes, target, parent = null, siblings = null, parentIndex = -1) => {
     for (let i = 0; i < nodes.length; i++) {
@@ -219,24 +233,75 @@
     const header = document.createElement('div');
     header.className = 'ca-chapter-edit__header';
 
+    const setCollapsed = (isCollapsed) => {
+      if (isCollapsed) collapsed.add(node._id);
+      else collapsed.delete(node._id);
+      card.classList.toggle('is-collapsed', isCollapsed);
+      body.hidden = isCollapsed;
+      toggle.classList.toggle('is-collapsed', isCollapsed);
+      toggle.textContent = isCollapsed ? '▸' : '▾';
+      toggle.setAttribute('aria-expanded', String(!isCollapsed));
+      const label = `${isCollapsed ? labels.expand : labels.collapse}: ${node.title || labels.chapterTitle}`;
+      toggle.setAttribute('aria-label', label);
+      toggle.title = label;
+      toggle.setAttribute('aria-controls', body.id);
+    };
+    const toggle = makeButton('▸', 'ca-icon-btn ca-chapter-edit__toggle');
+    toggle.dataset.chapterToggle = String(node._id);
+    toggle.addEventListener('click', () => setCollapsed(!collapsed.has(node._id)));
+    header.appendChild(toggle);
+
     const title = document.createElement('input');
     title.type = 'text';
     title.className = 'ca-input ca-chapter-edit__title';
     title.value = node.title;
     title.placeholder = labels.chapterTitle;
+    title.setAttribute('aria-label', `${labels.chapterTitle}: ${node._id}`);
     title.addEventListener('input', () => {
       node.title = title.value;
+      setCollapsed(collapsed.has(node._id));
       sync();
+    });
+    title.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') {
+        ev.preventDefault();
+        setCollapsed(false);
+        title.blur();
+      }
     });
     header.appendChild(title);
 
+    const meta = document.createElement('span');
+    meta.className = 'ca-chapter-edit__meta';
+    meta.textContent = labels.problemsCount.replace('{0}', node.pids.length)
+      + (node.children.length ? ` · ${labels.subchaptersCount.replace('{0}', node.children.length)}` : '');
+    const updateMeta = () => {
+      meta.textContent = labels.problemsCount.replace('{0}', node.pids.length)
+        + (node.children.length ? ` · ${labels.subchaptersCount.replace('{0}', node.children.length)}` : '');
+    };
+    header.appendChild(meta);
+
+    const actions = document.createElement('div');
+    actions.className = 'ca-chapter-edit__actions';
+    header.appendChild(actions);
+
+    const body = document.createElement('div');
+    body.className = 'ca-chapter-edit__body';
+    body.id = `course-chapter-body-${node._id}`;
+    card.classList.toggle('is-collapsed', collapsed.has(node._id));
+    setCollapsed(collapsed.has(node._id));
+
     const addChild = makeButton(`+ ${labels.subchapter}`);
+    addChild.setAttribute('aria-label', `${labels.subchapter}: ${node.title}`);
     addChild.addEventListener('click', () => {
+      const child = { _id: nextId(), title: labels.newChapter, content: '', pids: [], children: [] };
       node.children = node.children || [];
-      node.children.push({ _id: nextId(), title: labels.newChapter, content: '', pids: [], children: [] });
+      node.children.push(child);
+      updateMeta();
+      collapsed.add(child._id);
       render();
     });
-    header.appendChild(addChild);
+    actions.appendChild(addChild);
 
     if (depth > 0) {
       const outdent = makeButton(labels.outdent);
@@ -249,7 +314,7 @@
         targetSiblings.splice(parent.index + 1, 0, node);
         render();
       });
-      header.appendChild(outdent);
+      actions.appendChild(outdent);
     }
 
     const moveUp = makeButton('↑', 'ca-btn ca-btn--gray ca-btn--xsmall', labels.moveUp);
@@ -258,7 +323,7 @@
       [siblings[index - 1], siblings[index]] = [siblings[index], siblings[index - 1]];
       render();
     });
-    header.appendChild(moveUp);
+    actions.appendChild(moveUp);
 
     const moveDown = makeButton('↓', 'ca-btn ca-btn--gray ca-btn--xsmall', labels.moveDown);
     moveDown.disabled = index === siblings.length - 1;
@@ -266,18 +331,23 @@
       [siblings[index + 1], siblings[index]] = [siblings[index], siblings[index + 1]];
       render();
     });
-    header.appendChild(moveDown);
+    actions.appendChild(moveDown);
 
     const remove = makeButton(labels.delete, 'ca-btn ca-btn--danger ca-btn--xsmall');
     remove.addEventListener('click', () => {
       if (!confirm(labels.deleteChapterConfirm)) return;
+      const removed = new Set();
+      const collectRemoved = (chapter) => {
+        removed.add(chapter._id);
+        chapter.children.forEach(collectRemoved);
+      };
+      collectRemoved(node);
+      removed.forEach((id) => collapsed.delete(id));
       siblings.splice(index, 1);
+      updateMeta();
       render();
     });
-    header.appendChild(remove);
-
-    const body = document.createElement('div');
-    body.className = 'ca-chapter-edit__body';
+    actions.appendChild(remove);
 
     const contentLabel = document.createElement('label');
     contentLabel.textContent = labels.chapterIntroduction;
@@ -308,7 +378,9 @@
       initial: (node.pids || []).map((pid) => problemDict[pid] || { id: pid, title: String(pid) }),
       searchUrl,
       onChange: (pids) => {
+        if (pids.join(',') === node.pids.join(',')) return;
         node.pids = pids;
+        updateMeta();
         sync();
       },
     });
@@ -327,20 +399,30 @@
 
   const render = () => {
     root.innerHTML = '';
-    if (!chapters.length) chapters = [{ _id: nextId(), title: labels.chapterFallback, content: '', pids: [], children: [] }];
+    if (!chapters.length) {
+      const chapter = { _id: nextId(), title: labels.chapterFallback, content: '', pids: [], children: [] };
+      chapters = [chapter];
+      collapsed.add(chapter._id);
+    }
     chapters.forEach((node, index) => root.appendChild(renderNode(node, chapters, index, 0)));
     sync();
   };
 
-  const addRootButton = document.createElement('button');
-  addRootButton.type = 'button';
-  addRootButton.className = 'ca-btn ca-btn--small';
-  addRootButton.textContent = `+ ${labels.addChapter}`;
+  const addRootButton = document.getElementById('course-chapter-add');
   addRootButton.addEventListener('click', () => {
-    chapters.push({ _id: nextId(), title: labels.newChapter, content: '', pids: [], children: [] });
+    const chapter = { _id: nextId(), title: labels.newChapter, content: '', pids: [], children: [] };
+    chapters.push(chapter);
+    collapsed.add(chapter._id);
     render();
   });
-  root.parentNode.insertBefore(addRootButton, root.nextSibling);
+  document.getElementById('course-chapter-expand-all').addEventListener('click', () => {
+    collapsed.clear();
+    render();
+  });
+  document.getElementById('course-chapter-collapse-all').addEventListener('click', () => {
+    collectIds(chapters).forEach((id) => collapsed.add(id));
+    render();
+  });
 
   render();
 
